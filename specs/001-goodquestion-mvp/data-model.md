@@ -88,12 +88,12 @@
 | 이미지 키 매핑 | `fixtures/storage-assets.json` | `story-assets` 버킷 public URL 조합 (`base_url+'/'+key`) |
 | 게이트 임계값·모델명 | `src/lib/config.ts` + env | `no_speech_prob`/`avg_logprob` 등 실측 튜닝 대상 |
 
-## 3. 스키마 갭과 조치 (팀 합의 후 마이그레이션 — Notion SoT 존중)
+## 3. 스키마 갭과 조치 (**2026-08-10 최종: CLAUDE.md SSOT — 기본은 설계서, 충돌 시 기능명세서 우선. 스키마 변경은 승인 후 적용**)
 
 | # | 갭 | 조치 | 차단 화면 |
 |---|---|---|---|
-| 1 | `story_scenes.scene_type` 없음 | `'도입'/'전개'/'대화'` enum 컬럼 추가 (기능명세서 명시 요청). 진행률 N = 전개+대화 쌍=1 카운트(도입 제외) | 홈 이어하기·진행률 바 전부 |
-| 2 | `children.avatar_key`·`birth_date` 없음 | 컬럼 추가. birth_year는 유지(리포트 호환) | 프로필 선택/등록, 만 나이 배지 |
+| 1 | `story_scenes.scene_type` 없음 | **컬럼 미추가** — fixtures type/label 파생(`src/lib/story.ts` sceneTypeOf). 진행률 N = 전개+대화 쌍=1 카운트(도입 제외) | 없음 (코드로 충족) |
+| 2 | `children.avatar_key`·`birth_date` 없음 | **컬럼 2종 추가 확정·적용**(001_children_profile_fields, 사용자 승인) — 사용자 입력이라 코드 파생 불가. birth_year는 유지(리포트 호환). Notion 설계서 개정 공유 예정 | 없음 (요건 충족 가능) |
 | 3 | 미션 테이블 없음 | MVP는 fixtures 로드로 대체(신설 보류 — 연동기준 §2-A 방침) | 없음 (서버 설정으로 충족) |
 | 4 | `utterance_analyses` raw 컬럼 없음 | 서버 로그 보존으로 대체, 컬럼 추가는 협의 | 없음 (디버깅 편의만 영향) |
 | 5 | `element_criteria`/`element_worries` 없음 | **보류 확정**(Notion 요구사항 개정 전까지) — 프롬프트에 scene_goal만 주입 | 없음 |

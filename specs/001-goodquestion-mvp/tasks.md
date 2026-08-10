@@ -36,8 +36,8 @@
 
 ### 파트2 트랙
 
-- [ ] T003 [P] (파트2) 설정 로더 `src/lib/config.ts` — 역할별 모델명(기본 gpt-4o-mini)·STT 게이트 임계값(no_speech_prob 0.6, avg_logprob -1.0 등)을 env/상수로 분리 (R-02; 임계 기본값은 파트1과 항목 합의)
-- [ ] T004 [P] (파트2) OpenAI 단일 클라이언트 `src/lib/openai.ts` + 서버 전용 Supabase service role 클라이언트 `src/lib/supabase.ts` (`server-only` 임포트로 클라이언트 번들 유입 차단)
+- [X] T003 [P] (파트2) 설정 로더 `src/lib/config.ts` — 역할별 모델명(기본 gpt-4o-mini)·STT 게이트 임계값(no_speech_prob 0.6, avg_logprob -1.0 등)을 env/상수로 분리 (R-02; 임계 기본값은 파트1과 항목 합의) ✓ 382c28b — 파트1 gates.test.ts가 기본값 정합 검증 중
+- [X] T004 [P] (파트2) OpenAI 단일 클라이언트 `src/lib/openai.ts` + 서버 전용 Supabase service role 클라이언트 `src/lib/supabase.ts` (`server-only` 임포트로 클라이언트 번들 유입 차단) ✓ `server-only`는 tsx CLI에서 즉시 throw라 런타임 가드로 대체(코드 주석 사유) — 번들 검증은 T063. supabase.ts에 Node 20 ws transport 주입 추가(T001 비고 이행)
 
 ### 공동 (Day 0 합의 — 30분 타임박스)
 
@@ -60,9 +60,9 @@
 
 ### 파트2 트랙
 
-- [ ] T007 (파트2) 스키마 갭 마이그레이션 `supabase/migrations/001_mvp_additions.sql` — `story_scenes.scene_type`('도입'/'전개'/'대화'), `children.avatar_key`·`birth_date` 추가 (data-model §3 — Notion SoT라 팀 공유 후 적용, R-11)
-- [ ] T008 (파트2) 시드 스크립트 `scripts/seed.ts` — `fixtures/story.banggui.json` → stories/story_scenes upsert(external_id→uuid 매핑 보존, 임시 채택값 R-08: 대화2 요소=장면 테이블, EXPRESSION→REASON, preferred_turns=max_turns), 실행·검증 (T007 의존)
-- [ ] T010 [P] (파트2) Supabase Auth 연동 기반 — `src/lib/supabase-browser.ts`·`src/middleware.ts`(@supabase/ssr 세션 갱신·보호 라우트) (R-10)
+- [X] T007 (파트2) 스키마 갭 마이그레이션 — **최종 확정 (2026-08-10, CLAUDE.md SSOT: 충돌 시 기능명세서 우선)**: 3컬럼 선적용→전면 롤백→사용자 승인 후 `supabase/migrations/001_children_profile_fields.sql`로 **children.birth_date·avatar_key 2컬럼만 재적용**. scene_type은 DB에 추가하지 않고 fixtures 파생(`src/lib/story.ts` sceneTypeOf) 유지. T045·T046은 기능명세서 원안대로(생년월일 8자리 저장·만 나이 배지·아바타 저장) 진행. Notion 설계서 개정 공유 필요(팀)
+- [X] T008 (파트2) 시드 스크립트 `scripts/seed.ts` — `fixtures/story.banggui.json` → stories/story_scenes upsert(external_id→uuid 매핑 보존, 임시 채택값 R-08: 대화2 요소=장면 테이블, EXPRESSION→REASON, preferred_turns=max_turns), 실행·검증 (T007 의존) ✓ external_id→uuid는 결정적 UUIDv5(`src/lib/external-id.ts`+테스트 3건) — 매핑 파일 없이 서버·CLI 동일 계산, 2회 실행 멱등 확인, scenes 9/9
+- [X] T010 [P] (파트2) Supabase Auth 연동 기반 — `src/lib/supabase-browser.ts`·`src/middleware.ts`(@supabase/ssr 세션 갱신·보호 라우트) (R-10) ✓ **Next 16.3: middleware.ts→`src/proxy.ts` 개명**(문서 확인, export명 proxy). publishable 키 사용(NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — .env.example 갱신), 보호 프리픽스 6종 리다이렉트, API 401은 각 라우트 책임. next build 통과
 
 **Checkpoint**: DB에 이야기 1편 시드 완료·폰트/토큰 적용·인증 미들웨어 동작
 
@@ -94,23 +94,23 @@
 
 ### 파트2 트랙 — 대화 두뇌 코어 (CLI 단독 검증, 파트1과 동시 진행)
 
-- [ ] T023 [P] [US1] (파트2) 규칙 엔진 순수 함수 `src/lib/rules/engine.ts` — accumulated/missing 계산, turns_without_new_element·consecutive_low_information_turns 카운트, NORMAL/GUIDED(유도 1~2개)/CLOSING 판정, 종료 이유 GOAL_MET/MAX_TURNS (FR-010; LLM 무관·문장 미생성)
-- [ ] T024 [P] [US1] (파트2) 규칙 엔진 테스트 `src/lib/rules/engine.test.ts` — 누적 유지·모드 전환·최대 턴·조기 종료 케이스 (Vitest)
-- [ ] T025 [P] [US1] (파트2) 분석 LLM `src/lib/llm/analysis.ts` — 4필드 구조화 출력(child_intent/main_point/detected_elements/utterance_validity), 탐지는 항상 8요소 전체 명문화 (R-03)
-- [ ] T026 [P] [US1] (파트2) 서버 후처리 `src/lib/llm/postprocess.ts` — evidence 원문 인용 검증·중복 정리·약한 탐지 보정, LLM 원본은 서버 로그로 보존(R-11-4)
-- [ ] T027 [P] [US1] (파트2) 캐릭터 생성 LLM `src/lib/llm/generate.ts` — fixtures/characters 페르소나 시스템 프롬프트, GUIDED 시 서버 지정 부족 요소만 유도, 아동 안전 가드레일+후검증(길이·금칙어) (FR-011)
-- [ ] T028 [P] [US1] (파트2) eval 골든 세트 `eval/cases.json`(모의 아동 발화 20~30건 요소 라벨) + 회귀 러너 `eval/run.ts`
-- [ ] T029 [US1] (파트2) 시뮬레이션 CLI `scripts/simulate.ts` — 대본 입력→분석→후처리→판정→응답 루프 텍스트 출력 (T023·T025~T027 의존, 데모 폴백 겸용 R-17)
+- [X] T023 [P] [US1] (파트2) 규칙 엔진 순수 함수 `src/lib/rules/engine.ts` — accumulated/missing 계산, turns_without_new_element·consecutive_low_information_turns 카운트, NORMAL/GUIDED(유도 1~2개)/CLOSING 판정, 종료 이유 GOAL_MET/MAX_TURNS (FR-010; LLM 무관·문장 미생성) ✓ GOAL_MET이 MAX_TURNS 우선, GUIDED 임계는 config.rules(env 튜닝: RULES_GUIDED_*) 주입, guidanceTarget=required 순서상 첫 부족 요소(계약 타입 단수)
+- [X] T024 [P] [US1] (파트2) 규칙 엔진 테스트 `src/lib/rules/engine.test.ts` — 누적 유지·모드 전환·최대 턴·조기 종료 케이스 (Vitest) ✓ 9케이스 — TDD 선행 작성(RED→GREEN), required 밖 요소 누적·마지막 턴 GOAL_MET 우선 포함
+- [X] T025 [P] [US1] (파트2) 분석 LLM `src/lib/llm/analysis.ts` — 4필드 구조화 출력(child_intent/main_point/detected_elements/utterance_validity), 탐지는 항상 8요소 전체 명문화 (R-03) ✓ json_schema strict + 8요소 정의·validity 기준·intent 예시(Notion §5·§8), 파싱 실패 throw(재시도 근거), ANALYSIS_VERSION='mvp_v1', 순수부 테스트 5건
+- [X] T026 [P] [US1] (파트2) 서버 후처리 `src/lib/llm/postprocess.ts` — evidence 원문 인용 검증·중복 정리·약한 탐지 보정, LLM 원본은 서버 로그로 보존(R-11-4) ✓ TDD 7케이스 — 공백 무시 매칭으로 원문 표기 보정, INVALID_TYPE/DUPLICATE/WEAK_EVIDENCE/NOT_QUOTED 사유 기록
+- [X] T027 [P] [US1] (파트2) 캐릭터 생성 LLM `src/lib/llm/generate.ts` — fixtures/characters 페르소나 시스템 프롬프트, GUIDED 시 서버 지정 부족 요소만 유도, 아동 안전 가드레일+후검증(길이·금칙어) (FR-011) ✓ TDD 11케이스 — loadCharacter(fixtures SoT)·요소별 유도 화법 사전·후검증 160자/금칙어(재시도는 /api/turn 책임), 히스토리는 role 매핑 전달
+- [X] T028 [P] [US1] (파트2) eval 골든 세트 `eval/cases.json`(모의 아동 발화 20~30건 요소 라벨) + 회귀 러너 `eval/run.ts` ✓ 24건(장면 4×6, validity 5종 혼합) — expected는 핵심 최소 집합·재현율 기준, extra는 보고만. **실측 완료(2026-08-10): 프롬프트 2회 튜닝(mvp_v2 — 요소 예시·절 단위 복합 탐지·REASON 절 강조·SHORT 기준)으로 validity 24/24, 재현율 64.6%→89.6%. 잔여 3건은 경계 사례(과적합 방지 위해 중단)**
+- [X] T029 [US1] (파트2) 시뮬레이션 CLI `scripts/simulate.ts` — 대본 입력→분석→후처리→판정→응답 루프 텍스트 출력 (T023·T025~T027 의존, 데모 폴백 겸용 R-17) ✓ 시나리오 2종 동봉(happy-path=GOAL_MET·stagnant-guided=GUIDED→MAX_TURNS), CLOSING 시 LLM 미호출·고정 클로징 출력 명시, 'ㅇㅇ'→이름 치환. **실측 실행은 OPENAI_API_KEY 입력 후(사람 작업)**
 
 ### API 조립 (트랙별 소유 — Route Handler 착수 전 Next 16.3 문서 필독)
 
 - [ ] T030 [US1] (파트1) `src/app/api/stt/route.ts` — multipart 수신→힌트→Whisper→게이트→교정→`SttResult` 200, 무저장·즉시 폐기 (contracts/api-routes.md; T015 의존. api/ 중 이 파일만 파트1 소유)
-- [ ] T031 [US1] (파트2) `src/app/api/sessions/route.ts` — 세션 시작/재개 지점 계산(scene_goal_met 기준, 도입은 항상 처음), scenes 페이로드(scene_type·이미지 URL·고정 오디오 URL)·진행률 n/N(전개+대화 쌍=1) (T007·T008 의존; 이미지 URL은 파트1의 T011 헬퍼 호출)
-- [ ] T032 [US1] (파트2) `src/app/api/turn/route.ts` — 오케스트레이션 ①메시지 저장→②분석→③후처리→④utterance_analyses 저장→⑤규칙→⑥생성 또는 고정 대사→⑦TTS 캐시→⑧세션 갱신, 실패 시 1회 재시도·폴백 (파트1 lib는 `@/lib/tts` 인터페이스로만 호출 — T017·T021 산출물 의존, 코드 접점 없음)
+- [X] T031 [US1] (파트2) `src/app/api/sessions/route.ts` — 세션 시작/재개 지점 계산(scene_goal_met 기준, 도입은 항상 처음), scenes 페이로드(scene_type·이미지 URL·고정 오디오 URL)·진행률 n/N(전개+대화 쌍=1) (T007·T008 의존; 이미지 URL은 파트1의 T011 헬퍼 호출) ✓ 보호자-아이 소속 검증, 마지막 장면 완료 시 resumeSceneId=null(후속활동 단계), 보조 헬퍼 `supabase-server.ts`(인증)·`fixed-audio.ts`(R-06 키)·`story.ts`(uuid↔fixture)
+- [X] T032 [US1] (파트2) `src/app/api/turn/route.ts` — 오케스트레이션 ①메시지 저장→②분석→③후처리→④utterance_analyses 저장→⑤규칙→⑥생성 또는 고정 대사→⑦TTS 캐시→⑧세션 갱신, 실패 시 1회 재시도·폴백 (파트1 lib는 `@/lib/tts` 인터페이스로만 호출 — T017·T021 산출물 의존, 코드 접점 없음) ✓ CLOSING=고정 클로징+fixed-audio URL(LLM/TTS 무관), 분석·생성 1회 재시도 후 502, TTS 실패·voice-map 미확정(T019 대기)이면 텍스트만 반환, raw 분석은 서버 로그 보존, 장면 전환 시 규칙 상태 리셋. ※ API 스모크는 OPENAI_API_KEY+가입 세션 필요(사람 작업)
 
 ### UI 조립 (화면 파일 단위 분담)
 
-- [ ] T033 [P] [US1] (파트2) 턴 상태머신 `src/store/turn.ts` — CHAR_SPEAKING→RECORDING→TRANSCRIBING→REVIEW→SUBMITTED 전이, 게이트 실패 시 RECORDING 복귀 (data-model §5)
+- [X] T033 [P] [US1] (파트2) 턴 상태머신 `src/store/turn.ts` — CHAR_SPEAKING→RECORDING→TRANSCRIBING→REVIEW→SUBMITTED 전이, 게이트 실패 시 RECORDING 복귀 (data-model §5) ✓ TDD 8케이스 — failed=true는 REVIEW 미진입, 잘못된 단계 전이 무시, 상태 배지 라벨 PHASE_LABELS 동봉(T037 소비)
 - [ ] T034 [P] [US1] (파트1) 오디오 훅 `src/hooks/useAudioUnlock.ts`·`src/hooks/useRecorder.ts` — 첫 제스처 언락(iPad), MediaRecorder(mp4/webm), RMS·최소 길이 사전 게이트, 30초 자동 종료 (R-15)
 - [ ] T035 [P] [US1] (파트1) 진행 공통 컴포넌트 `src/components/progress-header.tsx` — 진행률 텍스트·바(도입 n=1 고정)·X 나가기(상세 복귀)
 - [ ] T036 [US1] (파트1) 이야기 진행 컨테이너+도입/전개 화면 `src/app/play/[sessionId]/page.tsx`·`src/components/narration-scene.tsx` — scene_description 온점 분리 문장 자동 재생, 이전/다음 화살표(첫/끝 규칙)·다시 듣기·마지막 문장 진행하기 (T031 응답 스키마 의존 — contracts/api-routes.md 기준으로 병렬 개발 가능)

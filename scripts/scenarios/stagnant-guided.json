@@ -1,0 +1,11 @@
+{
+  "_readme": "T029 simulate 대본 — 저정보·정체 발화로 GUIDED 유도를 확인한 뒤 max_turns(4) 도달로 CLOSING(MAX_TURNS)까지 가는 케이스.",
+  "scene": "sc_banggui_03",
+  "childName": "지우",
+  "turns": [
+    "몰라요",
+    "음 그냥요",
+    "방귀 뿡뿡 히히",
+    "슬펐을 것 같아요"
+  ]
+}
