@@ -15,7 +15,9 @@ export function createServiceClient(): SupabaseClient {
     requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     {
       auth: { persistSession: false, autoRefreshToken: false },
-      realtime: { transport: ws as unknown as WebSocket },
+      realtime: {
+        transport: ws as unknown as new (address: string | URL, subprotocols?: string | string[]) => WebSocket,
+      },
     },
   );
 }
