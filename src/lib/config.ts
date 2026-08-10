@@ -51,3 +51,13 @@ export const sttGate = {
 
 /** Whisper prompt 힌트 최대 토큰 (R-01 — 장면별 힌팅 상한) */
 export const sttHintMaxTokens = 224;
+
+/**
+ * 규칙 엔진 GUIDED 전환 임계 (FR-010) — 소비자는 src/lib/rules/engine.ts(순수 함수, 주입).
+ * 기본 1: 새 요소 없는 턴·저정보 발화가 1턴만 이어져도 다음 응답에서 부족 요소를 유도한다
+ * (max_turns 4~5로 짧아 이른 유도가 목표 충족에 유리).
+ */
+export const rules = {
+  guidedStagnantTurns: envNumber('RULES_GUIDED_STAGNANT_TURNS', 1),
+  guidedLowInfoTurns: envNumber('RULES_GUIDED_LOW_INFO_TURNS', 1),
+};
