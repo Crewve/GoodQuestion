@@ -99,7 +99,7 @@
 - [X] T025 [P] [US1] (파트2) 분석 LLM `src/lib/llm/analysis.ts` — 4필드 구조화 출력(child_intent/main_point/detected_elements/utterance_validity), 탐지는 항상 8요소 전체 명문화 (R-03) ✓ json_schema strict + 8요소 정의·validity 기준·intent 예시(Notion §5·§8), 파싱 실패 throw(재시도 근거), ANALYSIS_VERSION='mvp_v1', 순수부 테스트 5건
 - [X] T026 [P] [US1] (파트2) 서버 후처리 `src/lib/llm/postprocess.ts` — evidence 원문 인용 검증·중복 정리·약한 탐지 보정, LLM 원본은 서버 로그로 보존(R-11-4) ✓ TDD 7케이스 — 공백 무시 매칭으로 원문 표기 보정, INVALID_TYPE/DUPLICATE/WEAK_EVIDENCE/NOT_QUOTED 사유 기록
 - [X] T027 [P] [US1] (파트2) 캐릭터 생성 LLM `src/lib/llm/generate.ts` — fixtures/characters 페르소나 시스템 프롬프트, GUIDED 시 서버 지정 부족 요소만 유도, 아동 안전 가드레일+후검증(길이·금칙어) (FR-011) ✓ TDD 11케이스 — loadCharacter(fixtures SoT)·요소별 유도 화법 사전·후검증 160자/금칙어(재시도는 /api/turn 책임), 히스토리는 role 매핑 전달
-- [X] T028 [P] [US1] (파트2) eval 골든 세트 `eval/cases.json`(모의 아동 발화 20~30건 요소 라벨) + 회귀 러너 `eval/run.ts` ✓ 24건(장면 4×6, validity 5종 혼합) — expected는 핵심 최소 집합·재현율 기준, extra는 보고만. 실패 시 exit 2. **실측 실행은 OPENAI_API_KEY 입력 후(사람 작업)**
+- [X] T028 [P] [US1] (파트2) eval 골든 세트 `eval/cases.json`(모의 아동 발화 20~30건 요소 라벨) + 회귀 러너 `eval/run.ts` ✓ 24건(장면 4×6, validity 5종 혼합) — expected는 핵심 최소 집합·재현율 기준, extra는 보고만. **실측 완료(2026-08-10): 프롬프트 2회 튜닝(mvp_v2 — 요소 예시·절 단위 복합 탐지·REASON 절 강조·SHORT 기준)으로 validity 24/24, 재현율 64.6%→89.6%. 잔여 3건은 경계 사례(과적합 방지 위해 중단)**
 - [X] T029 [US1] (파트2) 시뮬레이션 CLI `scripts/simulate.ts` — 대본 입력→분석→후처리→판정→응답 루프 텍스트 출력 (T023·T025~T027 의존, 데모 폴백 겸용 R-17) ✓ 시나리오 2종 동봉(happy-path=GOAL_MET·stagnant-guided=GUIDED→MAX_TURNS), CLOSING 시 LLM 미호출·고정 클로징 출력 명시, 'ㅇㅇ'→이름 치환. **실측 실행은 OPENAI_API_KEY 입력 후(사람 작업)**
 
 ### API 조립 (트랙별 소유 — Route Handler 착수 전 Next 16.3 문서 필독)

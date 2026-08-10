@@ -7,7 +7,7 @@ import { getOpenAI } from '../openai';
 import type { RawAnalysis } from './postprocess';
 
 /** utterance_analyses.analysis_version 태깅 값 — 프롬프트/스키마 변경 시 올린다 */
-export const ANALYSIS_VERSION = 'mvp_v1';
+export const ANALYSIS_VERSION = 'mvp_v2'; // v2: 요소 구분 예시·복합 문장 절 단위 탐지·SHORT 기준 명확화 (eval 1차 회귀 반영)
 
 export type AnalysisContext = {
   sceneGoal: string;
@@ -20,14 +20,14 @@ export type AnalysisContext = {
 
 // 8요소 정의 — Notion DB 구조 §5 허용값. 설명은 분석 일관성을 위한 프롬프트 자산(콘텐츠 아님).
 const ELEMENT_GUIDE = `
-- DECISION(결정): 무엇을 할지/하지 않을지 자신의 선택을 말함
-- EMOTION(감정): 자신 또는 인물의 감정·기분을 말함
-- REASON(이유): 왜 그런지 이유·근거를 말함
-- PERSPECTIVE(관점): 인물의 입장·처지에서 상황을 바라보고 말함
-- EMPATHY(공감): 인물의 마음에 공감·위로를 표현함
-- SOLUTION(해결): 문제를 해결할 방법·아이디어를 제안함
-- RESULT(결과): 어떤 일의 결과·이후에 생길 일을 말함
-- REQUEST(요청): 누군가에게 부탁·요청을 함`.trim();
+- DECISION(결정): 무엇을 할지/하지 않을지 선택을 말함 (예: "나라면 말할 거야")
+- EMOTION(감정): 자신 또는 인물의 감정·기분을 말하거나 추측함 (예: "슬펐을 것 같아요", "저도 기뻐요")
+- REASON(이유): 왜 그런지 이유·근거를 말함 — '~니까', '~아서/어서', '~때문에', '~잖아요' 절이 단서
+- PERSPECTIVE(관점): 인물의 입장·처지가 되어 생각함 (예: "내가 며느리라면", "할아버지 입장도 생각해 주세요")
+- EMPATHY(공감): 인물의 마음을 헤아려 위로·공감을 표현함 (예: "괜찮아요", "이해해요", "얼마나 힘들었겠어요")
+- SOLUTION(해결): 문제를 해결할 방법·아이디어를 제안함 (예: "~하면 돼요", "~해 보면 어때요")
+- RESULT(결과): 어떤 일의 결과·앞으로 생길 일을 말함 (예: "~될 거예요", "~다칠 수 있어요")
+- REQUEST(요청): 누군가에게 부탁·요청함 (예: "~해 주세요", "~해 달라고 부탁해요")`.trim();
 
 // child_intent 예시 목록 — Notion DB 구조 §8 (예시이므로 스키마 강제는 하지 않음)
 const INTENT_EXAMPLES =
@@ -41,10 +41,16 @@ ${ELEMENT_GUIDE}
 
 [규칙]
 - detected_elements: 발화에 실제로 나타난 요소만 담는다. 각 evidence는 반드시 아이 발화 원문에서 그대로 인용한 부분 문자열이어야 한다 (바꿔 쓰기 금지).
-- 같은 요소는 한 번만 담는다. 확신이 없는 요소는 넣지 않는다.
+- **한 발화에 여러 요소가 함께 있으면 각각 모두 태그한다. 절 단위로 살핀다.**
+  예: "방귀가 세니까 배가 떨어질 거예요" → REASON("방귀가 세니까") + RESULT("배가 떨어질 거예요")
+  예: "멀리 피해야 해요 다치면 안 되니까요" → SOLUTION + REASON
+- 인물의 감정을 추측·언급하면(예: "슬펐을 것 같아요") EMOTION이다. 위로·공감의 태도가 함께 있으면 EMPATHY도 같이 태그한다 — EMPATHY 하나로 합치지 않는다.
+- **REASON은 가장 놓치기 쉽다**: '~니까', '~아서/어서', '~때문에', '~잖아요' 절이 보이면 반드시 REASON 태그 여부를 검토한다. SOLUTION·RESULT와 겹쳐도 REASON을 빠뜨리지 않는다.
+  예: "배가 아파서 병이 날 수도 있어요" → REASON("배가 아파서") + RESULT("병이 날 수도 있어요")
+- 같은 요소는 한 번만 담는다. 근거 절이 없는 요소는 넣지 않는다.
 - child_intent: 발화의 의도 분류 1개 (예: ${INTENT_EXAMPLES})
 - main_point: 아이 발화의 핵심 요지를 한 문장으로 요약
-- utterance_validity 기준: VALID(의미가 파악되는 유효 발화) / SHORT(지나치게 짧음) / UNCLEAR(뜻을 알기 어려움) / OFF_TOPIC(장면과 관련 없음) / PLAYFUL(장난·소리 흉내 등)`;
+- utterance_validity 기준: VALID(의미가 파악되는 유효 발화) / SHORT(한두 단어짜리 짧은 대답 — "몰라요", "네", "그냥요") / UNCLEAR(뜻을 알기 어려움) / OFF_TOPIC(장면과 관련 없음) / PLAYFUL(장난·소리 흉내 등)`;
 
   const user = `[장면 목표] ${context.sceneGoal}
 [장면 목표 요소(참고 — 탐지 범위를 제한하지 않음)] ${context.requiredElements.join(', ')}
