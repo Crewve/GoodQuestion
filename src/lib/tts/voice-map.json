@@ -1,0 +1,23 @@
+{
+  "_note": "T019 — 2026-08-11 팀 확정. 스튜디오 한글 표기: 며느리=고운, 시아버지=병훈, 이장=장태백, 내레이터=문정. 스튜디오 '캐릭터 캐스팅' 전용 보이스(예: 동굴아저씨)는 개발자 API 카탈로그(v1·v2)에 없음 — API voice_name 기준으로 기록한다. 키는 fixtures/tts-lines의 voice_role.",
+  "ch_banggui_daughter_in_law": {
+    "voice_name": "Gowoon",
+    "voice_id": "tc_68785db8ba9cd7503f27d921",
+    "model": "ssfm-v30"
+  },
+  "ch_banggui_father_in_law": {
+    "voice_name": "Byunghun",
+    "voice_id": "tc_694395d43f2c8d9d43e9a897",
+    "model": "ssfm-v30"
+  },
+  "ch_banggui_village_chief": {
+    "voice_name": "Taebaek",
+    "voice_id": "tc_606c6c155e38f609c6789d2b",
+    "model": "ssfm-v30"
+  },
+  "narrator": {
+    "voice_name": "Moonjung",
+    "voice_id": "tc_68f9c6a72f0f04a417bb136f",
+    "model": "ssfm-v30"
+  }
+}

@@ -3,9 +3,21 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { cacheKey, ensureStorage, readLocal, readStorage, storageUrl, writeLocal, writeStorage } from './cache';
 import { synthesize, type SynthesizeOpts } from './typecast';
+import voiceMap from './voice-map.json';
 
 export { cacheKey, storageUrl };
 export { listVoices, synthesize, typecastProvider } from './typecast';
+
+export type VoiceMapping = { voice_name: string; voice_id: string; model: string };
+
+/** T019 확정 보이스 — role은 fixtures/tts-lines의 voice_role (캐릭터 external_id 또는 'narrator') */
+export function voiceForRole(role: string): VoiceMapping {
+  const entry = (voiceMap as Record<string, VoiceMapping | string>)[role];
+  if (!entry || typeof entry === 'string') {
+    throw new Error(`voice-map.json에 없는 voice_role: ${role}`);
+  }
+  return entry;
+}
 
 export type CachedSynthesisResult = {
   buffer: Buffer;

@@ -81,14 +81,14 @@
 - [X] T012 [P] [US1] (파트1) STT 실패 게이트 순수 함수 `src/lib/stt/gates.ts` — 5종 순서(1~2자→no_speech_prob→avg_logprob→n-gram 반복→자막체 상투구), 임계값은 config 주입 (R-02) ✓ 구간 길이 가중 평균, 상투구는 공백 무시 비교, 신호 수집 함수 분리(collectSignals — stt-check 튜닝 출력용)
 - [X] T013 [P] [US1] (파트1) 게이트 단위 테스트 `src/lib/stt/gates.test.ts` — 무음·환각·정상 케이스 (Vitest) ✓ 10케이스 통과 (게이트 5종·순서 우선·가중 평균·설정 주입, config.ts 기본값 정합 포함)
 - [X] T014 [P] [US1] (파트1) 장면별 prompt 힌트 빌더 `src/lib/stt/hints.ts` — fixtures 캐릭터명·핵심 단어, ≤224토큰 ✓ 직전 캐릭터 대사(GUIDED 질문) 우선 주입, Whisper가 prompt 끝부분을 쓰는 특성 반영해 핵심 어휘 후치·앞에서 절단
-- [ ] T015 [US1] (파트1) Whisper 어댑터+경량 교정 `src/lib/stt/index.ts` — verbose_json, 게이트 통과 후 gpt-4o-mini 교정(맞춤법·조사만, 실패 시 sttRawText 폴백), `SttResult` 반환, 오디오 즉시 폐기 (T012·T014 의존)
+- [X] T015 [US1] (파트1) Whisper 어댑터+경량 교정 `src/lib/stt/index.ts` — verbose_json, 게이트 통과 후 gpt-4o-mini 교정(맞춤법·조사만, 실패 시 sttRawText 폴백), `SttResult` 반환, 오디오 즉시 폐기 (T012·T014 의존) ✓ speechToText() — SttResult+게이트 신호·duration 부가 반환(튜닝용), 교정은 과도 변형 시에도 원문 폴백, 보이스 샘플 mp3 실측 왕복 확인
 - [X] T016 [P] [US1] (파트1) 타입캐스트 어댑터 `src/lib/tts/typecast.ts` — `synthesize(text, voiceId)→mp3 Buffer`, provider 인터페이스, 동시성 2 제한 큐 내장 (R-05; 가입·API 스펙 확인 선행) ✓ API 실측 확정: GET /v1/voices·POST /v1/text-to-speech(X-API-KEY, mp3 320kbps), model은 보이스별 자동 해석
 - [X] T017 [US1] (파트1) TTS 2층 캐시 `src/lib/tts/cache.ts` + 진입점 `src/lib/tts/index.ts` — `hash(voiceId+text)`, 로컬 디렉토리(CLI)+`tts-cache` 버킷(런타임) (T016 의존) ✓ 로컬 히트 49ms·Storage write-through·공개 URL 200 검증. Storage 클라이언트는 주입 방식(파트2 supabase.ts Node20 이슈와 분리)
 - [X] T018 [P] [US1] (파트1) 보이스 후보 스크립트 `scripts/tts-voices.ts` — 역할 4종×후보 2~3개 샘플 mp3 생성, 즉시 실행해 팀 투표 요청 (**크리티컬 패스 — Day 0 최우선, 투표 리드타임**) ✓ 12건 생성(414자 사용, out/voice-samples/) — **팀 투표 대기 중, 확정 시 T019 진행**
-- [ ] T019 [US1] (파트1) 보이스 매핑 확정 `src/lib/tts/voice-map.json` — 투표 결과로 며느리·시아버지·마을 이장·내레이터 voice_id 기록 (T018 투표 의존)
-- [ ] T020 [P] [US1] (파트1) 왕복 검증 CLI `scripts/stt-check.ts`·`scripts/tts-check.ts` — SttResult+게이트 신호 전부 출력 / 텍스트→mp3 저장·캐시 히트 확인 ※ tts-check 완료(--storage 옵션 포함, 캐시 HIT·URL 검증) — stt-check는 OPENAI_API_KEY 입력 + T015 이후
-- [ ] T021 [US1] (파트1) 사전 생성 스크립트 `scripts/pregenerate-audio.ts` — tts-lines 14건→mp3→`fixed-audio` 업로드(파일명 `{key}.mp3` 잠정 R-06, 'ㅇㅇ' 2건 '친구야' 치환 R-07, 멱등), 실행 (T019 의존)
-- [ ] T022 [US1] (파트1) 게이트 임계 1차 튜닝 — 직접 녹음한 아동 발화 근사 샘플 10~20건(iPad audio/mp4·안드로이드 webm/opus 각각)으로 `stt-check` 실측, config 기본값 갱신 (T015·T020 의존)
+- [X] T019 [US1] (파트1) 보이스 매핑 확정 `src/lib/tts/voice-map.json` — 투표 결과로 며느리·시아버지·마을 이장·내레이터 voice_id 기록 (T018 투표 의존) ✓ 고운=Gowoon·병훈=Byunghun·이장=장태백(Taebaek)·문정=Moonjung, 전부 ssfm-v30 + `voiceForRole()` 로더. 주의: 스튜디오 '캐릭터 캐스팅' 전용 보이스(동굴아저씨 등)는 개발자 API 카탈로그(v1·v2)에 없음 — 1차 선정 동굴아저씨는 API 부재로 팀이 장태백으로 재확정
+- [X] T020 [P] [US1] (파트1) 왕복 검증 CLI `scripts/stt-check.ts`·`scripts/tts-check.ts` — SttResult+게이트 신호 전부 출력 / 텍스트→mp3 저장·캐시 히트 확인 ✓ 양쪽 완료 — stt-check: 게이트 신호 5종을 임계값과 병기 출력(--scene/--reply/--hint), 보이스 샘플 2건 실측 통과 (T022 튜닝 도구 겸용)
+- [X] T021 [US1] (파트1) 사전 생성 스크립트 `scripts/pregenerate-audio.ts` — tts-lines 14건→mp3→`fixed-audio` 업로드(파일명 `{key}.mp3` 잠정 R-06, 'ㅇㅇ' 2건 '친구야' 치환 R-07, 멱등), 실행 (T019 의존) ✓ 14/14 업로드·공개 URL 전수 검증(신규 합성 939자, 투표 샘플 캐시 히트 3건 과금 절약). 치환은 조사까지 처리('ㅇㅇ아'→'친구야', 'ㅇㅇ이'→'친구'). 재실행 시 전건 스킵·0과금 확인, 재생성은 --force
+- [ ] T022 [US1] (파트1) 게이트 임계 1차 튜닝 — 직접 녹음한 아동 발화 근사 샘플 10~20건(iPad audio/mp4·안드로이드 webm/opus 각각)으로 `stt-check` 실측, config 기본값 갱신 (T015·T020 의존) ※ 포맷 수용은 검증 완료: mp4(AAC)·webm(opus) 트랜스코드 샘플 모두 stt-check 정상 전사(2026-08-11) — 실녹음 기반 임계 튜닝만 잔존(사람 작업)
 
 **🔗 동기화 포인트 #2**: T022 완료 = 파트2에 "`SttResult` 인터페이스 전달 완료" 선언 (파트1 계획 §4-8)
 
@@ -104,16 +104,16 @@
 
 ### API 조립 (트랙별 소유 — Route Handler 착수 전 Next 16.3 문서 필독)
 
-- [ ] T030 [US1] (파트1) `src/app/api/stt/route.ts` — multipart 수신→힌트→Whisper→게이트→교정→`SttResult` 200, 무저장·즉시 폐기 (contracts/api-routes.md; T015 의존. api/ 중 이 파일만 파트1 소유)
+- [X] T030 [US1] (파트1) `src/app/api/stt/route.ts` — multipart 수신→힌트→Whisper→게이트→교정→`SttResult` 200, 무저장·즉시 폐기 (contracts/api-routes.md; T015 의존. api/ 중 이 파일만 파트1 소유) ✓ next dev 스모크 4케이스(정상 200·audio 누락 400·context 오류 400·손상 오디오 failed:true 200 폴백) 통과. sceneId는 sc_* 직해석·uuid는 시드(T008) 연동 전 기본 어휘 폴백. 선택 필드 characterReply 수용(계약 외 additive — 팀 공유 필요)
 - [X] T031 [US1] (파트2) `src/app/api/sessions/route.ts` — 세션 시작/재개 지점 계산(scene_goal_met 기준, 도입은 항상 처음), scenes 페이로드(scene_type·이미지 URL·고정 오디오 URL)·진행률 n/N(전개+대화 쌍=1) (T007·T008 의존; 이미지 URL은 파트1의 T011 헬퍼 호출) ✓ 보호자-아이 소속 검증, 마지막 장면 완료 시 resumeSceneId=null(후속활동 단계), 보조 헬퍼 `supabase-server.ts`(인증)·`fixed-audio.ts`(R-06 키)·`story.ts`(uuid↔fixture)
 - [X] T032 [US1] (파트2) `src/app/api/turn/route.ts` — 오케스트레이션 ①메시지 저장→②분석→③후처리→④utterance_analyses 저장→⑤규칙→⑥생성 또는 고정 대사→⑦TTS 캐시→⑧세션 갱신, 실패 시 1회 재시도·폴백 (파트1 lib는 `@/lib/tts` 인터페이스로만 호출 — T017·T021 산출물 의존, 코드 접점 없음) ✓ CLOSING=고정 클로징+fixed-audio URL(LLM/TTS 무관), 분석·생성 1회 재시도 후 502, TTS 실패·voice-map 미확정(T019 대기)이면 텍스트만 반환, raw 분석은 서버 로그 보존, 장면 전환 시 규칙 상태 리셋. ※ API 스모크는 OPENAI_API_KEY+가입 세션 필요(사람 작업)
 
 ### UI 조립 (화면 파일 단위 분담)
 
 - [X] T033 [P] [US1] (파트2) 턴 상태머신 `src/store/turn.ts` — CHAR_SPEAKING→RECORDING→TRANSCRIBING→REVIEW→SUBMITTED 전이, 게이트 실패 시 RECORDING 복귀 (data-model §5) ✓ TDD 8케이스 — failed=true는 REVIEW 미진입, 잘못된 단계 전이 무시, 상태 배지 라벨 PHASE_LABELS 동봉(T037 소비)
-- [ ] T034 [P] [US1] (파트1) 오디오 훅 `src/hooks/useAudioUnlock.ts`·`src/hooks/useRecorder.ts` — 첫 제스처 언락(iPad), MediaRecorder(mp4/webm), RMS·최소 길이 사전 게이트, 30초 자동 종료 (R-15)
-- [ ] T035 [P] [US1] (파트1) 진행 공통 컴포넌트 `src/components/progress-header.tsx` — 진행률 텍스트·바(도입 n=1 고정)·X 나가기(상세 복귀)
-- [ ] T036 [US1] (파트1) 이야기 진행 컨테이너+도입/전개 화면 `src/app/play/[sessionId]/page.tsx`·`src/components/narration-scene.tsx` — scene_description 온점 분리 문장 자동 재생, 이전/다음 화살표(첫/끝 규칙)·다시 듣기·마지막 문장 진행하기 (T031 응답 스키마 의존 — contracts/api-routes.md 기준으로 병렬 개발 가능)
+- [X] T034 [P] [US1] (파트1) 오디오 훅 `src/hooks/useAudioUnlock.ts`·`src/hooks/useRecorder.ts` — 첫 제스처 언락(iPad), MediaRecorder(mp4/webm), RMS·최소 길이 사전 게이트, 30초 자동 종료 (R-15) ✓ 언락은 첫 pointerdown 1회(모듈 전역), mime 협상 webm;opus→webm→mp4, AnalyserNode 실시간 레벨+전구간 평균 RMS, precheckRecording 순수 함수(TOO_SHORT/TOO_QUIET), onComplete 콜백에 사전 게이트 결과 동봉
+- [X] T035 [P] [US1] (파트1) 진행 공통 컴포넌트 `src/components/progress-header.tsx` — 진행률 텍스트·바(도입 n=1 고정)·X 나가기(상세 복귀) ✓ n/N 계산은 컨테이너 책임(도입=1, 전개k/대화k=k — 기능명세서 2.4.1·2.4.2), 터치 48px·텍스트 18px+·progressbar ARIA
+- [X] T036 [US1] (파트1) 이야기 진행 컨테이너+도입/전개 화면 `src/app/play/[sessionId]/page.tsx`·`src/components/narration-scene.tsx` — scene_description 온점 분리 문장 자동 재생, 이전/다음 화살표(첫/끝 규칙)·다시 듣기·마지막 문장 진행하기 (T031 응답 스키마 의존 — contracts/api-routes.md 기준으로 병렬 개발 가능) ✓ 진입 경로 `?child=&story=`로 /api/sessions 멱등 호출(새로고침 재개 복원). **문장 단위 오디오는 T021 확장으로 사전 생성**(`{scene}__narration_s{i}.mp3` 15건, `src/lib/narration.ts` 분리 함수를 화면·스크립트 공유) — 신규 API 라우트 없음. 대화 장면은 T037 합류 자리표시자, next build·typegen 통과
 - [ ] T037 [US1] (파트2) 대화 화면 `src/components/dialogue-scene.tsx` — 캐릭터 대사 카드(이름·이미지·자동 재생)·상태 배지 3종·대화 내역 리스트·마이크/보내기 버튼·STT 미리보기(수정 불가) (T033 의존, 파트1의 T034 훅 임포트)
 - [ ] T038 [US1] (공동) 턴 사이클 배선 — 캐릭터 오디오 종료→마이크 자동 시작, 보내기→`/api/turn`→응답 재생, CLOSING→고정 오디오 재생 후 다음 장면 전환(대화 마지막이면 학습완료로) (T030·T032·T036·T037 의존 — 페어로 진행, 통합 이슈 즉석 해결)
 
