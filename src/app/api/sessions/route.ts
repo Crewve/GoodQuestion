@@ -1,20 +1,28 @@
 // POST /api/sessions — 세션 시작/재개 (T031, contracts/api-routes.md)
 // 재개 지점: scene_goal_met=true면 현재 장면 +1, 아니면 현재 장면(도입 미완은 항상 처음 — FR-017).
 // 진행률 n/N: 전개+대화 쌍=1(도입 제외) — 이 이야기에서는 완료된 대화 장면 수 / 대화 장면 수.
+// 장면 유형(도입/전개/대화)은 DB 컬럼이 아니라 fixtures 매핑에서 파생한다 (Notion 설계서 SoT — 스키마 무변경).
 import { characterImageUrl, sceneImageUrl } from '@/lib/assets';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
 import { loadCharacter } from '@/lib/llm/generate';
-import { fixtureSceneByUuid } from '@/lib/story';
+import { fixtureSceneByUuid, sceneTypeOf } from '@/lib/story';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthedUser } from '@/lib/supabase-server';
 
 type SceneRow = {
   id: string;
   scene_order: number;
-  scene_type: '도입' | '전개' | '대화';
   scene_description: string;
   character_name: string;
 };
+
+/** 장면 유형 — fixtures 우선, 매핑이 없으면 DB 값으로 근사(대화=character_name 존재) */
+function sceneTypeForRow(row: SceneRow): '도입' | '전개' | '대화' {
+  const fixture = fixtureSceneByUuid(row.id);
+  if (fixture) return sceneTypeOf(fixture);
+  if (row.character_name) return '대화';
+  return row.scene_order === 1 ? '도입' : '전개';
+}
 
 function errorJson(status: number, code: string, message: string) {
   return Response.json({ error: { code, message } }, { status });
@@ -49,7 +57,7 @@ export async function POST(request: Request) {
 
   const { data: scenes, error: scenesError } = await admin
     .from('story_scenes')
-    .select('id, scene_order, scene_type, scene_description, character_name')
+    .select('id, scene_order, scene_description, character_name')
     .eq('story_id', storyId)
     .order('scene_order')
     .returns<SceneRow[]>();
@@ -104,7 +112,7 @@ export async function POST(request: Request) {
     resumeSceneOrder = 1; // 이례 상태 — 도입부터
   } else if (session.scene_goal_met) {
     resumeSceneOrder = currentScene.scene_order + 1; // 장면 완료 → 다음 장면
-  } else if (currentScene.scene_type === '도입') {
+  } else if (sceneTypeForRow(currentScene) === '도입') {
     resumeSceneOrder = 1; // 도입 중단은 저장하지 않고 항상 처음부터 (FR-017)
   } else {
     resumeSceneOrder = currentScene.scene_order;
@@ -112,15 +120,16 @@ export async function POST(request: Request) {
   // 마지막 장면까지 완료 → 학습완료(후속 활동) 단계: resumeSceneId=null
   const resumeScene = resumeSceneOrder > lastOrder ? null : scenes.find((s) => s.scene_order === resumeSceneOrder) ?? null;
 
-  // scenes 페이로드 — 이미지·고정 오디오 URL은 fixtures 매핑(external_id) 기준
+  // scenes 페이로드 — 유형·이미지·고정 오디오 URL은 fixtures 매핑(external_id) 기준
   const scenesPayload = scenes.map((scene) => {
     const fixture = fixtureSceneByUuid(scene.id);
     const externalId = fixture?.external_id;
-    const isDialogue = scene.scene_type === '대화';
+    const sceneType = sceneTypeForRow(scene);
+    const isDialogue = sceneType === '대화';
     return {
       id: scene.id,
       order: scene.scene_order,
-      type: scene.scene_type,
+      type: sceneType,
       description: isDialogue ? undefined : scene.scene_description,
       characterName: isDialogue && scene.character_name ? loadCharacter(scene.character_name).name : undefined,
       characterImageUrl: isDialogue && scene.character_name ? characterImageUrl(scene.character_name) : undefined,
@@ -133,7 +142,7 @@ export async function POST(request: Request) {
   });
 
   // 진행률 — N=대화 장면 수(전개+대화 쌍), n=재개 지점 이전에 완료된 대화 수
-  const dialogueOrders = scenes.filter((s) => s.scene_type === '대화').map((s) => s.scene_order);
+  const dialogueOrders = scenes.filter((s) => sceneTypeForRow(s) === '대화').map((s) => s.scene_order);
   const N = dialogueOrders.length;
   const n = dialogueOrders.filter((order) => order < resumeSceneOrder).length;
 

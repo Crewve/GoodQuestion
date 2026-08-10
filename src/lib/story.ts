@@ -31,5 +31,14 @@ export function fixtureSceneByUuid(sceneId: string): FixtureScene | null {
   return byUuid.get(sceneId) ?? null;
 }
 
+/**
+ * 장면 유형(도입/전개/대화) — DB에 scene_type 컬럼을 두지 않는다(Notion 설계서 SoT, 2026-08-10 결정).
+ * 진행률·렌더 분기는 fixtures의 type/label에서 파생한다.
+ */
+export function sceneTypeOf(scene: FixtureScene): '도입' | '전개' | '대화' {
+  if (scene.type === 'dialogue') return '대화';
+  return scene.label === '도입' ? '도입' : '전개';
+}
+
 /** 시드된 이야기 uuid (방귀 뀌는 며느리 1편) */
 export const BANGGUI_STORY_ID = externalIdToUuid(storyFixture.story.external_id);

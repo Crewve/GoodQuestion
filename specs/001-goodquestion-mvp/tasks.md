@@ -60,7 +60,7 @@
 
 ### 파트2 트랙
 
-- [X] T007 (파트2) 스키마 갭 마이그레이션 `supabase/migrations/001_mvp_additions.sql` — `story_scenes.scene_type`('도입'/'전개'/'대화'), `children.avatar_key`·`birth_date` 추가 (data-model §3 — Notion SoT라 팀 공유 후 적용, R-11) ✓ MCP apply_migration(mvp_additions)로 적용·컬럼 확인 (2026-08-10)
+- [X] T007 (파트2) 스키마 갭 마이그레이션 — **철회 (2026-08-10 팀 결정: DB는 Notion 설계서 그대로, 개발 중 스키마 임의 변경 금지)**. 적용했던 컬럼 3종(scene_type·avatar_key·birth_date) drop·마이그레이션 기록 삭제로 원상 복구 완료. 대체: scene_type은 fixtures 매핑(`src/lib/story.ts` sceneTypeOf)에서 파생, avatar_key·birth_date는 Notion 요구사항 개정 전 보류 — **T045·T046은 birth_year 저장(생년월일 입력→연도 추출)으로 범위 조정, 만 나이 배지는 연 나이 근사 필요**
 - [X] T008 (파트2) 시드 스크립트 `scripts/seed.ts` — `fixtures/story.banggui.json` → stories/story_scenes upsert(external_id→uuid 매핑 보존, 임시 채택값 R-08: 대화2 요소=장면 테이블, EXPRESSION→REASON, preferred_turns=max_turns), 실행·검증 (T007 의존) ✓ external_id→uuid는 결정적 UUIDv5(`src/lib/external-id.ts`+테스트 3건) — 매핑 파일 없이 서버·CLI 동일 계산, 2회 실행 멱등 확인, scenes 9/9
 - [X] T010 [P] (파트2) Supabase Auth 연동 기반 — `src/lib/supabase-browser.ts`·`src/middleware.ts`(@supabase/ssr 세션 갱신·보호 라우트) (R-10) ✓ **Next 16.3: middleware.ts→`src/proxy.ts` 개명**(문서 확인, export명 proxy). publishable 키 사용(NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — .env.example 갱신), 보호 프리픽스 6종 리다이렉트, API 401은 각 라우트 책임. next build 통과
 

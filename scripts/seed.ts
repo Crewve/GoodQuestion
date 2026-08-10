@@ -1,6 +1,8 @@
 // T008 — fixtures/story.banggui.json → stories/story_scenes 시드 (멱등 upsert)
 // 실행: npx tsx scripts/seed.ts
 //
+// - 스키마는 Notion 「DB 구조_260803_수정안」 그대로 사용한다 — 컬럼 추가 없음 (2026-08-10 결정).
+//   장면 유형(도입/전개/대화) 등 설계서 밖 정보는 DB가 아니라 fixtures 매핑(src/lib/story.ts)에서 파생.
 // - external_id→uuid는 결정적 매핑(src/lib/external-id)이라 재실행해도 같은 행을 갱신한다.
 // - 임시 채택값(R-08): 대화2 요소=장면 테이블(fixtures에 반영됨), EXPRESSION→REASON(동일),
 //   preferred_turns=null → max_turns 동일값(참고용 필드 — 규칙 엔진 종료 판정 미사용).
@@ -71,8 +73,7 @@ async function main() {
     id: externalIdToUuid(scene.external_id),
     story_id: storyId,
     scene_order: scene.scene_order,
-    scene_type: sceneType(scene),
-    // NOT NULL 스키마 대응: 유형에 없는 필드는 빈 값으로 채운다 (데이터 부재의 의미는 scene_type이 가짐)
+    // NOT NULL 스키마 대응: 유형에 없는 필드는 빈 값으로 채운다 (유형 구분은 fixtures 매핑이 담당)
     scene_description: scene.narration ?? '',
     conflict: '',
     character_name: scene.character ?? '',
@@ -89,10 +90,10 @@ async function main() {
     .upsert(sceneRows, { onConflict: 'id' });
   if (sceneError) throw new Error(`story_scenes upsert 실패: ${sceneError.message}`);
 
-  // 검증 출력 — external_id→uuid 매핑과 시드 결과 요약
+  // 검증 출력 — external_id→uuid 매핑과 시드 결과 요약 (유형 표기는 fixtures 파생값)
   const { data: scenes, error: verifyError } = await supabase
     .from('story_scenes')
-    .select('id, scene_order, scene_type, character_name, required_elements, max_turns')
+    .select('id, scene_order, character_name, required_elements, max_turns')
     .eq('story_id', storyId)
     .order('scene_order');
   if (verifyError) throw new Error(`검증 조회 실패: ${verifyError.message}`);
@@ -102,8 +103,8 @@ async function main() {
     const row = scenes?.find((r) => r.id === externalIdToUuid(scene.external_id));
     if (!row) throw new Error(`시드 후 행 미발견: ${scene.external_id}`);
     console.log(
-      `✔ scene ${String(row.scene_order).padStart(2)} [${row.scene_type}] ${scene.external_id} → ${row.id}` +
-        (row.scene_type === '대화' ? ` (${row.character_name}, 요소 ${row.required_elements.length}, 최대 ${row.max_turns}턴)` : ''),
+      `✔ scene ${String(row.scene_order).padStart(2)} [${sceneType(scene)}] ${scene.external_id} → ${row.id}` +
+        (scene.type === 'dialogue' ? ` (${row.character_name}, 요소 ${row.required_elements.length}, 최대 ${row.max_turns}턴)` : ''),
     );
   }
   console.log(`합계: scenes ${scenes?.length ?? 0}/9`);

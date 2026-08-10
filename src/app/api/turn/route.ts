@@ -73,17 +73,18 @@ export async function POST(request: Request) {
 
   const { data: sceneRow } = await admin
     .from('story_scenes')
-    .select('id, story_id, scene_order, scene_type, character_name, character_closing, scene_goal, required_elements, max_turns')
+    .select('id, story_id, scene_order, character_name, character_closing, scene_goal, required_elements, max_turns')
     .eq('id', sceneId)
     .maybeSingle();
   if (!sceneRow || sceneRow.story_id !== session.story_id) {
     return errorJson(400, 'BAD_REQUEST', '장면이 세션의 이야기와 일치하지 않습니다.');
   }
-  if (sceneRow.scene_type !== '대화') {
+  // 장면 유형은 fixtures 매핑에서 파생 (DB에 scene_type 없음 — Notion 설계서 SoT)
+  const fixture = fixtureSceneByUuid(sceneId);
+  if (fixture ? fixture.type !== 'dialogue' : !sceneRow.character_name) {
     return errorJson(400, 'BAD_REQUEST', '대화 장면이 아닙니다.');
   }
 
-  const fixture = fixtureSceneByUuid(sceneId);
   const character = loadCharacter(sceneRow.character_name);
 
   // 장면 전환 감지 — 새 장면 진입 시 규칙 상태 리셋 (누적 요소는 장면 단위)
