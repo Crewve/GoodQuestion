@@ -111,5 +111,5 @@
 | 3 | post_activity_config (R-09) | 임시 저작 시드 | 기획 |
 | 4 | 시스템 안내 문구 | proposal 유지 | 기획 |
 | 5 | 보이스 4종 확정 | 후보 샘플→투표 | 팀 투표 |
-| 6 | children 스키마 보강 (R-11-2) | **보류 확정(2026-08-10) — DB 무변경**, birth_year 저장·연 나이 근사로 대체. Notion 개정 시 재론 | 팀(DB SoT) |
+| 6 | children 스키마 보강 (R-11-2) | **확정(2026-08-10)** — CLAUDE.md SSOT(기능명세서 우선)에 따라 birth_date·avatar_key 2컬럼 추가 적용(사용자 승인). Notion 설계서 개정 공유 남음 | 팀(문서 개정) |
 | 7 | 헤드라인 폰트 Jua vs Cafe24 | Cafe24Ssurround | 기획 |
