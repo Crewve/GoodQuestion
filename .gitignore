@@ -47,6 +47,10 @@ next-env.d.ts
 # local tool trash
 .octo-tmp/
 
+# agent/spec-kit 로컬 셋업 (팀 합의: 커밋하지 않고 각자 로컬 관리)
+.claude/
+.specify/
+
 # tts 로컬 캐시 (1층 — CLI/배치 과금 방지)
 .tts-cache/
 
