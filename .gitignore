@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local mcp config
+.mcp.json
+
+# local tool trash
+.octo-tmp/
