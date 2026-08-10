@@ -30,9 +30,9 @@
 
 ### 파트1 트랙
 
-- [ ] T001 (파트1) 의존성 추가: `openai @supabase/supabase-js @supabase/ssr zustand` + dev `tsx vitest` — package.json (npm install; 이후 양 트랙 pull)
-- [ ] T002 [P] (파트1) `.env.example` 작성(OPENAI_API_KEY·TYPECAST_API_KEY·NEXT_PUBLIC_SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY·모델 오버라이드 3종) + `.env.local` 실키 보강 — 타입캐스트 가입·키 발급 포함 (quickstart §0)
-- [ ] T006 [P] (파트1) Storage 버킷 생성 스크립트 `scripts/setup-buckets.ts` — `fixed-audio`·`tts-cache` 공개 읽기 버킷 생성(멱등), 실행
+- [X] T001 (파트1) 의존성 추가: `openai @supabase/supabase-js @supabase/ssr zustand` + dev `tsx vitest` — package.json (npm install; 이후 양 트랙 pull) ※ Node 20 호환용 `ws`·`@types/ws` 추가 (supabase-js v2.109+가 Node 22 네이티브 WebSocket 요구 — scripts/lib/supabase.ts 참고, 파트2 T004의 src/lib/supabase.ts도 동일 조치 필요)
+- [X] T002 [P] (파트1) `.env.example` 작성(OPENAI_API_KEY·TYPECAST_API_KEY·NEXT_PUBLIC_SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY·모델 오버라이드 3종) + `.env.local` 실키 보강 — 타입캐스트 가입·키 발급 포함 (quickstart §0) ※ OPENAI_API_KEY·TYPECAST_API_KEY 실값 입력은 사람 작업으로 남음 (.gitignore에 !.env.example 예외 추가)
+- [X] T006 [P] (파트1) Storage 버킷 생성 스크립트 `scripts/setup-buckets.ts` — `fixed-audio`·`tts-cache` 공개 읽기 버킷 생성(멱등), 실행 ✓ 2회 실행으로 멱등 확인, 공용 헬퍼 scripts/lib/{env,supabase}.ts 동봉
 
 ### 파트2 트랙
 
@@ -41,7 +41,7 @@
 
 ### 공동 (Day 0 합의 — 30분 타임박스)
 
-- [ ] T005 (공동) 공유 계약 타입 `src/lib/contracts.ts` — contracts/lib-contracts.md 초안을 파트2가 작성, 파트1 승인으로 확정 (ThinkingElement 8종·SttResult·AnalysisResult·ProgressDecision). 이후 변경은 상호 합의로만
+- [X] T005 (공동) 공유 계약 타입 `src/lib/contracts.ts` — contracts/lib-contracts.md 초안을 파트2가 작성, 파트1 승인으로 확정 (ThinkingElement 8종·SttResult·AnalysisResult·ProgressDecision). 이후 변경은 상호 합의로만 ✓ 파트2 초안(382c28b) 검토 결과 계약 문서와 일치 — 파트1 승인 완료 (2026-08-10)
 
 **🔗 동기화 포인트 #1**: T005 합의 완료 = 양 트랙 완전 병렬 시작 가능
 
@@ -82,11 +82,11 @@
 - [ ] T013 [P] [US1] (파트1) 게이트 단위 테스트 `src/lib/stt/gates.test.ts` — 무음·환각·정상 케이스 (Vitest)
 - [ ] T014 [P] [US1] (파트1) 장면별 prompt 힌트 빌더 `src/lib/stt/hints.ts` — fixtures 캐릭터명·핵심 단어, ≤224토큰
 - [ ] T015 [US1] (파트1) Whisper 어댑터+경량 교정 `src/lib/stt/index.ts` — verbose_json, 게이트 통과 후 gpt-4o-mini 교정(맞춤법·조사만, 실패 시 sttRawText 폴백), `SttResult` 반환, 오디오 즉시 폐기 (T012·T014 의존)
-- [ ] T016 [P] [US1] (파트1) 타입캐스트 어댑터 `src/lib/tts/typecast.ts` — `synthesize(text, voiceId)→mp3 Buffer`, provider 인터페이스, 동시성 2 제한 큐 내장 (R-05; 가입·API 스펙 확인 선행)
-- [ ] T017 [US1] (파트1) TTS 2층 캐시 `src/lib/tts/cache.ts` + 진입점 `src/lib/tts/index.ts` — `hash(voiceId+text)`, 로컬 디렉토리(CLI)+`tts-cache` 버킷(런타임) (T016 의존)
-- [ ] T018 [P] [US1] (파트1) 보이스 후보 스크립트 `scripts/tts-voices.ts` — 역할 4종×후보 2~3개 샘플 mp3 생성, 즉시 실행해 팀 투표 요청 (**크리티컬 패스 — Day 0 최우선, 투표 리드타임**)
+- [X] T016 [P] [US1] (파트1) 타입캐스트 어댑터 `src/lib/tts/typecast.ts` — `synthesize(text, voiceId)→mp3 Buffer`, provider 인터페이스, 동시성 2 제한 큐 내장 (R-05; 가입·API 스펙 확인 선행) ✓ API 실측 확정: GET /v1/voices·POST /v1/text-to-speech(X-API-KEY, mp3 320kbps), model은 보이스별 자동 해석
+- [X] T017 [US1] (파트1) TTS 2층 캐시 `src/lib/tts/cache.ts` + 진입점 `src/lib/tts/index.ts` — `hash(voiceId+text)`, 로컬 디렉토리(CLI)+`tts-cache` 버킷(런타임) (T016 의존) ✓ 로컬 히트 49ms·Storage write-through·공개 URL 200 검증. Storage 클라이언트는 주입 방식(파트2 supabase.ts Node20 이슈와 분리)
+- [X] T018 [P] [US1] (파트1) 보이스 후보 스크립트 `scripts/tts-voices.ts` — 역할 4종×후보 2~3개 샘플 mp3 생성, 즉시 실행해 팀 투표 요청 (**크리티컬 패스 — Day 0 최우선, 투표 리드타임**) ✓ 12건 생성(414자 사용, out/voice-samples/) — **팀 투표 대기 중, 확정 시 T019 진행**
 - [ ] T019 [US1] (파트1) 보이스 매핑 확정 `src/lib/tts/voice-map.json` — 투표 결과로 며느리·시아버지·마을 이장·내레이터 voice_id 기록 (T018 투표 의존)
-- [ ] T020 [P] [US1] (파트1) 왕복 검증 CLI `scripts/stt-check.ts`·`scripts/tts-check.ts` — SttResult+게이트 신호 전부 출력 / 텍스트→mp3 저장·캐시 히트 확인
+- [ ] T020 [P] [US1] (파트1) 왕복 검증 CLI `scripts/stt-check.ts`·`scripts/tts-check.ts` — SttResult+게이트 신호 전부 출력 / 텍스트→mp3 저장·캐시 히트 확인 ※ tts-check 완료(--storage 옵션 포함, 캐시 HIT·URL 검증) — stt-check는 OPENAI_API_KEY 입력 + T015 이후
 - [ ] T021 [US1] (파트1) 사전 생성 스크립트 `scripts/pregenerate-audio.ts` — tts-lines 14건→mp3→`fixed-audio` 업로드(파일명 `{key}.mp3` 잠정 R-06, 'ㅇㅇ' 2건 '친구야' 치환 R-07, 멱등), 실행 (T019 의존)
 - [ ] T022 [US1] (파트1) 게이트 임계 1차 튜닝 — 직접 녹음한 아동 발화 근사 샘플 10~20건(iPad audio/mp4·안드로이드 webm/opus 각각)으로 `stt-check` 실측, config 기본값 갱신 (T015·T020 의존)
 
