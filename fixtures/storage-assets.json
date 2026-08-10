@@ -1,0 +1,151 @@
+{
+  "bucket": "story-assets",
+  "base_url": "https://lpiqyaqajlxhnvumvjvb.supabase.co/storage/v1/object/public/story-assets",
+  "note": "public_url = base_url + '/' + key. 원본은 design/이미지 (git 미추적).",
+  "assets": [
+    {
+      "key": "stories/banggui/thumbnail-titled.png",
+      "source": "design/이미지/대표 이야기/대표 이야기_썸네일(제목O).png"
+    },
+    {
+      "key": "stories/banggui/thumbnail.png",
+      "source": "design/이미지/대표 이야기/대표 이야기_썸네일(제목X).png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_01.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/도입_전개/도입.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_02.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/도입_전개/전개1.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_03.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/대화/대화1.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_04.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/도입_전개/전개2.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_05.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/대화/대화2.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_06.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/도입_전개/전개3.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_07-1.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/대화/대화3-1.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_07-2.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/대화/대화3-2.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_08.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/도입_전개/전개4.png"
+    },
+    {
+      "key": "stories/banggui/scenes/sc_banggui_09.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/대화/대화4.png"
+    },
+    {
+      "key": "stories/banggui/missions/mission-1.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/미션/미션1.png"
+    },
+    {
+      "key": "stories/banggui/missions/mission-2.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/미션/미션2.png"
+    },
+    {
+      "key": "stories/banggui/characters/myeoneuri.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/대화 캐릭터 프로필/대화 프로필_방귀 며느리.png"
+    },
+    {
+      "key": "stories/banggui/characters/siabeoji.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/대화 캐릭터 프로필/대화 프로필_시아버지.png"
+    },
+    {
+      "key": "stories/banggui/characters/ijang.png",
+      "source": "design/이미지/대표 이야기/이야기 진행/대화 캐릭터 프로필/대화 프로필_마을이장.png"
+    },
+    {
+      "key": "profiles/avatar/boy-1.png",
+      "source": "design/이미지/아이 프로필 캐릭터/캐릭터(남자1).png"
+    },
+    {
+      "key": "profiles/avatar/boy-2.png",
+      "source": "design/이미지/아이 프로필 캐릭터/캐릭터(남자2).png"
+    },
+    {
+      "key": "profiles/avatar/girl-1.png",
+      "source": "design/이미지/아이 프로필 캐릭터/캐릭터(여자1).png"
+    },
+    {
+      "key": "profiles/avatar/girl-2.png",
+      "source": "design/이미지/아이 프로필 캐릭터/캐릭터(여자2).png"
+    },
+    {
+      "key": "profiles/select/boy-1.png",
+      "source": "design/이미지/아이 프로필 캐릭터/배경 X/캐릭터 선택_남자 1.png"
+    },
+    {
+      "key": "profiles/select/boy-2.png",
+      "source": "design/이미지/아이 프로필 캐릭터/배경 X/캐릭터 선택_남자 2.png"
+    },
+    {
+      "key": "profiles/select/girl-1.png",
+      "source": "design/이미지/아이 프로필 캐릭터/배경 X/캐릭터 선택_여자 1.png"
+    },
+    {
+      "key": "profiles/select/girl-2.png",
+      "source": "design/이미지/아이 프로필 캐릭터/배경 X/캐릭터 선택_여자 2.png"
+    },
+    {
+      "key": "profiles/select/guardian.png",
+      "source": "design/이미지/아이 프로필 캐릭터/배경 X/보호자.png"
+    },
+    {
+      "key": "profiles/select-bg/boy-1.png",
+      "source": "design/이미지/아이 프로필 캐릭터/boy 1.png"
+    },
+    {
+      "key": "profiles/select-bg/boy-2.png",
+      "source": "design/이미지/아이 프로필 캐릭터/boy 2.2.png"
+    },
+    {
+      "key": "profiles/select-bg/girl-1.png",
+      "source": "design/이미지/아이 프로필 캐릭터/girl 1.png"
+    },
+    {
+      "key": "profiles/select-bg/girl-2.png",
+      "source": "design/이미지/아이 프로필 캐릭터/girl 2.png"
+    },
+    {
+      "key": "recommended/01-seonnyeo-namukkun.png",
+      "source": "design/이미지/추천 이야기/추천 1_선녀와 나무꾼.png"
+    },
+    {
+      "key": "recommended/02-hae-dal-onui.png",
+      "source": "design/이미지/추천 이야기/추천 2_해와 달이 된 오누이.png"
+    },
+    {
+      "key": "recommended/03-geumdokki-eundokki.png",
+      "source": "design/이미지/추천 이야기/추천 3_금도끼 은도끼.png"
+    },
+    {
+      "key": "recommended/04-tokki-geobuki.png",
+      "source": "design/이미지/추천 이야기/추천 4_토끼와 거북이.png"
+    },
+    {
+      "key": "recommended/05-hokburi-yeonggam.png",
+      "source": "design/이미지/추천 이야기/추천 5_혹부리 영감.png"
+    },
+    {
+      "key": "recommended/06-gaemi-bejjangi.png",
+      "source": "design/이미지/추천 이야기/추천 6_개미와 베짱이.png"
+    }
+  ]
+}
