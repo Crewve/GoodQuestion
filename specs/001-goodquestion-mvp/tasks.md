@@ -30,9 +30,9 @@
 
 ### 파트1 트랙
 
-- [ ] T001 (파트1) 의존성 추가: `openai @supabase/supabase-js @supabase/ssr zustand` + dev `tsx vitest` — package.json (npm install; 이후 양 트랙 pull)
-- [ ] T002 [P] (파트1) `.env.example` 작성(OPENAI_API_KEY·TYPECAST_API_KEY·NEXT_PUBLIC_SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY·모델 오버라이드 3종) + `.env.local` 실키 보강 — 타입캐스트 가입·키 발급 포함 (quickstart §0)
-- [ ] T006 [P] (파트1) Storage 버킷 생성 스크립트 `scripts/setup-buckets.ts` — `fixed-audio`·`tts-cache` 공개 읽기 버킷 생성(멱등), 실행
+- [X] T001 (파트1) 의존성 추가: `openai @supabase/supabase-js @supabase/ssr zustand` + dev `tsx vitest` — package.json (npm install; 이후 양 트랙 pull) ※ Node 20 호환용 `ws`·`@types/ws` 추가 (supabase-js v2.109+가 Node 22 네이티브 WebSocket 요구 — scripts/lib/supabase.ts 참고, 파트2 T004의 src/lib/supabase.ts도 동일 조치 필요)
+- [X] T002 [P] (파트1) `.env.example` 작성(OPENAI_API_KEY·TYPECAST_API_KEY·NEXT_PUBLIC_SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY·모델 오버라이드 3종) + `.env.local` 실키 보강 — 타입캐스트 가입·키 발급 포함 (quickstart §0) ※ OPENAI_API_KEY·TYPECAST_API_KEY 실값 입력은 사람 작업으로 남음 (.gitignore에 !.env.example 예외 추가)
+- [X] T006 [P] (파트1) Storage 버킷 생성 스크립트 `scripts/setup-buckets.ts` — `fixed-audio`·`tts-cache` 공개 읽기 버킷 생성(멱등), 실행 ✓ 2회 실행으로 멱등 확인, 공용 헬퍼 scripts/lib/{env,supabase}.ts 동봉
 
 ### 파트2 트랙
 
@@ -41,7 +41,7 @@
 
 ### 공동 (Day 0 합의 — 30분 타임박스)
 
-- [ ] T005 (공동) 공유 계약 타입 `src/lib/contracts.ts` — contracts/lib-contracts.md 초안을 파트2가 작성, 파트1 승인으로 확정 (ThinkingElement 8종·SttResult·AnalysisResult·ProgressDecision). 이후 변경은 상호 합의로만
+- [X] T005 (공동) 공유 계약 타입 `src/lib/contracts.ts` — contracts/lib-contracts.md 초안을 파트2가 작성, 파트1 승인으로 확정 (ThinkingElement 8종·SttResult·AnalysisResult·ProgressDecision). 이후 변경은 상호 합의로만 ✓ 파트2 초안(382c28b) 검토 결과 계약 문서와 일치 — 파트1 승인 완료 (2026-08-10)
 
 **🔗 동기화 포인트 #1**: T005 합의 완료 = 양 트랙 완전 병렬 시작 가능
 
