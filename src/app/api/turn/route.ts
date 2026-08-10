@@ -2,8 +2,6 @@
 // ①메시지 저장 → ②분석 → ③후처리 → ④분석 저장 → ⑤규칙 판정 → ⑥생성 또는 고정 대사 →
 // ⑦TTS(캐시) → ⑧세션 갱신. 분석·생성은 1회 재시도, TTS 실패는 텍스트만 반환(폴백 매트릭스).
 // CLOSING은 LLM·TTS 미호출 — fixed-audio 사전 생성 mp3 URL 반환 (R-04, 장애와 무관하게 성공).
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
 import { ANALYSIS_VERSION, analyzeUtterance } from '@/lib/llm/analysis';
 import { generateReply, loadCharacter } from '@/lib/llm/generate';
@@ -14,7 +12,7 @@ import type { ThinkingElement } from '@/lib/contracts';
 import { fixtureSceneByUuid } from '@/lib/story';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthedUser } from '@/lib/supabase-server';
-import { synthesizeWithCache } from '@/lib/tts';
+import { synthesizeWithCache, voiceForRole } from '@/lib/tts';
 
 function errorJson(status: number, code: string, message: string) {
   return Response.json({ error: { code, message } }, { status });
@@ -26,21 +24,6 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
     return await fn();
   } catch {
     return await fn();
-  }
-}
-
-/**
- * 보이스 매핑 조회 — voice-map.json은 파트1 T019 산출물(투표 후 확정)이라 아직 없을 수 있다.
- * 없으면 null을 반환하고 TTS를 건너뛴다(텍스트만 표시 폴백). T019 확정 후 정적 import로 교체 예정.
- */
-function loadVoiceId(voiceRole: string): string | null {
-  try {
-    const mapPath = resolve(process.cwd(), 'src/lib/tts/voice-map.json');
-    if (!existsSync(mapPath)) return null;
-    const voiceMap = JSON.parse(readFileSync(mapPath, 'utf8')) as Record<string, string>;
-    return voiceMap[voiceRole] ?? voiceMap[voiceRole.replace('ch_banggui_', '')] ?? null;
-  } catch {
-    return null;
   }
 }
 
@@ -200,16 +183,16 @@ export async function POST(request: Request) {
     }
 
     // ⑦ TTS 2층 캐시 — 실패해도 턴은 성공 (텍스트만 표시 폴백)
-    const voiceId = loadVoiceId(sceneRow.character_name);
-    if (voiceId) {
-      try {
-        const synthesis = await synthesizeWithCache(characterReplyText, voiceId, { storage: admin });
-        audioUrl = synthesis.url ?? null;
-      } catch (error) {
-        console.warn(`[turn] TTS 실패 — 텍스트만 반환: ${error instanceof Error ? error.message : error}`);
-      }
-    } else {
-      console.warn('[turn] voice-map.json 미확정(T019 대기) — 텍스트만 반환');
+    // T019 확정으로 동적 조회 → 정적 voice-map 로더 교체 (미확정 시기의 파일 부재 폴백 제거)
+    try {
+      const voice = voiceForRole(sceneRow.character_name);
+      const synthesis = await synthesizeWithCache(characterReplyText, voice.voice_id, {
+        model: voice.model,
+        storage: admin,
+      });
+      audioUrl = synthesis.url ?? null;
+    } catch (error) {
+      console.warn(`[turn] TTS 실패 — 텍스트만 반환: ${error instanceof Error ? error.message : error}`);
     }
   }
 
