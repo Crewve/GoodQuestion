@@ -1,0 +1,28 @@
+# PAGE: 굿퀘스천 세부 자료  [id=3a50bb61-d7ff-80fd-bbb5-c522b4880e12]
+  ## 스타트업 영 그라운드 세부자료
+  ---
+  [text]
+  이어하기.png
+  ## 지원 기기 우선순위
+  MVP는 태블릿 사용을 1순위로 개발합니다.
+  - 1순위: iPad, 안드로이드 태블릿
+  - 2순위: PC 및 노트북
+  - 3순위: 스마트폰
+  ## LINKED/CHILD PAGE: MVP 요건  [id=3a50bb61-d7ff-8055-b3f4-fdeeeb56f553]
+  ## LINKED/CHILD PAGE: DB 구조  [id=3a70bb61-d7ff-809f-8b1c-f986bb84bb96]
+  ## LINKED/CHILD PAGE: DB 구조_260803_수정안  [id=3b10bb61-d7ff-8092-965d-e6bdef7e096c]
+  굿퀘스천_고객인터뷰_참고사항_UX/UI.docx
+  굿퀘스천_MVP_대화작동규칙.docx
+  굿퀘스천_MVP_대화작동규칙_260803_수정안.pdf
+  [text]
+  ## LINKED/CHILD PAGE: MVP 콘텐츠) 방귀 뀌는 며느리  [id=3a50bb61-d7ff-8015-a06e-c4239a32f23a]
+  [text]
+  ## LINKED/CHILD PAGE: 굿퀘스천 로고  [id=3b30bb61-d7ff-8039-b47f-ffd22a9ed9d6]
+  ## LINKED/CHILD PAGE: 발화 분석 및 진행 판단 연동 기준  [id=3b40bb61-d7ff-80d6-b305-eb7577fa1094]
+  ## LINKED/CHILD PAGE: 인터뷰 정리  [id=3b40bb61-d7ff-8012-9324-cdcb2a434c06]
+  ## LINKED/CHILD PAGE: [방뀌며] 캐릭터 성격  [id=fbd0bb61-d7ff-8350-941d-813005093f0c]
+  [text]
+  ## LINKED/CHILD PAGE: (선택 요건) 보호자 리포트  [id=3b40bb61-d7ff-8076-9c82-cf9f43f90d43]
+  [text]
+  [이미지 파일 구글 드라이브 링크]
+  ‣

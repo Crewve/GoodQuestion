@@ -45,3 +45,7 @@ next-env.d.ts
 
 # local tool trash
 .octo-tmp/
+
+# design source files (large binaries — shared out-of-band, see design/README.md)
+/design/*
+!/design/README.md

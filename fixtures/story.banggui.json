@@ -1,0 +1,190 @@
+{
+  "_source": {
+    "notion_page": "MVP 콘텐츠) 방귀 뀌는 며느리",
+    "notion_id": "3a50bb61-d7ff-8015-a06e-c4239a32f23a",
+    "notion_url": "https://dour-lamprey-1bc.notion.site/3a50bb61d7ff8015a06ec4239a32f23a",
+    "extracted_at": "2026-08-08",
+    "note": "external_id는 노션 문서의 슬러그(id 칼럼)를 그대로 보존한 값. 실제 DB는 uuid 타입이므로 시드 시 uuid를 생성하고 external_id는 매핑용으로만 사용한다."
+  },
+  "story": {
+    "external_id": "s_banggui_daughter_in_law_001",
+    "title": "방귀 뀌는 며느리",
+    "summary": "큰 방귀를 부끄러워하던 며느리가 자신의 다름을 장점으로 바꾸는 이야기",
+    "difficulty": "보통",
+    "topics": ["다름", "자기이해", "장점 발견"],
+    "estimated_minutes": 20,
+    "status": "published",
+    "post_activity_config": null,
+    "post_activity_note": "노션에 이 이야기의 post_activity_config(카드·정답 순서·재구성 키워드)가 아직 정의돼 있지 않음. 기획 확인 필요."
+  },
+  "scenes": [
+    {
+      "external_id": "sc_banggui_01",
+      "scene_order": 1,
+      "type": "narration",
+      "label": "도입",
+      "narration": "옛날 어느 마을에 방귀를 아주 크게 뀌는 며느리가 살았습니다. 며느리는 시집에 온 뒤로 늘 얌전하고 예의 바르게 보이고 싶었습니다. 시댁 식구들이 자신을 이상하게 볼까 봐 걱정했기 때문입니다.",
+      "screen": { "layout": "패드 전체 화면", "voice_input": false, "note": "도입 내용을 한 문장씩 순차 표시하거나 음성으로 재생. 캐릭터 대화 영역 미노출." }
+    },
+    {
+      "external_id": "sc_banggui_02",
+      "scene_order": 2,
+      "type": "narration",
+      "label": "전개1",
+      "narration": "그래서 며느리는 방귀가 나오려고 할 때마다 꾹꾹 참았습니다. 하루도 참고, 이틀도 참고, 그렇게 오래 참다 보니 배는 점점 빵빵하게 부풀어 올랐고 얼굴은 노랗게 변했습니다. 몸도 마음도 너무 힘들었지만, 며느리는 차마 가족들에게 솔직하게 말하지 못했습니다.",
+      "screen": { "layout": "왼쪽 영역(전개1), 오른쪽은 대화1 대기", "voice_input": false }
+    },
+    {
+      "external_id": "sc_banggui_03",
+      "scene_order": 3,
+      "type": "dialogue",
+      "label": "대화1",
+      "character": "ch_banggui_daughter_in_law",
+      "character_opening": "ㅇㅇ아, 내 방귀가 너무 크다는 걸 알면 가족들이 나를 이상하게 생각하지 않을까?",
+      "character_closing": "그래도 아직은 못 말하겠어. 조금만 더 참아 볼게.",
+      "scene_goal": "방귀를 숨기고 싶어하는 며느리의 입장을 이해하고, 공감해주며 문제를 숨기지 않고 솔직하게 말할 수 있는 용기를 준다",
+      "required_elements": ["PERSPECTIVE", "EMOTION", "REASON", "SOLUTION"],
+      "max_turns": 4,
+      "preferred_turns": null,
+      "mission": null,
+      "closing_note": "마지막 대사는 아이 답변에 대한 평가 문장이 아니라 다음 전개로 이어지는 이야기 연결 대사로 사용한다.",
+      "discrepancies": [
+        "화면 흐름 문서(§5 대화1)의 target_elements는 PERSPECTIVE, EMOTION, EXPRESSION, SOLUTION — EXPRESSION은 8요소 허용값이 아니라 REASON의 오기로 추정. 장면 구성 테이블(§3) 기준 채택.",
+        "character_opening의 'ㅇㅇ'은 아이 이름 자리표시자."
+      ]
+    },
+    {
+      "external_id": "sc_banggui_04",
+      "scene_order": 4,
+      "type": "narration",
+      "label": "전개2",
+      "narration": "며느리는 더 이상 참을 수 없어 몰래 살짝만 방귀를 뀌려고 합니다. 하지만 오래 참았던 탓에 방귀가 크게 터져 나왔습니다. 마당의 먼지가 휘리릭 날아가고, 기왓장이 달그락거리고, 시아버지의 갓까지 휙 날아가 버렸습니다.",
+      "screen": { "layout": "왼쪽 영역(전개2), 오른쪽은 대화2", "voice_input": false }
+    },
+    {
+      "external_id": "sc_banggui_05",
+      "scene_order": 5,
+      "type": "dialogue",
+      "label": "대화2",
+      "character": "ch_banggui_father_in_law",
+      "character_opening": "아이고, 이게 무슨 일이냐! 우리 집안이 다 흔들리는구나! 이렇게 창피한 며느리와 함께 못 살겠다! 그렇지 않니?",
+      "character_closing": "흥, 그래도 도저히 이런 며느리와는 함께 살 수 없으니 친정으로 데려다줘야겠다.",
+      "scene_goal": "시아버지가 놀란 마음을 이해하면서도, 며느리가 일부러 그런 것이 아니라 오래 참아서 힘들었던 것임을 말하고, 며느리를 따뜻하게 이해해 달라고 설득한다.",
+      "required_elements": ["PERSPECTIVE", "EMOTION", "REASON", "SOLUTION"],
+      "max_turns": 5,
+      "preferred_turns": null,
+      "mission": null,
+      "discrepancies": [
+        "요소 불일치(진짜 충돌): 장면 구성 테이블(§3)은 [PERSPECTIVE, EMOTION, REASON, SOLUTION], 화면 흐름(§5 대화2)은 [PERSPECTIVE, EMPATHY, REASON, REQUEST]. 화면 흐름의 진행 설명(관점 이해→이유 설명→이해 요청)은 후자와 정합. DB 매핑 기준인 장면 테이블을 임시 채택했으나 기획 확인 필요."
+      ]
+    },
+    {
+      "external_id": "sc_banggui_06",
+      "scene_order": 6,
+      "type": "narration",
+      "label": "전개3",
+      "narration": "한참 걷다 보니 아랫마을 길가에 아주 높은 배나무가 한 그루 서 있었습니다. 나무 꼭대기에는 노랗고 탐스러운 배들이 주렁주렁 매달려 있었습니다. 시아버지는 배를 보자 군침이 돌았습니다. 마침 아랫마을 사람들도 그 배를 먹고 싶어 했지만, 나무가 너무 높아 아무도 딸 수 없었습니다.",
+      "screen": { "layout": "왼쪽 영역(전개3), 오른쪽은 대화3·미션1", "voice_input": false }
+    },
+    {
+      "external_id": "sc_banggui_07",
+      "scene_order": 7,
+      "type": "dialogue",
+      "label": "대화3",
+      "character": "ch_banggui_village_chief",
+      "character_opening": "이 배나무는 해마다 탐스러운 배가 열리지만, 너무 높아서 아무도 딸 수가 없었소. 무슨 뾰족한 방법이 없겠는가?",
+      "character_closing": "아이고, 방귀 뀌는 며느리 덕분에 온 마을이 배 잔치를 할 수 있겠구려, 고맙소!",
+      "scene_goal": "높은 배나무의 배를 떨어뜨릴 방법을 생각하고, 며느리의 큰 방귀를 안전하게 사용할 수 있는 해결책을 제안한다.",
+      "required_elements": ["SOLUTION", "REASON", "REQUEST", "RESULT"],
+      "max_turns": 5,
+      "preferred_turns": null,
+      "mission": "mission_1",
+      "closing_note": "마지막 대사 이후에는 며느리의 방귀로 배가 떨어지는 결과 연출이 이어진다.",
+      "discrepancies": [
+        "첫 대사 어미: 장면 테이블은 '없었소', 화면 흐름은 '없었단다'. 장면 테이블 표기 채택."
+      ]
+    },
+    {
+      "external_id": "sc_banggui_08",
+      "scene_order": 8,
+      "type": "narration",
+      "label": "전개4",
+      "narration": "시아버지는 며느리의 방귀가 시끄럽고 별난 것이 아니라, 모두를 도울 수 있는 특별한 힘이라는 것을 깨닫습니다. 자신이 며느리를 구박했던 일을 후회하고 사과합니다.",
+      "screen": { "layout": "왼쪽 영역(전개4), 오른쪽은 대화4·미션2", "voice_input": false }
+    },
+    {
+      "external_id": "sc_banggui_09",
+      "scene_order": 9,
+      "type": "dialogue",
+      "label": "대화4",
+      "character": "ch_banggui_daughter_in_law",
+      "character_opening": "ㅇㅇ이 덕분에 내 방귀가 누군가에게 도움이 될 수 있다는 걸 처음 알았어. 이제는 방귀 소리가 큰 걸 부끄러워하지 않아도 될까?",
+      "character_closing": "이제는 부끄러워하며 숨기지 않고, 조심해서 좋은 일에 써 볼게.",
+      "scene_goal": "다름을 인정하고, 자신의 특징을 긍정적으로 받아들이는 태도를 말한다.",
+      "required_elements": ["EMOTION", "PERSPECTIVE", "RESULT", "SOLUTION"],
+      "max_turns": 4,
+      "preferred_turns": null,
+      "mission": "mission_2",
+      "discrepancies": [
+        "character_opening의 'ㅇㅇ'은 아이 이름 자리표시자."
+      ]
+    }
+  ],
+  "missions": {
+    "mission_1": {
+      "title": "높이 있는 배 따기 미션",
+      "scene": "sc_banggui_07",
+      "goal": "높은 배나무의 배를 떨어뜨리기 위해 며느리의 방귀를 안전하게 사용할 수 있는 방법 찾기",
+      "guide_points": [
+        "무엇을 사용할 것인지",
+        "주변에 있는 마을 사람들과 시아버지는 어디로 피해야 할지",
+        "며느리에게 어떻게 부탁할 것인지",
+        "그 결과 어떤 일이 생길지"
+      ],
+      "expose_principle": "미션은 대화 시작과 동시에 보여주지 않는다. 아이의 발화 흐름을 확인한 뒤, 해결 방법을 실제로 구성해야 하는 시점에 노출한다.",
+      "expose_conditions": [
+        "아이가 며느리의 방귀를 활용할 수 있다고 제안한 경우",
+        "아이가 해결 방향은 말했지만 방법이 구체적이지 않은 경우",
+        "2회 이상 대화했지만 실행 방법이 나오지 않은 경우",
+        "캐릭터 질문만으로 해결 방법을 구체화하기 어려운 경우"
+      ],
+      "result_usage": "미션 결과는 단순 정답 여부가 아니라 요소(SOLUTION·REASON·REQUEST·RESULT) 확인에 활용한다."
+    },
+    "mission_2": {
+      "title": "친구들의 단점을 장점으로 바꾸기 미션",
+      "scene": "sc_banggui_09",
+      "goal": "처음에는 단점처럼 보였지만 좋은 일에 쓸 수 있는 특징 찾기",
+      "purpose": "친구나 주변 사람의 특징을 다른 관점에서 바라보고, 단점처럼 보이는 특징을 장점이나 가능성으로 바꾸어 말한다.",
+      "examples": [
+        "목소리가 큰 친구는 멀리 있는 사람을 부를 수 있어요.",
+        "질문이 많은 친구는 새로운 생각을 찾을 수 있어요.",
+        "힘이 센 친구는 무거운 물건을 옮길 때 도울 수 있어요.",
+        "조용한 친구는 다른 사람의 말을 잘 들어 줄 수 있어요."
+      ],
+      "expose_timing": "아이가 며느리의 질문에 먼저 자신의 생각(자신의 특징을 긍정하는 이유)을 말한 뒤 노출한다. 처음부터 보여주면 정해진 답을 찾으려 할 수 있다."
+    }
+  },
+  "common_rules": {
+    "dialogue_sequence": [
+      "전개 스토리 종료",
+      "대화 영역 활성화",
+      "캐릭터 고정 첫 대사",
+      "아이 음성 입력 활성화",
+      "아이 발화 분석",
+      "장면 목표와 비교",
+      "캐릭터 반응 생성",
+      "미션 필요 여부 판단",
+      "목표 요소 충족 확인",
+      "마지막 대사",
+      "다음 장면 이동"
+    ],
+    "goal_check": "각 대화 장면은 required_elements 기준으로 아이의 누적 발화를 확인한다. 한 번의 발화에 모든 요소가 포함될 필요는 없다. 이미 충족된 요소는 유지하고 부족한 요소만 다음 질문에 반영한다.",
+    "closing_conditions": [
+      "필수 목표 요소가 모두 충족된 경우",
+      "max_turns에 도달한 경우",
+      "미션 필수 장면에서 미션과 핵심 발화가 완료된 경우"
+    ],
+    "max_turns_handling": "목표를 다 충족하지 못해도 최대 턴 도달 시 장면을 종료한다. 마지막 응답은 평가·지적이 아니라 자연스럽게 다음 이야기로 연결한다: 현재까지 아이가 말한 내용에 짧게 반응 → 캐릭터 마지막 대사 → 다음 전개 이동."
+  },
+  "synopsis_reference": "【참고용 전체 줄거리】 도입) 옛날 어느 마을에 방귀를 아주 크게 뀌는 며느리가 살았습니다. 며느리는 시집에 온 뒤로 늘 얌전하고 예의 바르게 보이고 싶었습니다. 전개1) 방귀를 꾹꾹 참다 배가 빵빵해지고 얼굴이 노랗게 변했지만 가족들에게 솔직하게 말하지 못했습니다. 전개2) 더는 참지 못하고 뀐 방귀가 크게 터져 시아버지의 갓까지 날아갔고, 시아버지는 '이런 며느리와는 살 수 없다'며 친정으로 데려다주러 길을 나섰습니다. 전개3) 길가의 높은 배나무 — 마을 사람 누구도 배를 딸 수 없었습니다. 며느리가 방귀로 배를 떨어뜨려 온 마을이 배 잔치를 했습니다. 전개4) 시아버지는 며느리를 구박했던 일을 후회하고 사과했으며, 며느리는 자신의 특징을 부끄러운 비밀이 아니라 잘 쓰면 모두에게 도움이 되는 특별한 힘으로 여기게 되었습니다."
+}
