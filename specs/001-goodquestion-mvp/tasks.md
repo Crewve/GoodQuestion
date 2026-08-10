@@ -55,8 +55,8 @@
 
 ### 파트1 트랙
 
-- [ ] T009 [P] (파트1) 루트 레이아웃·디자인 토큰 — `src/app/layout.tsx`에 `next/font/local`(src/fonts의 Cafe24Ssurround+PretendardGOV 4웨이트), `src/app/globals.css`에 컬러 토큰 7종(Base #FFF8EE·Primary #FF7A3D 등) (R-14; next 폰트 문서 선독)
-- [ ] T011 [P] (파트1) 에셋 URL 헬퍼 `src/lib/assets.ts` — `fixtures/storage-assets.json`의 base_url+key 조합, 장면 external_id→이미지 URL 매핑
+- [X] T009 [P] (파트1) 루트 레이아웃·디자인 토큰 — `src/app/layout.tsx`에 `next/font/local`(src/fonts의 Cafe24Ssurround+PretendardGOV 4웨이트), `src/app/globals.css`에 컬러 토큰 7종(Base #FFF8EE·Primary #FF7A3D 등) (R-14; next 폰트 문서 선독) ✓ Tailwind v4 @theme inline 연결(font-sans/font-display, bg-primary 등), lang=ko, 라이트 고정, next build 통과
+- [X] T011 [P] (파트1) 에셋 URL 헬퍼 `src/lib/assets.ts` — `fixtures/storage-assets.json`의 base_url+key 조합, 장면 external_id→이미지 URL 매핑 ✓ 장면(대화3 2컷)·캐릭터·미션·아바타·추천 썸네일 헬퍼, 미등록 키 즉시 throw
 
 ### 파트2 트랙
 
@@ -78,9 +78,9 @@
 
 ### 파트1 트랙 — 음성 I/O 코어 (CLI 단독 검증)
 
-- [ ] T012 [P] [US1] (파트1) STT 실패 게이트 순수 함수 `src/lib/stt/gates.ts` — 5종 순서(1~2자→no_speech_prob→avg_logprob→n-gram 반복→자막체 상투구), 임계값은 config 주입 (R-02)
-- [ ] T013 [P] [US1] (파트1) 게이트 단위 테스트 `src/lib/stt/gates.test.ts` — 무음·환각·정상 케이스 (Vitest)
-- [ ] T014 [P] [US1] (파트1) 장면별 prompt 힌트 빌더 `src/lib/stt/hints.ts` — fixtures 캐릭터명·핵심 단어, ≤224토큰
+- [X] T012 [P] [US1] (파트1) STT 실패 게이트 순수 함수 `src/lib/stt/gates.ts` — 5종 순서(1~2자→no_speech_prob→avg_logprob→n-gram 반복→자막체 상투구), 임계값은 config 주입 (R-02) ✓ 구간 길이 가중 평균, 상투구는 공백 무시 비교, 신호 수집 함수 분리(collectSignals — stt-check 튜닝 출력용)
+- [X] T013 [P] [US1] (파트1) 게이트 단위 테스트 `src/lib/stt/gates.test.ts` — 무음·환각·정상 케이스 (Vitest) ✓ 10케이스 통과 (게이트 5종·순서 우선·가중 평균·설정 주입, config.ts 기본값 정합 포함)
+- [X] T014 [P] [US1] (파트1) 장면별 prompt 힌트 빌더 `src/lib/stt/hints.ts` — fixtures 캐릭터명·핵심 단어, ≤224토큰 ✓ 직전 캐릭터 대사(GUIDED 질문) 우선 주입, Whisper가 prompt 끝부분을 쓰는 특성 반영해 핵심 어휘 후치·앞에서 절단
 - [ ] T015 [US1] (파트1) Whisper 어댑터+경량 교정 `src/lib/stt/index.ts` — verbose_json, 게이트 통과 후 gpt-4o-mini 교정(맞춤법·조사만, 실패 시 sttRawText 폴백), `SttResult` 반환, 오디오 즉시 폐기 (T012·T014 의존)
 - [X] T016 [P] [US1] (파트1) 타입캐스트 어댑터 `src/lib/tts/typecast.ts` — `synthesize(text, voiceId)→mp3 Buffer`, provider 인터페이스, 동시성 2 제한 큐 내장 (R-05; 가입·API 스펙 확인 선행) ✓ API 실측 확정: GET /v1/voices·POST /v1/text-to-speech(X-API-KEY, mp3 320kbps), model은 보이스별 자동 해석
 - [X] T017 [US1] (파트1) TTS 2층 캐시 `src/lib/tts/cache.ts` + 진입점 `src/lib/tts/index.ts` — `hash(voiceId+text)`, 로컬 디렉토리(CLI)+`tts-cache` 버킷(런타임) (T016 의존) ✓ 로컬 히트 49ms·Storage write-through·공개 URL 200 검증. Storage 클라이언트는 주입 방식(파트2 supabase.ts Node20 이슈와 분리)
