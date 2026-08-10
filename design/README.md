@@ -12,9 +12,9 @@ design/
 │   ├── 대표 이야기/                  # 썸네일 2, 도입_전개 5, 대화 5, 미션 2, 캐릭터 프로필 3
 │   ├── 아이 프로필 캐릭터/            # 4종 × 배경 유/무 + 보호자
 │   └── 추천 이야기/                  # 추천 썸네일 6
-└── 폰트/
-    ├── Cafe24Ssurround-v2.0.zip      # 헤드라인용 라운드체 (woff2 포함)
-    └── PretendardGOV-1.3.9.zip       # 본문용 (112MB — GitHub 100MB 제한 초과, 커밋 금지)
+└── 폰트/                             # 압축 해제본 (원본 zip은 삭제됨)
+    ├── Cafe24Ssurround-v2.0/         # 헤드라인용 라운드체 — otf·ttf·webfont(woff/woff2)·라이선스 PDF
+    └── PretendardGOV-1.3.9/          # 본문용 — public/=OS 설치용 otf·ttf(93MB), web/=웹용 woff·woff2·서브셋(52MB)
 ```
 
 ## 참조
@@ -23,4 +23,4 @@ design/
 - 디자인 토큰: Base `#FFF8EE` · Primary `#FF7A3D` · Sunny `#FFC93C` · Sage+ `#3DBE8B` · Sky `#4FA9E8` · Berry `#F262A0` · Text `#3A2C1E`
 - 미확정: 헤드라인 폰트 — 피그마 텍스트 스타일은 Jua, 전달받은 폰트는 Cafe24Ssurround (기획 확인 대기)
 
-앱에서 실제 사용할 에셋은 여기서 골라 `public/`(UI 에셋·폰트) 또는 Supabase Storage(이야기 콘텐츠 이미지)로 옮겨 쓴다.
+앱에서 실제 사용할 에셋은 여기서 골라 옮겨 쓴다: 웹폰트 woff2는 `src/fonts/`로 추출 완료(커밋됨), 이야기 콘텐츠 이미지는 Supabase Storage, 소량 UI 에셋은 `public/` 예정.
