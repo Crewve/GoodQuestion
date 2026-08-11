@@ -196,7 +196,7 @@
 
 - [x] T045 \[P\] \[US3\] (파트2) 회원가입 2단계 화면 `src/app/(auth)/signup/page.tsx` — 순차 인디케이터, 1단계 계정 생성(이메일 중복·비번 8\~20 규칙·약관 전체동의; SMS 인증은 미구현 범위 축소 R-10), 2단계 아이 탭 1\~3명(캐릭터 4종·이름·생년월일 YYYYMMDD·아동 동의 1회), 검증 시점 규칙(탭별/전체) (T010 의존) ✓ 검증 규칙·명세 문구는 `src/lib/auth/signup-validation.ts` TDD 26건 단일 소스, SMS 미배치(R-10), 중복 이메일은 signUp 응답 판정(에러 코드+identities 빈 배열 → 1단계 복귀), 프로필 저장은 POST `/api/profiles` 호출로 확정(T046 구현 대상), 성공 시 `/profiles` 이동. 브라우저 실측: 1→2단계 전환·탭 생성/전환 값 유지·탭별/전체 검증 시점·버튼 활성 조건 확인
 
-- [ ] T046 \[US3\] (파트2) 프로필 저장 처리 — Server Action 또는 `src/app/api/profiles/route.ts`: parents/children(avatar_key·birth_date)/child_consents 기록 (T007 의존; T045·T047 폼이 공용 호출)
+- [x] T046 \[US3\] (파트2) 프로필 저장 처리 — Server Action 또는 `src/app/api/profiles/route.ts`: parents/children(avatar_key·birth_date)/child_consents 기록 (T007 의존; T045·T047 폼이 공용 호출) ✓ POST `/api/profiles`로 확정. 페이로드 검증은 `src/lib/auth/profiles-payload.ts` TDD 9건(T045 규칙 재사용), parents는 없을 때만 생성(name=이메일 로컬파트), birth_year는 birth_date 파생, 동의는 아이별 1행(mvp_v1·authenticated_parent), 보호자당 총 3명 제한 API 강제(T047 대비). E2E 실측: 201 등록·400 총원 초과·401 미인증·3테이블 기록 확인. ⚠️ 프로젝트 Auth 'Confirm email' 활성 상태 발견 — 즉시 가입 흐름 위해 대시보드 비활성 필요(research R-10 발견 항목, 데모 전 팀 작업)
 
 - [ ] T049 \[P\] \[US3\] (파트2) 이야기 목록·상세 `src/app/stories/page.tsx`·`src/app/stories/[storyId]/page.tsx` — 주제·난이도 단일 선택 AND 필터·빈 상태, 상세(stories 데이터+고정 문구 '이런 것을 배워요')·시작하기 (Server Component 직접 조회)
 
