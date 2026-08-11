@@ -59,6 +59,7 @@
 ## R-10. 인증 — Supabase Auth, SMS 본인인증은 범위 제외
 
 - **Decision**: Supabase Auth 이메일/비밀번호 + 소셜 1개(카카오; Supabase 기본 provider 지원. 심사 지연 시 구글로 대체). 휴대폰 SMS 인증번호(기능명세서 1.2.1)는 MVP에서 **UI만 배치하거나 생략**하고 실발송 미구현 — 기획에 범위 축소 공유. `parents.id`는 `auth.users.id`와 1:1.
+- **발견(2026-08-11, T046 E2E)**: 프로젝트 Auth 설정에 **Confirm email이 활성** 상태 — signUp이 확인 메일 발송을 시도해 무료 티어 발송 한도(429 over_email_send_rate_limit)로 가입이 실패하고, 활성 유지 시 가입 직후 세션이 없어 즉시 가입 흐름(R-10 결정)이 성립하지 않는다. **대시보드 Authentication→Sign In / Providers→Email에서 Confirm email 비활성 필요(팀 작업, 데모 전 필수)**. API(/api/profiles)는 확인 완료 세션으로 E2E 검증 완료.
 - **Rationale**: SMS는 별도 유료 프로바이더(Twilio 등) 연동이 필요해 3\~4일 일정에 비현실적. MVP 요건 원문은 "소셜 포함 최소 1개 이상 연동"으로 이메일+소셜 1개면 충족.
 - **Alternatives considered**: Supabase Phone Auth(Twilio) — 비용·시간 대비 데모 가치 낮음.
 
