@@ -160,7 +160,7 @@
 
 ### 파트1 트랙
 
-- [ ] T042 \[P\] \[US2\] (파트1) 미션 오버레이 팝업 `src/components/mission-popup.tsx` — 화면 전환 없는 단일 오버레이, \[진행 중\]→\[성공 완료\] 내부 전환, 마이크는 버튼 시작(자동 아님, T034 훅 재사용), 이야기 계속하기로 복귀 (T037 의존)
+- [x] T042 \[P\] \[US2\] (파트1) 미션 오버레이 팝업 `src/components/mission-popup.tsx` — 화면 전환 없는 단일 오버레이, \[진행 중\]→\[성공 완료\] 내부 전환, 마이크는 버튼 시작(자동 아님, T034 훅 재사용), 이야기 계속하기로 복귀 (T037 의존) ✓ 완료(2026-08-11): 팝업 로컬 단계(IDLE→RECORDING→TRANSCRIBING→REVIEW→SUBMITTING→SUCCESS)로 전역 turn 스토어(T033)와 분리, `/api/stt` context=mission 재사용(사전 게이트·"다시 한번 말해줄래?" 폴백은 대화 화면과 동일 규칙), fixtures missions 직접 로드(제목·목표·guide_points/examples 렌더, 미션 이미지 T011 헬퍼). **배선 접점은 콜백 2개뿐**: `onSubmit(text, sttRawText)`(resolve→성공 전환, reject→다시 보내기)·`onContinue` — T041 완료 후 dialogue-scene에서 exposeMission 조건부 렌더+콜백 연결만 하면 됨. 성공 콘텐츠는 MVP 고정 문구. ⚠️ 명세 내부 상충 발견: 기능명세서 2.4.3 구성요소 표는 "마이크 자동 활성화 아님", 기능 설명 ⓐ는 "자동 시작" — 구성요소 표·본 태스크 확정대로 버튼 시작 구현(팀 공유 필요). tsc·eslint·next build 통과
 
 ### 파트2 트랙
 
