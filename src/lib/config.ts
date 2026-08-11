@@ -20,7 +20,9 @@ export const models = {
 /**
  * STT 실패 게이트 임계값 (R-02 — 판정 순서: ①최소 글자 ②no_speech_prob ③avg_logprob ④n-gram 반복 ⑤자막체 상투구)
  * 소비자는 파트1 `src/lib/stt/gates.ts`(순수 함수, config 주입).
- * ⚠️ 기본값·항목 구성은 파트1과 합의 대상(T003) — 실측 튜닝(T022)은 파트1 담당.
+ * 실측 튜닝(T022) 완료(2026-08-11): 안드로이드 실녹음 12건(정상 8·소음 2·1~2자 2, scripts/stt-tune.ts) 오분류 0 — 기본값 유지 확정.
+ * 정상 발화 분포: no_speech_prob ≤0.109 · avg_logprob ≥-0.67 · n-gram 반복 1회. 소음 입력은 Whisper가 힌트 어휘를
+ * 반복 환각(no_speech_prob 0.12~0.15로 ②③ 미탐)하며 ④ n-gram(반복 7회)이 주 방어선 — 상세는 out/stt-tune-report.json.
  */
 export const sttGate = {
   /** ① 공백 제거 후 글자 수가 이 값 이하면 실패 (기본: 1~2자 차단) */
