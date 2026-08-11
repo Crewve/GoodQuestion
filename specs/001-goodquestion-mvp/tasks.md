@@ -144,7 +144,7 @@
 
 - [x] T037 \[US1\] (파트2) 대화 화면 `src/components/dialogue-scene.tsx` — 캐릭터 대사 카드(이름·이미지·자동 재생)·상태 배지 3종·대화 내역 리스트·마이크/보내기 버튼·STT 미리보기(수정 불가) (T033 의존, 파트1의 T034 훅 임포트) ✓ props `{sessionId, scene, childName?, onSceneEnd}` — T038은 page.tsx 자리표시자를 `<DialogueScene>`으로 교체하고 `childName`(세션 응답 추가 필드) 전달만 하면 됨. 폴백: 게이트/STT 실패 "다시 한번 말해줄래?"+마이크 재클릭, 턴 실패 다시 보내기, TTS 없음 텍스트만 진행, 자동재생 차단은 다시 듣기 복구. **R-07 확정(실명 호출) 동반 구현**: `src/lib/child-name.ts`(받침 조사 처리, 테스트 6건)·`/api/sessions` 실명 오프닝 런타임 TTS(캐시·3.5초 예산·'친구야' 폴백)+`childName` 응답 추가·`/api/turn` childName 전달 — research.md R-07·api-routes.md 개정, next build·vitest 59/59 통과
 
-- [ ] T038 \[US1\] (공동) 턴 사이클 배선 — 캐릭터 오디오 종료→마이크 자동 시작, 보내기→`/api/turn`→응답 재생, CLOSING→고정 오디오 재생 후 다음 장면 전환(대화 마지막이면 학습완료로) (T030·T032·T036·T037 의존 — 페어로 진행, 통합 이슈 즉석 해결)
+- [x] T038 \[US1\] (공동) 턴 사이클 배선 — 캐릭터 오디오 종료→마이크 자동 시작, 보내기→`/api/turn`→응답 재생, CLOSING→고정 오디오 재생 후 다음 장면 전환(대화 마지막이면 학습완료로) (T030·T032·T036·T037 의존 — 페어로 진행, 통합 이슈 즉석 해결) ✓ page.tsx 자리표시자→`<DialogueScene>` 교체(+SessionPayload에 childName·openingText). **리허설 E2E**: 테스트 계정 시드 `scripts/dev-test-user.ts`(민준) → 도입·전개·대화1 진입, 실명 오프닝("민준아") tts-cache 합성본 재생·상태 배지 확인, `/api/turn` 실왕복 2턴 — 1턴 NORMAL(REASON·SOLUTION 탐지, 생성 대사 실명 호출, 6.8초), 2턴 CLOSING(GOAL_MET, fixed-audio 클로징, nextSceneId, 2.4초), 재개 지점 order 4·진행률 1/4 확인. **통합 버그 3건 수정**: story_sessions·messages·utterance_analyses insert에 id/타임스탬프 클라이언트 생성 추가(스키마에 DB 기본값 없음 — Notion 설계서 원형, 첫 실행 경로에서 발견). 잔여 사람 작업: 실기기 마이크 녹음 리허설(자동화 탭은 오디오 재생 시 렌더러 프리즈 — 환경 이슈)
 
 **🔗 동기화 포인트 #3**: T038 = 양 트랙 합류. quickstart §1·§2 CLI 전항 + §3 API 스모크 + 대화1 E2E — **여기까지가 데모 가능한 MVP**
 

@@ -120,6 +120,10 @@ export async function POST(request: Request) {
     const { data: created, error: createError } = await admin
       .from('story_sessions')
       .insert({
+        // id·타임스탬프는 스키마 기본값 없음 (Notion 설계서 원형) — 클라이언트 생성
+        id: crypto.randomUUID(),
+        started_at: new Date().toISOString(),
+        last_activity_at: new Date().toISOString(),
         child_id: childId,
         story_id: storyId,
         status: 'in_progress',
