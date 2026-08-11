@@ -198,9 +198,9 @@
 
 - [x] T046 \[US3\] (파트2) 프로필 저장 처리 — Server Action 또는 `src/app/api/profiles/route.ts`: parents/children(avatar_key·birth_date)/child_consents 기록 (T007 의존; T045·T047 폼이 공용 호출) ✓ POST `/api/profiles`로 확정. 페이로드 검증은 `src/lib/auth/profiles-payload.ts` TDD 9건(T045 규칙 재사용), parents는 없을 때만 생성(name=이메일 로컬파트), birth_year는 birth_date 파생, 동의는 아이별 1행(mvp_v1·authenticated_parent), 보호자당 총 3명 제한 API 강제(T047 대비). E2E 실측: 201 등록·400 총원 초과·401 미인증·3테이블 기록 확인. ⚠️ 프로젝트 Auth 'Confirm email' 활성 상태 발견 — 즉시 가입 흐름 위해 대시보드 비활성 필요(research R-10 발견 항목, 데모 전 팀 작업)
 
-- [ ] T049 \[P\] \[US3\] (파트2) 이야기 목록·상세 `src/app/stories/page.tsx`·`src/app/stories/[storyId]/page.tsx` — 주제·난이도 단일 선택 AND 필터·빈 상태, 상세(stories 데이터+고정 문구 '이런 것을 배워요')·시작하기 (Server Component 직접 조회)
+- [x] T049 \[P\] \[US3\] (파트2) 이야기 목록·상세 `src/app/stories/page.tsx`·`src/app/stories/[storyId]/page.tsx` — 주제·난이도 단일 선택 AND 필터·빈 상태, 상세(stories 데이터+고정 문구 '이런 것을 배워요')·시작하기 (Server Component 직접 조회) ✓ 필터·난이도 라벨(쉬움/보통/어려움→새싹/튼튼/도전)·줄거리 결합은 `src/lib/stories-view.ts` TDD 7건, 필터는 쿼리 파라미터=재조회(단일 이야기라 메모리 필터), 아이 컨텍스트는 child 쿼리 전파(상세는 로그인 보호자 첫 아이 폴백 — T047/T048 합류 전 동작), 에러는 error.tsx '다시 시도', GNB `src/components/bottom-nav.tsx` 신설(T048 홈 재사용 가능). 브라우저 실측: 목록·필터 활성·빈 상태·초기화·상세 렌더 확인
 
-- [ ] T050 \[US3\] (파트2) 시작하기→세션 연결 — `/api/sessions` 호출, 진행 이력 유무별 재개/신규 라우팅(`/play/[sessionId]`) (T031·T049 의존)
+- [x] T050 \[US3\] (파트2) 시작하기→세션 연결 — `/api/sessions` 호출, 진행 이력 유무별 재개/신규 라우팅(`/play/[sessionId]`) (T031·T049 의존) ✓ `src/components/story-start-button.tsx` — POST /api/sessions(멱등)로 sessionId 취득 후 `/play/[sessionId]?child&story` 이동(재개/신규 분기는 서버 재개 지점 계산이 담당), 아이 컨텍스트 없으면 /profiles 이동, 실패 시 에러 문구·재시도. 브라우저 실측: 상세→시작하기→도입 장면 재생 진입 확인 (play X 나가기 복귀 대상 상세 화면도 이제 실재)
 
 **Checkpoint**: 가입부터 이야기 시작까지 전체 여정 + US1 대화 진입
 
