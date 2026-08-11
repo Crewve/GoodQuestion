@@ -164,13 +164,13 @@
 
 ### 파트2 트랙
 
-- [ ] T039 \[P\] \[US2\] (파트2) 미션 설정 로더 `src/lib/missions.ts` — fixtures `missions` 키(goal·guide_points·expose_conditions·examples) 로드, 장면 매핑(sc_banggui_07/09) (R-11-3)
+- [x] T039 \[P\] \[US2\] (파트2) 미션 설정 로더 `src/lib/missions.ts` — fixtures `missions` 키(goal·guide_points·expose_conditions·examples) 로드, 장면 매핑(sc_banggui_07/09) (R-11-3) ✓ mission_1(조건형)·mission_2(시점형) 스키마 차이를 공통 타입으로 정규화, 장면 매핑은 fixture scene 필드 파생, 미등록 키 throw
 
-- [ ] T040 \[US2\] (파트2) 미션 노출 판정 `src/lib/rules/mission.ts` + `src/lib/rules/mission.test.ts` — expose_conditions 4종을 분석 결과·턴 수 기반 순수 함수로 판정, 노출은 장면당 1회 (T039 의존; 미션 결과는 요소 확인에 활용 — 정답 판정 아님)
+- [x] T040 \[US2\] (파트2) 미션 노출 판정 `src/lib/rules/mission.ts` + `src/lib/rules/mission.test.ts` — expose_conditions 4종을 분석 결과·턴 수 기반 순수 함수로 판정, 노출은 장면당 1회 (T039 의존; 미션 결과는 요소 확인에 활용 — 정답 판정 아님) ✓ TDD 9케이스 — 형식화: ①SOLUTION 탐지 ②REASON·DECISION만+SOLUTION 미누적 ③2턴+SOLUTION 미누적 ④연속 저정보 2턴, 미션2=VALID+자기긍정 요소(REASON·EMOTION·PERSPECTIVE)/2턴 폴백. 장면당 1회는 story_sessions.mission_phase(002 마이그레이션, 사용자 승인 — R-18)
 
-- [ ] T041 \[US2\] (파트2) `/api/turn` 미션 분기 확장 — `isMission` 입력 처리(미션 응답도 메시지·분석 동일 경로), 응답에 `exposeMission`·`missionPhase` 포함, 미션 완료를 CLOSING 조건 ③에 반영 (T032·T040 의존)
+- [x] T041 \[US2\] (파트2) `/api/turn` 미션 분기 확장 — `isMission` 입력 처리(미션 응답도 메시지·분석 동일 경로), 응답에 `exposeMission`·`missionPhase` 포함, 미션 완료를 CLOSING 조건 ③에 반영 (T032·T040 의존) ✓ 노출 턴=캐릭터 응답·저장 없음(팝업만, missionPhase:'progress'), 미션 응답 턴=동일 경로+missionPhase:'success'+다음 대사 동봉, 조건 ③은 GOAL_MET 자연 수렴+미수행 GOAL_MET 종료 보류(R-18 해석 — 충돌 기록), 종료 턴 미노출. api-routes.md 미션 행 추가(T042 소비 기준)
 
-- [ ] T043 \[US2\] (파트2) 미션 시나리오 검증 — `scripts/scenarios/mission-*.json` 대본 4종 작성, `simulate` 실행·eval 케이스 추가 (T029·T040 의존)
+- [x] T043 \[US2\] (파트2) 미션 시나리오 검증 — `scripts/scenarios/mission-*.json` 대본 4종 작성, `simulate` 실행·eval 케이스 추가 (T029·T040 의존) ✓ simulate.ts에 미션 판정 미러 통합(턴 객체 isMission 지원), 4종 실측: solution(①즉시)·direction(②)·stall(③2턴)·mission2(자기긍정 후) 전부 노출→응답→GOAL_MET+mission=completed. eval 미션 응답 4건 추가 — m2 재해석 유형이 PERSPECTIVE 미탐지되는 갭 발견, 분석 프롬프트 mvp_v3(PERSPECTIVE에 단점→장점 재해석 포함)로 재현율 83.9%→92.9%, validity 28/28, 기존 실패 5건→2건
 
 **Checkpoint**: US1 + 미션 포함 대화3·대화4 전체 흐름 동작
 
