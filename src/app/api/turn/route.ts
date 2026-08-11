@@ -7,7 +7,9 @@ import { fixedAudioUrl } from '@/lib/fixed-audio';
 import { ANALYSIS_VERSION, analyzeUtterance } from '@/lib/llm/analysis';
 import { generateReply, loadCharacter } from '@/lib/llm/generate';
 import { postprocessAnalysis } from '@/lib/llm/postprocess';
+import { missionForScene } from '@/lib/missions';
 import { evaluateTurn, type RuleState } from '@/lib/rules/engine';
+import { evaluateMissionExposure, type MissionPhase } from '@/lib/rules/mission';
 import { rules as ruleThresholds } from '@/lib/config';
 import type { ThinkingElement } from '@/lib/contracts';
 import { fixtureSceneByUuid } from '@/lib/story';
@@ -38,18 +40,18 @@ export async function POST(request: Request) {
   } catch {
     return errorJson(400, 'BAD_REQUEST', '요청 본문이 JSON이 아닙니다.');
   }
-  const { sessionId, sceneId, text, sttRawText } = body;
+  const { sessionId, sceneId, text, sttRawText, isMission } = body;
   if (!sessionId || !sceneId || !text?.trim()) {
     return errorJson(400, 'BAD_REQUEST', 'sessionId·sceneId·text는 필수입니다.');
   }
-  // isMission 분기는 T041(US2)에서 확장 — 현재는 일반 턴과 동일 경로
+  // isMission=true — 미션 팝업 응답 제출. 메시지·분석은 일반 턴과 동일 경로(요소 확인 활용, 정답 판정 아님)
 
   const admin = getSupabaseAdmin();
 
   const { data: session } = await admin
     .from('story_sessions')
     .select(
-      'id, story_id, child_id, current_scene_id, current_child_turn_count, accumulated_elements, turns_without_new_element, consecutive_low_information_turns, scene_goal_met',
+      'id, story_id, child_id, current_scene_id, current_child_turn_count, accumulated_elements, turns_without_new_element, consecutive_low_information_turns, scene_goal_met, mission_phase',
     )
     .eq('id', sessionId)
     .maybeSingle();
@@ -167,10 +169,40 @@ export async function POST(request: Request) {
     ruleThresholds,
   );
 
-  // ⑥ CLOSING: LLM 미호출, 고정 클로징 (R-04) / NORMAL·GUIDED: 캐릭터 생성 (1회 재시도)
+  // ⑤-2 미션 판정 (T041, 기능명세서 2.4.3 ⑥) — 노출은 장면당 1회(mission_phase, 002 마이그레이션)
+  const mission = fixture ? missionForScene(fixture.external_id) : null;
+  let missionPhase: MissionPhase = isNewScene ? null : ((session.mission_phase ?? null) as MissionPhase);
+  if (isMission && missionPhase === 'exposed') missionPhase = 'completed'; // 미션 응답 제출 — 팝업 [성공 완료] 전환
+
+  // 미션 필수 장면 가드: 미션 미수행 GOAL_MET 조기 종료는 보류하고 대화를 연다
+  // (기획 흐름 — 미션 수행→부족 요소 질문→종료. MAX_TURNS는 하드 리밋이라 보류 없음)
+  let effectiveDecision = decision;
+  if (decision.mode === 'CLOSING' && decision.sceneEndReason === 'GOAL_MET' && mission && missionPhase !== 'completed') {
+    effectiveDecision = { mode: 'NORMAL', missingElements: decision.missingElements };
+  }
+
+  // 장면이 끝나는 턴에는 노출하지 않는다 (팝업 띄울 다음 사이클이 없음)
+  const exposure =
+    effectiveDecision.mode === 'CLOSING'
+      ? { expose: false as const, reason: null }
+      : evaluateMissionExposure({
+          mission,
+          missionPhase,
+          turnCount: nextState.turnCount,
+          detectedElements: refined.detectedElements.map((element) => element.type),
+          accumulated: nextState.accumulated,
+          utteranceValidity: refined.utteranceValidity,
+          consecutiveLowInformationTurns: nextState.consecutiveLowInformationTurns,
+        });
+  if (exposure.expose) missionPhase = 'exposed';
+
+  // ⑥ 노출 턴: 캐릭터 응답 없이 팝업만 (기능명세서 — 캐릭터 음성 재생 없이 화면 표시, 바로 답 대기)
+  //    CLOSING: LLM 미호출, 고정 클로징 (R-04) / NORMAL·GUIDED: 캐릭터 생성 (1회 재시도)
   let characterReplyText: string;
   let audioUrl: string | null = null;
-  if (decision.mode === 'CLOSING') {
+  if (exposure.expose) {
+    characterReplyText = '';
+  } else if (effectiveDecision.mode === 'CLOSING') {
     characterReplyText = sceneRow.character_closing ?? '';
     audioUrl = fixture ? fixedAudioUrl(`${fixture.external_id}__closing`) : null;
   } else {
@@ -179,9 +211,9 @@ export async function POST(request: Request) {
         generateReply({
           character,
           sceneGoal: sceneRow.scene_goal ?? '',
-          mode: decision.mode as 'NORMAL' | 'GUIDED',
-          guidanceTarget: decision.guidanceTarget,
-          missingElements: decision.missingElements,
+          mode: effectiveDecision.mode as 'NORMAL' | 'GUIDED',
+          guidanceTarget: effectiveDecision.guidanceTarget,
+          missingElements: effectiveDecision.missingElements,
           childName,
           history: [
             ...(history ?? []).map((m) => ({
@@ -211,15 +243,18 @@ export async function POST(request: Request) {
   }
 
   // 캐릭터 메시지 저장 (CLOSING 고정 대사 포함 — Notion §8: 서버가 closing을 messages에 저장)
-  await admin.from('messages').insert({
-    id: crypto.randomUUID(), // 스키마 기본값 없음 — 클라이언트 생성
-    created_at: new Date().toISOString(),
-    session_id: sessionId,
-    scene_id: sceneId,
-    speaker_type: 'character',
-    turn_order: nextTurnOrder + 1,
-    text: characterReplyText,
-  });
+  // 미션 노출 턴은 캐릭터 발화가 없어 저장하지 않는다
+  if (characterReplyText) {
+    await admin.from('messages').insert({
+      id: crypto.randomUUID(), // 스키마 기본값 없음 — 클라이언트 생성
+      created_at: new Date().toISOString(),
+      session_id: sessionId,
+      scene_id: sceneId,
+      speaker_type: 'character',
+      turn_order: nextTurnOrder + 1,
+      text: characterReplyText,
+    });
+  }
 
   // 다음 장면 (CLOSING 시 이동 대상)
   const { data: nextScene } = await admin
@@ -237,12 +272,13 @@ export async function POST(request: Request) {
       current_child_turn_count: nextState.turnCount,
       accumulated_elements: nextState.accumulated,
       last_detected_elements: refined.detectedElements.map((element) => element.type),
-      last_response_mode: decision.mode,
-      last_guidance_target: decision.guidanceTarget ?? null,
+      last_response_mode: effectiveDecision.mode,
+      last_guidance_target: effectiveDecision.guidanceTarget ?? null,
       turns_without_new_element: nextState.turnsWithoutNewElement,
       consecutive_low_information_turns: nextState.consecutiveLowInformationTurns,
-      scene_goal_met: decision.mode === 'CLOSING',
-      scene_end_reason: decision.sceneEndReason ?? null,
+      scene_goal_met: effectiveDecision.mode === 'CLOSING',
+      scene_end_reason: effectiveDecision.sceneEndReason ?? null,
+      mission_phase: missionPhase,
       last_activity_at: new Date().toISOString(),
     })
     .eq('id', sessionId);
@@ -251,20 +287,23 @@ export async function POST(request: Request) {
   }
 
   return Response.json({
-    mode: decision.mode,
+    mode: effectiveDecision.mode,
     characterReplyText,
     audioUrl,
-    ...(decision.mode === 'CLOSING'
+    // 미션 분기 (T041) — 노출은 이 필드로만 전달(클라이언트 판정 금지), missionPhase는 팝업 단계 표기
+    ...(exposure.expose && mission ? { exposeMission: mission.id, missionPhase: 'progress' as const } : {}),
+    ...(isMission && missionPhase === 'completed' ? { missionPhase: 'success' as const } : {}),
+    ...(effectiveDecision.mode === 'CLOSING'
       ? {
           sceneEnd: {
-            reason: decision.sceneEndReason,
+            reason: effectiveDecision.sceneEndReason,
             nextSceneId: nextScene?.id ?? null,
           },
         }
       : {}),
     progress: {
       accumulated: nextState.accumulated,
-      missing: decision.missingElements,
+      missing: effectiveDecision.missingElements,
       turn: nextState.turnCount,
       maxTurns: sceneRow.max_turns ?? 0,
     },

@@ -7,7 +7,7 @@ import { getOpenAI } from '../openai';
 import type { RawAnalysis } from './postprocess';
 
 /** utterance_analyses.analysis_version 태깅 값 — 프롬프트/스키마 변경 시 올린다 */
-export const ANALYSIS_VERSION = 'mvp_v2'; // v2: 요소 구분 예시·복합 문장 절 단위 탐지·SHORT 기준 명확화 (eval 1차 회귀 반영)
+export const ANALYSIS_VERSION = 'mvp_v3'; // v3: PERSPECTIVE에 '단점→장점 재해석'(미션2 핵심 발화 유형) 포함 — T043 eval 갭 반영
 
 export type AnalysisContext = {
   sceneGoal: string;
@@ -23,7 +23,7 @@ const ELEMENT_GUIDE = `
 - DECISION(결정): 무엇을 할지/하지 않을지 선택을 말함 (예: "나라면 말할 거야")
 - EMOTION(감정): 자신 또는 인물의 감정·기분을 말하거나 추측함 (예: "슬펐을 것 같아요", "저도 기뻐요")
 - REASON(이유): 왜 그런지 이유·근거를 말함 — '~니까', '~아서/어서', '~때문에', '~잖아요' 절이 단서
-- PERSPECTIVE(관점): 인물의 입장·처지가 되어 생각함 (예: "내가 며느리라면", "할아버지 입장도 생각해 주세요")
+- PERSPECTIVE(관점): 인물의 입장·처지가 되어 생각하거나, 대상의 특징·상황을 다른 관점에서 재해석함 — 단점처럼 보이는 특징을 장점·가능성으로 바꿔 말하는 발화 포함 (예: "내가 며느리라면", "할아버지 입장도 생각해 주세요", "목소리가 큰 친구는 멀리 있는 사람을 부를 수 있어요")
 - EMPATHY(공감): 인물의 마음을 헤아려 위로·공감을 표현함 (예: "괜찮아요", "이해해요", "얼마나 힘들었겠어요")
 - SOLUTION(해결): 문제를 해결할 방법·아이디어를 제안함 (예: "~하면 돼요", "~해 보면 어때요")
 - RESULT(결과): 어떤 일의 결과·앞으로 생길 일을 말함 (예: "~될 거예요", "~다칠 수 있어요")

@@ -7,6 +7,7 @@
 // 폴백(contracts 매트릭스): 게이트/STT 실패 = "다시 한번 말해줄래?" + 마이크 재클릭, 턴 실패 = 다시 보내기,
 // audioUrl 없음(TTS 장애) = 텍스트만 표시하고 즉시 다음 단계, 자동재생 차단 = 다시 듣기 탭이 복구 경로.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MissionPopup } from '@/components/mission-popup';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import { substituteChildName } from '@/lib/child-name';
 import type { SttResult, ThinkingElement } from '@/lib/contracts';
@@ -41,6 +42,9 @@ type TurnResponse = {
   mode: 'NORMAL' | 'GUIDED' | 'CLOSING';
   characterReplyText: string;
   audioUrl: string | null;
+  /** 미션 분기 (T041) — 노출은 이 필드로만 전달, 판정은 서버 전용 */
+  exposeMission?: string;
+  missionPhase?: 'progress' | 'success';
   sceneEnd?: { reason: 'GOAL_MET' | 'MAX_TURNS'; nextSceneId: string | null };
   progress: { accumulated: ThinkingElement[]; missing: ThinkingElement[]; turn: number; maxTurns: number };
 };
@@ -64,6 +68,10 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [lastAudioUrl, setLastAudioUrl] = useState<string | null>(null);
   const [turnRetry, setTurnRetry] = useState<{ text: string; sttRawText: string } | null>(null);
+  /** 열린 미션 팝업 (T042 배선) — 서버 exposeMission으로만 열린다 */
+  const [activeMission, setActiveMission] = useState<string | null>(null);
+  /** 미션 응답의 캐릭터 대사 — 팝업 [성공 완료]가 닫힐 때 재생 (기능명세서 ⓕ→⑦) */
+  const heldReplyRef = useRef<Pick<TurnResponse, 'characterReplyText' | 'audioUrl' | 'sceneEnd'> | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hintAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -195,6 +203,11 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
         });
         if (!res.ok) throw new Error(`turn HTTP ${res.status}`);
         const turn = (await res.json()) as TurnResponse;
+        if (turn.exposeMission) {
+          // 노출 턴 — 캐릭터 응답 없음, 팝업이 마이크·보내기를 소유 (전역 턴은 SUBMITTED 유지)
+          setActiveMission(turn.exposeMission);
+          return;
+        }
         setHistory((h) => [...h, { speaker: 'character', text: turn.characterReplyText }]);
         pendingSceneEndRef.current = turn.sceneEnd ? turn.sceneEnd.nextSceneId : undefined;
         useTurnStore.getState().characterSpeaking(); // SUBMITTED → CHAR_SPEAKING
@@ -227,11 +240,49 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
     void recorder.start();
   }, [recorder]);
 
+  // --- 미션 팝업 배선 (T042 합류) ---
+
+  const handleMissionSubmit = useCallback(
+    async (missionText: string, missionRaw: string) => {
+      // reject 시 팝업이 '다시 보내기'를 노출하므로 여기서는 실패를 삼키지 않는다
+      const res = await fetch('/api/turn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, sceneId: scene.id, text: missionText, sttRawText: missionRaw, isMission: true }),
+      });
+      if (!res.ok) throw new Error(`turn HTTP ${res.status}`);
+      const turn = (await res.json()) as TurnResponse;
+      setHistory((h) => [...h, { speaker: 'child', text: missionText }]); // 미션 응답도 대화 내역에 표시 (기능명세서 ⓓ)
+      heldReplyRef.current = {
+        characterReplyText: turn.characterReplyText,
+        audioUrl: turn.audioUrl,
+        sceneEnd: turn.sceneEnd,
+      };
+    },
+    [scene.id, sessionId],
+  );
+
+  const handleMissionContinue = useCallback(() => {
+    // '이야기 계속하기' — 팝업 닫고 보류한 캐릭터 반응 재생 → ⑦ 종료 조건 흐름 재개
+    setActiveMission(null);
+    const held = heldReplyRef.current;
+    heldReplyRef.current = null;
+    if (!held) return;
+    if (held.characterReplyText) {
+      setHistory((h) => [...h, { speaker: 'character', text: held.characterReplyText }]);
+    }
+    pendingSceneEndRef.current = held.sceneEnd ? held.sceneEnd.nextSceneId : undefined;
+    useTurnStore.getState().characterSpeaking(); // SUBMITTED → CHAR_SPEAKING
+    playCharacterAudio(held.audioUrl);
+  }, [playCharacterAudio]);
+
   // --- 장면 진입/전환 ---
 
   useEffect(() => {
     useTurnStore.getState().reset();
     pendingSceneEndRef.current = undefined;
+    heldReplyRef.current = null;
+    setActiveMission(null);
     setTurnRetry(null);
     setStatusMessage(null);
     // 세션 페이로드 텍스트 우선 — 서버가 고른 오디오(실명본/폴백)와 표기가 일치한다
@@ -264,6 +315,16 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
     <section className="flex min-h-0 flex-1 flex-col items-center gap-3 px-6 pb-6">
       <audio ref={audioRef} hidden />
       <audio ref={hintAudioRef} hidden />
+
+      {/* 미션 오버레이 (T042) — 화면 전환 없는 단일 팝업, 서버 exposeMission으로만 열림 */}
+      {activeMission && (
+        <MissionPopup
+          missionId={activeMission}
+          sceneId={fixtureScene?.external_id ?? scene.id}
+          onSubmit={handleMissionSubmit}
+          onContinue={handleMissionContinue}
+        />
+      )}
 
       {scene.imageUrl && (
         <img src={scene.imageUrl} alt="" className="max-h-[28vh] w-full max-w-2xl rounded-3xl object-contain" />
