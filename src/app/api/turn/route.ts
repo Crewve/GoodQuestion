@@ -2,6 +2,7 @@
 // ①메시지 저장 → ②분석 → ③후처리 → ④분석 저장 → ⑤규칙 판정 → ⑥생성 또는 고정 대사 →
 // ⑦TTS(캐시) → ⑧세션 갱신. 분석·생성은 1회 재시도, TTS 실패는 텍스트만 반환(폴백 매트릭스).
 // CLOSING은 LLM·TTS 미호출 — fixed-audio 사전 생성 mp3 URL 반환 (R-04, 장애와 무관하게 성공).
+import { substituteChildName } from '@/lib/child-name';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
 import { ANALYSIS_VERSION, analyzeUtterance } from '@/lib/llm/analysis';
 import { generateReply, loadCharacter } from '@/lib/llm/generate';
@@ -48,11 +49,19 @@ export async function POST(request: Request) {
   const { data: session } = await admin
     .from('story_sessions')
     .select(
-      'id, story_id, current_scene_id, current_child_turn_count, accumulated_elements, turns_without_new_element, consecutive_low_information_turns, scene_goal_met',
+      'id, story_id, child_id, current_scene_id, current_child_turn_count, accumulated_elements, turns_without_new_element, consecutive_low_information_turns, scene_goal_met',
     )
     .eq('id', sessionId)
     .maybeSingle();
   if (!session) return errorJson(400, 'BAD_REQUEST', '세션을 찾을 수 없습니다.');
+
+  // 실명 호출 (R-07 확정) — 히스토리 치환·생성 프롬프트 호칭에 사용
+  const { data: childRow } = await admin
+    .from('children')
+    .select('name')
+    .eq('id', session.child_id)
+    .maybeSingle();
+  const childName = childRow?.name ?? undefined;
 
   const { data: sceneRow } = await admin
     .from('story_scenes')
@@ -91,7 +100,7 @@ export async function POST(request: Request) {
   const nextTurnOrder = (history?.at(-1)?.turn_order ?? 0) + 1;
   const lastCharacterText =
     history?.filter((m) => m.speaker_type === 'character').at(-1)?.text ??
-    (fixture?.character_opening ?? '').replaceAll('ㅇㅇ', '친구야');
+    substituteChildName(fixture?.character_opening ?? '', childName);
 
   // ① 아이 메시지 저장 — 게이트 실패 발화는 클라이언트가 보내지 않는다(계약 불변 조건 1)
   const { data: childMessage, error: messageError } = await admin
@@ -169,6 +178,7 @@ export async function POST(request: Request) {
           mode: decision.mode as 'NORMAL' | 'GUIDED',
           guidanceTarget: decision.guidanceTarget,
           missingElements: decision.missingElements,
+          childName,
           history: [
             ...(history ?? []).map((m) => ({
               speaker: (m.speaker_type === 'character' ? 'character' : 'child') as 'character' | 'child',
