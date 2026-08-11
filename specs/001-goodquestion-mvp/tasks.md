@@ -194,7 +194,7 @@
 
 ### 파트2 트랙
 
-- [ ] T045 \[P\] \[US3\] (파트2) 회원가입 2단계 화면 `src/app/(auth)/signup/page.tsx` — 순차 인디케이터, 1단계 계정 생성(이메일 중복·비번 8\~20 규칙·약관 전체동의; SMS 인증은 미구현 범위 축소 R-10), 2단계 아이 탭 1\~3명(캐릭터 4종·이름·생년월일 YYYYMMDD·아동 동의 1회), 검증 시점 규칙(탭별/전체) (T010 의존)
+- [x] T045 \[P\] \[US3\] (파트2) 회원가입 2단계 화면 `src/app/(auth)/signup/page.tsx` — 순차 인디케이터, 1단계 계정 생성(이메일 중복·비번 8\~20 규칙·약관 전체동의; SMS 인증은 미구현 범위 축소 R-10), 2단계 아이 탭 1\~3명(캐릭터 4종·이름·생년월일 YYYYMMDD·아동 동의 1회), 검증 시점 규칙(탭별/전체) (T010 의존) ✓ 검증 규칙·명세 문구는 `src/lib/auth/signup-validation.ts` TDD 26건 단일 소스, SMS 미배치(R-10), 중복 이메일은 signUp 응답 판정(에러 코드+identities 빈 배열 → 1단계 복귀), 프로필 저장은 POST `/api/profiles` 호출로 확정(T046 구현 대상), 성공 시 `/profiles` 이동. 브라우저 실측: 1→2단계 전환·탭 생성/전환 값 유지·탭별/전체 검증 시점·버튼 활성 조건 확인
 
 - [ ] T046 \[US3\] (파트2) 프로필 저장 처리 — Server Action 또는 `src/app/api/profiles/route.ts`: parents/children(avatar_key·birth_date)/child_consents 기록 (T007 의존; T045·T047 폼이 공용 호출)
 
