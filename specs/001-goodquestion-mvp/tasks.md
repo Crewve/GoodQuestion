@@ -186,11 +186,11 @@
 
 ### 파트1 트랙
 
-- [ ] T044 \[P\] \[US3\] (파트1) 로그인 화면 `src/app/(auth)/login/page.tsx` — 이메일/소셜 탭 전환, Supabase Auth signIn, 에러 문구 3종(기능명세서 1.1), 성공 시 프로필 선택 이동 (소셜은 카카오 1개 — 심사 지연 시 구글 대체 R-10)
+- [x] T044 \[P\] \[US3\] (파트1) 로그인 화면 `src/app/(auth)/login/page.tsx` — 이메일/소셜 탭 전환, Supabase Auth signIn, 에러 문구 3종(기능명세서 1.1), 성공 시 프로필 선택 이동 (소셜은 카카오 1개 — 심사 지연 시 구글 대체 R-10) ✓ 완료(2026-08-11): 서버 셸+`login-screen.tsx`(탭 전환 시 입력 유지). 에러 3종 원문 반영 — 형식 오류는 클라이언트 검사, 미가입/비번 오류는 Supabase가 동일 invalid_credentials라 **보조 라우트 `/auth/email-exists`**(admin generateLink 프로브, 계정 열거 트레이드오프 주석)로 구분. 카카오는 PKCE 콜백 `/auth/callback`(공개 경로 — 보호 경로 직행 시 proxy가 code 유실) 경유, 실패 시 "소셜 로그인에 실패했습니다"(?error=social). ⚠️ 사람 작업: Supabase 카카오 provider·Kakao Developers 콘솔 설정
 
-- [ ] T047 \[P\] \[US3\] (파트1) 아이 프로필 선택·추가 화면 `src/app/profiles/page.tsx` — 카드 최대 3+추가 카드(3명 시 숨김), 만 나이 배지 계산, 선택 시 홈 진입(아이 컨텍스트), 2.1.1 추가 폼 재사용
+- [x] T047 \[P\] \[US3\] (파트1) 아이 프로필 선택·추가 화면 `src/app/profiles/page.tsx` — 카드 최대 3+추가 카드(3명 시 숨김), 만 나이 배지 계산, 선택 시 홈 진입(아이 컨텍스트), 2.1.1 추가 폼 재사용 ✓ 완료(2026-08-11): 서버 셸(admin 조회 — RLS 미설정이라 브라우저 직조회 불가, /api/sessions와 동일 패턴)+`profiles-screen.tsx`(뷰 전환으로 2.1↔2.1.1). 만 나이 헬퍼 `src/lib/profile-display.ts`(+테스트 6건 — 0세 미만/150세 이상 미표시, DATE·8자리 양형식). **추가 폼은 `src/components/child-profile-form.tsx`로 분리 — T045(회원가입 2단계)가 재사용 가능**(동의 노출·버튼 라벨 props화, 1.2.2와 2.1.1의 UX 차이 흡수). **저장은 `save-profile.ts` 인터페이스만 호출** — 파트2 T046 실계약({children:[{name, avatar_key, birth_date}], child_consent}, 팀원 US3 브랜치 확인 2026-08-11)에 맞춰 단건 래핑, T046 합류 전(404) "준비 중" 안내로 대기
 
-- [ ] T048 \[P\] \[US3\] (파트1) 홈 화면 `src/app/home/page.tsx` — 인사말(성 제외 이름), 이어하기 카드(진행률 n/N·%·계속하기) 조건 노출, 추천 3×2 6개(첫 카드 '방귀 뀌는 며느리' 고정·유일 클릭 가능), GNB(단어장 이동 없음) (진행률은 T031 응답 재사용)
+- [x] T048 \[P\] \[US3\] (파트1) 홈 화면 `src/app/home/page.tsx` — 인사말(성 제외 이름), 이어하기 카드(진행률 n/N·%·계속하기) 조건 노출, 추천 3×2 6개(첫 카드 '방귀 뀌는 며느리' 고정·유일 클릭 가능), GNB(단어장 이동 없음) (진행률은 T031 응답 재사용) ✓ 완료(2026-08-11): 서버 셸(?child= 소속 검증, 이어하기 노출 조건=status≠completed 세션 존재)+`home-screen.tsx`. 인사말 "반가워요 {이름} 어린이"(성 제외 — profile-display.givenName). 진행률은 세션 존재 시에만 POST /api/sessions 재사용(멱등 — 없는데 부르면 생성 부작용이라 금지), 계속하기→`/play/[sessionId]?child=&story=`. **명세 확인: 홈은 기능명세서 2.0**(2.2는 이야기 목록) — 방귀 첫 카드 고정은 "진행 중 이야기 없을 때"이며 있으면 더미 6종이 그리드를 채움(더미 썸네일이 6종인 이유). 더미 메타(제목·핵심단어·난이도·시간)는 표시용 임시값. GNB는 파트2 T049 `bottom-nav.tsx`를 동일 내용으로 선반영해 공용(합류 시 add/add 동일 — 충돌 없음, 단어장=이동 없음·child 쿼리 전파), 모두 보기·첫 카드도 ?child= 전파(T049 상세와 관례 일치)
 
 ### 파트2 트랙
 

@@ -47,6 +47,20 @@
 
 목록/상세/홈/마이페이지의 읽기 데이터(stories 필터, 이어하기 카드, 프로필 목록)는 별도 API 없이 Server Component에서 Supabase 조회를 기본으로 한다. 클라이언트 상호작용이 필요한 쓰기(프로필 등록 등)는 Server Action 또는 `/api/profiles`로 통일 — 조립 단계(tasks)에서 확정.
 
+### POST `/api/profiles` — 아이 프로필 등록 (확정 2026-08-11 — 파트2 T046 구현 기준, T045·T047 공용)
+
+| | |
+|---|---|
+| 요청 | `{ children: [{ name, avatar_key: 'boy-1'\|'boy-2'\|'girl-1'\|'girl-2', birth_date: 'YYYYMMDD' }] (1~3명), child_consent: true }` |
+| 처리 | parents 없으면 생성 → 보호자당 총원 3명 최종 강제(400) → children(avatar_key·birth_date DATE 변환·birth_year 파생) insert + child_consents 아이별 1행 |
+| 응답 | 201 `{ children: [{ id, name, avatar_key, birth_date }] }` |
+| 계약 | 파트1 호출부는 `src/app/profiles/save-profile.ts`(2.1.1은 1명씩 단건 래핑). T046 develop 합류 전 404는 호출부가 "준비 중" 대기로 처리 |
+
+## 로그인 보조 (파트1 T044 소유)
+
+`GET /auth/callback` — 소셜(카카오) PKCE 코드 교환 후 `next`로 리다이렉트(공개 경로 — 보호 경로 직행 시 proxy가 code 유실). 실패 시 `/login?error=social`.
+`POST /auth/email-exists` — `{ email }` → `{ exists }`. 기능명세서 1.1.1의 미가입/비밀번호 오류 문구 구분용(Supabase는 동일 invalid_credentials 반환). admin generateLink(recovery) 프로브 — 메일 발송 없음, 계정 열거 트레이드오프는 명세 요구 우선으로 수용(정식 서비스 전 레이트리밋 필요).
+
 ## 폴백 매트릭스
 
 | 장애 | 동작 |
