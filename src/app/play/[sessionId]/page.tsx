@@ -5,6 +5,7 @@
 // 대화 장면 UI는 파트2 T037(dialogue-scene) 합류 지점 — T038 공동 배선 전까지 자리표시자를 렌더한다.
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { DialogueScene } from '@/components/dialogue-scene';
 import { NarrationScene } from '@/components/narration-scene';
 import { ProgressHeader } from '@/components/progress-header';
 import { useAudioUnlock } from '@/hooks/useAudioUnlock';
@@ -17,12 +18,16 @@ type ScenePayload = {
   description?: string;
   characterName?: string;
   characterImageUrl?: string;
+  /** 대화 오프닝 표시 텍스트 — 서버가 openingAudioUrl과 표기를 맞춰 내려줌 (R-07) */
+  openingText?: string;
   openingAudioUrl?: string;
   imageUrl?: string;
 };
 
 type SessionPayload = {
   sessionId: string;
+  /** 실명 호출(R-07) — 대화 화면 텍스트 치환 폴백용 */
+  childName: string | null;
   resumeSceneId: string | null;
   resumeSceneOrder: number;
   scenes: ScenePayload[];
@@ -148,16 +153,16 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
           narrationAudioUrl={currentScene.openingAudioUrl}
           onProceed={proceed}
         />
-      ) : (
-        // T037(파트2 dialogue-scene) 합류 지점 — T038 공동 배선에서 교체
-        <section className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-          {currentScene?.characterImageUrl && (
-            <img src={currentScene.characterImageUrl} alt={currentScene.characterName ?? ''} className="size-40 rounded-full object-cover" />
-          )}
-          <p className="font-display text-2xl text-ink">{currentScene?.characterName}</p>
-          <p className="text-lg text-ink">대화 화면은 연결 준비 중이에요 (T037·T038).</p>
-        </section>
-      )}
+      ) : currentScene ? (
+        // T038 배선 — 턴 사이클은 DialogueScene 내부(T037), CLOSING 오디오 종료 시 onSceneEnd로 진행
+        <DialogueScene
+          key={currentScene.id} // 장면 전환 시 턴 상태·대화 내역 초기화
+          sessionId={data.sessionId}
+          scene={currentScene}
+          childName={data.childName}
+          onSceneEnd={proceed} // 다음 장면 또는(마지막 대화) 학습완료 지점으로 — 선형 진행이라 order+1과 동치
+        />
+      ) : null}
     </main>
   );
 }

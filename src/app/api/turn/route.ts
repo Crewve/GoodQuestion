@@ -106,6 +106,9 @@ export async function POST(request: Request) {
   const { data: childMessage, error: messageError } = await admin
     .from('messages')
     .insert({
+      // id·created_at은 스키마 기본값 없음 (Notion 설계서 원형) — 클라이언트 생성
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
       session_id: sessionId,
       scene_id: sceneId,
       speaker_type: 'child',
@@ -141,6 +144,7 @@ export async function POST(request: Request) {
 
   // ④ 분석 확정본 저장
   const { error: analysisError } = await admin.from('utterance_analyses').insert({
+    id: crypto.randomUUID(), // 스키마 기본값 없음 — 클라이언트 생성
     message_id: childMessage.id,
     child_intent: refined.childIntent,
     main_point: refined.mainPoint,
@@ -208,6 +212,8 @@ export async function POST(request: Request) {
 
   // 캐릭터 메시지 저장 (CLOSING 고정 대사 포함 — Notion §8: 서버가 closing을 messages에 저장)
   await admin.from('messages').insert({
+    id: crypto.randomUUID(), // 스키마 기본값 없음 — 클라이언트 생성
+    created_at: new Date().toISOString(),
     session_id: sessionId,
     scene_id: sceneId,
     speaker_type: 'character',
