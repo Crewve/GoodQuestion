@@ -7,7 +7,9 @@
 //        ④ 질문만으로 구체화 어려움             → 연속 저정보 턴 ≥ 2 (엔진 카운터 재사용)
 //   미션2 자기 특징을 긍정하는 이유 발화 후       → VALID 발화에서 REASON·EMOTION·PERSPECTIVE 탐지
 //        (미션 필수 장면 보장 폴백)             → turnCount ≥ 2
-// 노출은 장면당 1회 — missionPhase(story_sessions.mission_phase, 002 마이그레이션)가 null일 때만.
+// 노출은 장면당 1회 '완료' — missionPhase(story_sessions.mission_phase, 002 마이그레이션)가 'completed'면 재노출 금지.
+// 'exposed'(노출됐지만 미완료)는 재노출한다(T074, E2E 항목 21): 팝업은 클라이언트 휘발 상태라 새로고침·재진입·
+// 응답 유실 시 사라지는데, DB가 'exposed'를 기억한 채 재노출을 막으면 미션 없이 MAX_TURNS 종료로 빠진다.
 // CLOSING 조건 ③(미션+핵심 발화)은 미션 응답이 동일 분석·누적 경로를 타므로 GOAL_MET으로 자연 수렴 — 엔진 무변경.
 import type { AnalysisResult, ThinkingElement } from '@/lib/contracts';
 import type { Mission } from '@/lib/missions';
@@ -19,7 +21,8 @@ export type MissionExposeReason =
   | 'DIRECTION_ONLY' // 미션1 ②
   | 'NO_METHOD_AFTER_TURNS' // 미션1 ③ · 미션2 폴백
   | 'HARD_TO_CONCRETIZE' // 미션1 ④
-  | 'SELF_AFFIRMATION_STATED'; // 미션2
+  | 'SELF_AFFIRMATION_STATED' // 미션2
+  | 'REEXPOSED'; // 노출 후 미완료 — 팝업 유실 복구 (T074)
 
 export type MissionExposureInput = {
   /** 장면의 미션 (missions.ts missionForScene — 미션 없는 장면은 null) */
@@ -46,7 +49,9 @@ const SELF_AFFIRMATION_ELEMENTS: ThinkingElement[] = ['REASON', 'EMOTION', 'PERS
 
 export function evaluateMissionExposure(input: MissionExposureInput): MissionExposureDecision {
   const { mission, missionPhase, turnCount, detectedElements, accumulated, utteranceValidity } = input;
-  if (!mission || missionPhase !== null) return NO_EXPOSURE;
+  if (!mission || missionPhase === 'completed') return NO_EXPOSURE;
+  // 'exposed' 미완료 — 클라이언트 팝업이 유실된 상태일 수 있으므로 조건 재판정 없이 즉시 재노출 (T074)
+  if (missionPhase === 'exposed') return { expose: true, reason: 'REEXPOSED' };
 
   if (mission.id === 'mission_1') {
     if (detectedElements.includes('SOLUTION')) {
