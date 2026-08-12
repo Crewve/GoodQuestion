@@ -8,6 +8,7 @@
 // 콘텐츠는 T051 post_activity_config가 SoT라 props로 받는다(fixtures 직접 로드 없음 — T051 합류 전에도 개발 가능).
 // "핵심 단어 4개 포함 여부 검증"(2.4.5 유효성)은 차단 동작·문구가 미정의라 비차단 시각 피드백(포함 단어 ✓)으로만
 // 반영 — 저장 차단은 하지 않는다(보내기 활성 조건은 원문대로 "텍스트 공백 아님"뿐, tasks.md에 기록).
+// 스타일: 피그마 「개발 배포용」 2.4.5 — 카드+단어 칩 4세트·하늘색 "내가 한 말" 카드·원형 마이크+보내기 필.
 import { useCallback, useRef, useState } from 'react';
 import type { PostActivityCard } from '@/components/card-ordering';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
@@ -122,28 +123,37 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
 
   const micEnabled = (phase === 'IDLE' || phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting';
   const sendEnabled = phase === 'REVIEW' && !!stt?.text.trim(); // 텍스트 표시 완료 전까지 비활성 (2.4.5 구성요소)
+  const micLabel = recorder.isRecording ? '말 끝났어요! (녹음 마치기)' : stt ? '다시 말하기' : '눌러서 말하기';
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col items-center gap-5 overflow-y-auto px-6 pb-8">
+    <section className="flex min-h-0 flex-1 flex-col gap-4 px-6 pb-5 pt-5">
       <audio ref={hintAudioRef} hidden />
 
-      {/* 활동 안내 (T067, E2E 항목 28) — 2.4.4 카드 배열 안내와 동일 스타일 */}
-      <p className="text-center font-display text-2xl text-ink">
-        장면 카드와 핵심 단어를 보고, 이야기를 처음부터 끝까지 말해보세요!
-      </p>
+      {/* 활동 안내 (T067 문구 유지) + 보조 안내 (피그마 instruction-banner 예시 문구) */}
+      <div className="shrink-0">
+        <p className="font-display text-[32px] leading-snug text-ink">
+          장면 카드와 핵심 단어를 보고, 이야기를 처음부터 끝까지 말해보세요!
+        </p>
+        <p className="mt-1 font-display text-[22px] text-[#6F6152]">
+          &quot;며느리는 솔직하게 말하기로 했어요&quot;처럼 자유롭게 이야기를 들려주세요
+        </p>
+      </div>
 
       {/* 장면 카드 + 핵심 단어 4세트 — 표시 전용, 사용자 조작 불가 (2.4.5 구성요소) */}
-      <div className="grid w-full max-w-3xl grid-cols-4 gap-3">
+      <div className="grid min-h-0 flex-1 grid-cols-4 gap-4">
         {cards.map((card, index) => {
           const keyword = keywords[index];
           const included = !!keyword && !!stt?.text.includes(keyword); // 포함 여부 시각 피드백 (비차단)
           return (
-            <figure key={card.id} className="flex flex-col items-center gap-1 rounded-2xl bg-white p-2">
-              <img src={card.imageUrl} alt={card.label} className="aspect-square w-full rounded-xl object-cover" />
+            <figure key={card.id} className="flex min-h-0 flex-col gap-2.5">
+              <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border-[1.5px] border-[#F0E4D3] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)]">
+                {/* eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴) */}
+                <img src={card.imageUrl} alt={card.label} className="h-full w-full object-cover" />
+              </div>
               {keyword && (
                 <figcaption
-                  className={`rounded-full px-3 py-1 text-lg font-semibold ${
-                    included ? 'bg-sage text-white' : 'bg-sunny text-ink'
+                  className={`flex h-11 shrink-0 items-center justify-center rounded-[10px] border-[1.5px] border-sage font-display text-lg ${
+                    included ? 'bg-sage text-ink' : 'bg-sage/10 text-[#177A4F]'
                   }`}
                 >
                   {included ? '✓ ' : ''}
@@ -156,27 +166,23 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
       </div>
 
       {/* 내가 한 말 — 상시 노출 카드, 인식 실패 시 비워둔 채 유지 (2.4.5) */}
-      <div className="w-full max-w-2xl">
-        <p className="mb-1 text-lg font-semibold text-ink">내가 한 말</p>
-        <p
-          className={`min-h-20 w-full rounded-2xl border-2 bg-white px-4 py-3 text-center text-xl ${
-            stt ? 'border-primary text-ink' : 'border-white text-ink/40'
-          }`}
-        >
-          {stt ? `“${stt.text}”` : '마이크를 눌러 이야기를 들려주세요'}
+      <div className="w-full shrink-0 rounded-[20px] border border-sky/25 bg-[#DDF0FB]/80 px-5 py-4">
+        <p className="text-lg font-bold text-[#1D6FAE]">내가 한 말</p>
+        <p className={`mt-2 min-h-14 font-display text-[22px] leading-tight ${stt ? 'text-ink' : 'text-ink/70'}`}>
+          {stt ? stt.text : '마이크를 눌러 이야기를 들려주세요'}
         </p>
       </div>
 
       {/* 상태 배지 / 안내 문구 — 색+아이콘+텍스트 병행 (FR-020) */}
-      <div className="flex min-h-12 items-center gap-3">
+      <div className="flex min-h-10 shrink-0 items-center justify-center gap-3">
         {phase === 'RECORDING' && (
-          <span className="flex h-12 items-center gap-2 rounded-full bg-sunny px-5 text-lg font-semibold text-ink">
+          <span className="flex h-10 items-center gap-2 rounded-full bg-sunny px-5 text-lg font-semibold text-ink">
             <span aria-hidden>🎤</span>
             생각을 말해보세요!
           </span>
         )}
         {phase === 'TRANSCRIBING' && (
-          <span className="flex h-12 items-center gap-2 rounded-full bg-sunny px-5 text-lg font-semibold text-ink">
+          <span className="flex h-10 items-center gap-2 rounded-full bg-sunny px-5 text-lg font-semibold text-ink">
             <span aria-hidden>✍️</span>
             말을 글자로 바꾸는 중이에요!
           </span>
@@ -186,9 +192,9 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
             ● ● ●
           </span>
         )}
-        {statusMessage && <span className="text-lg font-semibold text-primary">{statusMessage}</span>}
+        {statusMessage && <span className="text-lg font-semibold text-[#B84A12]">{statusMessage}</span>}
         {recorder.status === 'error' && !statusMessage && (
-          <span className="text-lg font-semibold text-primary">{ERROR_MIC_PERMISSION}</span>
+          <span className="text-lg font-semibold text-[#B84A12]">{ERROR_MIC_PERMISSION}</span>
         )}
         {submitRetry && stt && (
           <>
@@ -196,7 +202,7 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
             <button
               type="button"
               onClick={() => void requestSubmit(stt.text)}
-              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-white active:bg-ink"
+              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-ink active:bg-ink active:text-white"
             >
               다시 보내기
             </button>
@@ -204,28 +210,29 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
         )}
       </div>
 
-      {/* 마이크(버튼 시작·재녹음 겸용)·보내기 — 터치 48px+ (FR-020) */}
-      <div className="flex items-center justify-center gap-4">
+      {/* 마이크(버튼 시작·재녹음 겸용)·보내기 — 터치 48px+ (FR-020), 피그마 bottom-actions 중앙 정렬 */}
+      <div className="flex shrink-0 items-center justify-center gap-4">
         <button
           type="button"
           onClick={handleMicClick}
           disabled={!micEnabled}
+          aria-label={micLabel}
           style={
             recorder.isRecording ? { transform: `scale(${1 + Math.min(recorder.level * 2, 0.15)})` } : undefined
           }
-          className={`flex h-16 items-center gap-2 rounded-full px-8 text-xl font-bold transition-transform ${
-            recorder.isRecording ? 'bg-primary text-white' : 'bg-white text-ink shadow'
+          className={`flex size-20 items-center justify-center rounded-full text-4xl shadow-[0_10px_28px_-8px_rgba(255,122,61,0.33)] transition-transform ${
+            recorder.isRecording ? 'bg-sunny' : 'bg-primary'
           } disabled:opacity-40`}
         >
-          🎤 {recorder.isRecording ? '말 끝났어요!' : stt ? '다시 말하기' : '눌러서 말하기'}
+          <span aria-hidden>🎤</span>
         </button>
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!sendEnabled}
-          className="h-16 rounded-full bg-primary px-8 text-xl font-bold text-white active:bg-ink disabled:opacity-40"
+          className="h-12 rounded-full bg-sage px-6 font-display text-xl text-ink active:bg-ink active:text-white disabled:opacity-40"
         >
-          보내기
+          보내기 →
         </button>
       </div>
     </section>
