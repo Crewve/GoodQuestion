@@ -7,7 +7,7 @@
 
 ## A. 사전 준비 (공동)
 
-- [ ] A-1. `develop` 최신 동기화 — `git pull` 후 `npm run dev` 재시작 (⚠️ 장수 dev 프로세스는 신규 라우트에서 WorkerError 500 이력 — 반드시 재시작)
+- [ ] A-1. `develop` 최신 동기화 — `git pull` 후 `npm run dev` 재시작 (⚠️ 장수 dev 프로세스는 신규 라우트에서 WorkerError 500 이력 — 반드시 재시작. ⚠️ dev 서버를 강제 종료한 뒤 `next build`가 `.next/dev/types/validator.ts` 구문 오류로 실패하면 쓰다 만 생성 파일이 원인 — `rm -rf .next/dev` 후 재빌드, 2026-08-12 실재현)
 - [ ] A-2. `.env.local` 키 4종 존재 확인: `OPENAI_API_KEY` · `TYPECAST_API_KEY` · `SUPABASE_SERVICE_ROLE_KEY` · `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (⚠️ publishable 키 유실 이력 있음 — 없으면 `.env.example`에서 복사)
 - [ ] A-3. 시드 반영 상태 — `npx tsx scripts/seed.ts` 재실행 시 9/9 멱등 통과
 - [ ] A-4. Storage 3버킷(story-assets·fixed-audio·tts-cache) 접근 가능 — 홈/상세 이미지·고정 오디오 로드로 간접 확인
@@ -79,7 +79,22 @@
 ## E. 최종 확인 — quickstart §5 (T063에서 1차 완료, 리허설 후 재확인)
 
 - [ ] E-1. (파트2) 원본 음성 미저장 — 리허설 중 생성된 세션 기준 Storage·DB 재확인
-- [ ] E-2. (파트2) 클라이언트 번들 키 3종 미포함 — 최종 develop에서 `next build` 후 검색 1회
+- [ ] E-2. (파트2) 클라이언트 번들 키 3종 미포함 — 최종 develop에서 `next build` 후 검색 1회. 실행 방법(브라우저로 내려가는 산출물은 `.next/static`뿐이라 그 안만 검색, env 변경 후엔 반드시 재빌드):
+
+  ```bash
+  npx next build   # dev 서버 종료 후
+  # 실값을 변수로만 로드 (터미널 출력 금지)
+  export $(grep -E '^(OPENAI_API_KEY|TYPECAST_API_KEY|SUPABASE_SERVICE_ROLE_KEY|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)=' .env.local | xargs)
+  # ① 실값 검색 — 3줄 모두 0이어야 통과
+  grep -rl "$OPENAI_API_KEY" .next/static | wc -l
+  grep -rl "$TYPECAST_API_KEY" .next/static | wc -l
+  grep -rl "$SUPABASE_SERVICE_ROLE_KEY" .next/static | wc -l
+  # ② 이름 검색 — 0이어야 통과 (클라이언트 코드에 참조 자체가 없어야 함)
+  grep -rlE "OPENAI_API_KEY|TYPECAST_API_KEY|SERVICE_ROLE" .next/static | wc -l
+  # ③ 양성 대조군 — 1 이상이어야 검색 방법 유효 (공개 설계 값)
+  grep -rl "lpiqyaqajlxhnvumvjvb.supabase.co" .next/static | wc -l
+  grep -rl "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" .next/static | wc -l
+  ```
 - [ ] E-3. (공동) 테스트 데이터 정리 — 리허설 계정·아이·세션 삭제(프로필 관리 삭제 = 학습 기록 캐스케이드)
 - [ ] E-4. (공동) 본 체크리스트 완료 상태로 커밋, tasks.md T060·T064 `[x]` + 요약 기록
 
