@@ -268,9 +268,9 @@
 
 ### 파트2 트랙
 
-- [ ] T063 \[P\] (파트2) 보안·프라이버시 확인 — `next build` 후 클라이언트 번들 키 3종 검색, 원본 음성 미저장(임시 파일 포함) 확인 (quickstart §5)
+- [x] T063 \[P\] (파트2) 보안·프라이버시 확인 — `next build` 후 클라이언트 번들 키 3종 검색, 원본 음성 미저장(임시 파일 포함) 확인 (quickstart §5) ✓ 완료(2026-08-12, US4·US5 병합 후 develop 기준 전수 점검): ① **번들 키 3종 미포함** — `next build` 후 `.next/static` 전체에서 OPENAI·TYPECAST·SERVICE_ROLE **실값·이름 모두 0건**, 양성 대조군(NEXT_PUBLIC URL 7건·publishable 1건 — 공개 설계)으로 검색 방법 유효성 교차 확인. ② **원본 음성 미저장** — /api/stt는 메모리→OpenAI 스트리밍만(파일·임시파일 기록 없음, src 전체 fs 쓰기는 tts/cache.ts 합성본 1곳뿐), Storage 3버킷 전수 조회 결과 사전 생성 대사 29·이미지 36·합성 캐시 6으로 사용자 녹음 0건, DB 전 테이블에 audio/voice/recording/bytea 컬럼 부재. ③ 게이트 임계값 env 오버라이드(config.ts) ④ contracts/fixtures 변경 합의 기록(T005 승인·T051 PR #14 공유) ⑤ 미확정 7건 데이터 교체 구조(R-08·R-09 fixtures→시드) — §5 체크리스트 5항 전부 충족
 
-- [ ] T065 \[P\] (파트2) 문서 갱신 — `docs/프로젝트/프로젝트_디렉토리_명세.md` §3을 실제 구조로 갱신, research.md 미해결 7건 회신 결과 반영
+- [x] T065 \[P\] (파트2) 문서 갱신 — `docs/프로젝트/프로젝트_디렉토리_명세.md` §3을 실제 구조로 갱신, research.md 미해결 7건 회신 결과 반영 ✓ 완료(2026-08-12): §3 '확장 예정'→'실제 구현 구조'로 전면 교체(app 라우트 전체·lib 모듈·scripts/eval/migrations/specs, 환경변수 실사용 표 — publishable 키 추가, 버킷 3종 — story-assets 추가), §4 문서 컨벤션의 낡은 'SoT=Notion' 서술을 CLAUDE.md SSOT(기능명세서 우선)로 교정. research.md 미해결 7건 상태 갱신 — 기획 회신 없음: #1·#5·#6 팀 확정, #2 운영 확정(T021), #3 T051 임시 저작 반영 완료, #3·#4·#7은 데이터/문구 교체만으로 반영 가능 구조(T063 §5-⑤ 교차 확인)
 
 ### 공동 (통합 리허설)
 
