@@ -1,7 +1,7 @@
 'use client';
-// 내정보 화면 본체 (T056, 기능명세서 3.1) — 사용자 정보 카드(고정 프로필 이미지·"보호자님")·
-// 로그인 방식 문구·아이 프로필 리스트(표시 전용, 이름은 성 제외)·주간 요약 카드 3종
-// (배지 카드만 클릭 → 3.6)·메뉴 버튼(공지/고객센터/이용안내)·로그아웃 확인 팝업.
+// 내정보 화면 본체 (T056, 기능명세서 3.1 / UI 리뉴얼 E — 피그마 「개발 배포용」 3.1 내정보 기본·Case B·로그아웃).
+// 사용자 정보 카드(보호자 이미지·"보호자님"·로그인 방식) → 등록된 아이 카드(팔레트 순환, 표시 전용) →
+// 이번 주 활동 요약 3종(배지 카드만 클릭 → 3.6) → 설정 메뉴(공지/고객센터/이용안내/로그아웃) → v1.0.0.
 // 로그아웃은 Supabase signOut 후 1.1 로그인 화면으로 — 실패 시 팝업 유지·재시도 (3.2 삭제 팝업과 동일 관례).
 import { useState } from 'react';
 import Image from 'next/image';
@@ -9,9 +9,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
 import { BottomNav } from '@/components/bottom-nav';
-import { avatarUrl, type AvatarKey } from '@/lib/assets';
-import { givenName, koreanAge } from '@/lib/profile-display';
+import { assetUrl } from '@/lib/assets';
+import { givenName } from '@/lib/profile-display';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { ChildProfileCard, MyPageHeader } from './accordion';
 
 export type WeeklySummary = {
   /** 이번 주 완료한 이야기(완료 세션) 수 */
@@ -28,12 +29,11 @@ const SUMMARY_ERROR_MESSAGE = '학습 정보를 불러오지 못했습니다';
 const LOGOUT_CONFIRM_MESSAGE = '정말 로그아웃 하시겠습니까?';
 const LOGOUT_ERROR = '로그아웃에 실패했어요. 잠시 후 다시 시도해 주세요.';
 
-const AVATAR_KEYS = new Set<string>(['boy-1', 'boy-2', 'girl-1', 'girl-2']);
-
-const MENU_ITEMS: { label: string; href: string }[] = [
-  { label: '공지사항', href: '/my/notices' },
-  { label: '고객센터', href: '/my/support' },
-  { label: '이용안내', href: '/my/guide' },
+// 설정 메뉴 — 피그마 3.1 '설정' 카드 아이콘·순서
+const MENU_ITEMS: { label: string; href: string; icon: string }[] = [
+  { label: '공지사항', href: '/my/notices', icon: '📢' },
+  { label: '고객센터', href: '/my/support', icon: '💬' },
+  { label: '이용안내', href: '/my/guide', icon: '📋' },
 ];
 
 type MyScreenProps = {
@@ -51,136 +51,130 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-5 py-6">
-        <h1 className="font-display text-3xl text-ink">내정보</h1>
-
-        {/* 사용자 정보 카드 — 프로필 이미지는 하나로 고정(표시 전용) */}
-        <section className="flex items-center gap-4 rounded-3xl bg-white p-4">
-          <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-base text-3xl">
-            👤
-          </span>
+      <MyPageHeader />
+      <main className="mx-auto flex w-full max-w-[848px] flex-1 flex-col px-6 pb-8 pt-5">
+        {/* 사용자 정보 카드 — 보호자 이미지는 하나로 고정(표시 전용) */}
+        <section className="flex items-center gap-4 rounded-3xl border border-[#F0E4D3] bg-white p-5 shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
+          <Image
+            src={assetUrl('profiles/select/guardian.png')}
+            alt=""
+            width={62}
+            height={53}
+            className="h-[53px] w-[62px] shrink-0 object-contain"
+          />
           <div className="min-w-0">
-            <p className="text-xl font-bold text-ink">보호자님</p>
-            <p className="text-base text-ink/60">{loginMethodLabel}</p>
+            <p className="text-base font-bold text-ink">보호자님</p>
+            <p className="mt-1 text-sm text-[#8A7A68]">{loginMethodLabel}</p>
           </div>
         </section>
 
-        {/* 등록된 아이 프로필 카드 리스트 — 표시 전용·클릭 불가, 이름은 성 제외 (3.1) */}
-        <section className="flex flex-col gap-3">
+        {/* 등록된 아이 카드 리스트 — 표시 전용·클릭 불가, 이름은 성 제외 (3.1) */}
+        <section className="mt-4 rounded-3xl border border-[#F0E4D3] bg-white p-5 shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-ink">아이 프로필</h2>
+            <h2 className="text-base font-bold text-ink">등록된 아이</h2>
             <Link
               href="/my/profiles"
-              className="flex h-11 items-center rounded-full bg-white px-4 text-base font-semibold text-ink active:opacity-80"
+              className="-my-2 flex min-h-12 items-center text-sm font-bold text-primary active:opacity-70"
             >
-              프로필 관리
+              프로필 관리 →
             </Link>
           </div>
           {profiles.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6">
-              <p className="text-lg text-ink/70">{EMPTY_PROFILES_MESSAGE}</p>
+            <div className="mt-4 flex flex-col items-center gap-3 rounded-[28px] bg-[#FFEDE3] p-6">
+              <p className="text-base text-ink/70">{EMPTY_PROFILES_MESSAGE}</p>
               {/* 아이 추가 버튼을 통해 프로필 등록 가능 (3.1 예외 처리) — 등록은 3.2에서 */}
               <Link
                 href="/my/profiles"
-                className="flex h-12 items-center rounded-full bg-primary px-6 text-lg font-bold text-white active:bg-ink"
+                className="flex h-12 items-center rounded-full bg-primary px-6 text-base font-bold text-white active:bg-ink"
               >
                 ＋ 아이 추가
               </Link>
             </div>
           ) : (
-            <ul className="flex flex-col gap-3">
-              {profiles.map((profile) => {
-                const age = koreanAge(profile.birthDate);
-                const hasAvatar = !!profile.avatarKey && AVATAR_KEYS.has(profile.avatarKey);
-                return (
-                  <li key={profile.id} className="flex items-center gap-4 rounded-3xl bg-white p-4">
-                    {hasAvatar ? (
-                      <Image
-                        src={avatarUrl(profile.avatarKey as AvatarKey, 'select')}
-                        alt=""
-                        width={64}
-                        height={64}
-                        className="size-16 shrink-0 rounded-2xl object-contain"
-                      />
-                    ) : (
-                      <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-base text-3xl">
-                        🙂
-                      </span>
-                    )}
-                    <span className="min-w-0 truncate text-xl font-bold text-ink">{givenName(profile.name)}</span>
-                    {age !== null && (
-                      <span className="ml-auto rounded-full bg-sunny px-3 py-1 text-base font-semibold text-ink">
-                        만 {age}세
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {profiles.map((profile, index) => (
+                <ChildProfileCard
+                  key={profile.id}
+                  profile={profile}
+                  displayName={givenName(profile.name)}
+                  index={index}
+                />
+              ))}
             </ul>
           )}
         </section>
 
         {/* 이번 주 활동 요약 — 카드 3종, 배지 카드만 클릭 가능(3.6 이동) */}
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-bold text-ink">이번 주 활동</h2>
+        <section className="mt-4 rounded-3xl bg-[#FFE8C9] p-4 pt-5">
+          <h2 className="px-1 text-base font-bold text-ink">이번 주 활동 요약</h2>
           {summary === null ? (
-            <div className="flex items-center justify-between gap-3 rounded-3xl bg-white p-4">
-              <p className="text-base text-ink/70">{SUMMARY_ERROR_MESSAGE}</p>
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white/65 p-4">
+              <p className="text-[15px] text-ink/70">{SUMMARY_ERROR_MESSAGE}</p>
               <button
                 type="button"
                 onClick={() => router.refresh()}
-                className="h-11 shrink-0 rounded-full bg-primary px-4 text-base font-semibold text-white active:bg-ink"
+                className="h-12 shrink-0 rounded-full bg-primary px-5 text-sm font-bold text-white active:bg-ink"
               >
                 다시 시도
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
-              <div className="flex flex-col items-center gap-1 rounded-3xl bg-white p-4">
-                <span aria-hidden className="text-2xl">📚</span>
-                <span className="text-2xl font-bold text-ink">{summary.completedCount}</span>
-                <span className="text-center text-sm font-semibold text-ink/60">완료한 이야기</span>
+            <div className="mt-3 grid grid-cols-3 gap-4">
+              <div className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5">
+                <span aria-hidden className="text-2xl">📖</span>
+                <span className="text-xl font-bold text-primary">{summary.completedCount}편</span>
+                <span className="text-center text-xs text-[#8A7A68]">완료한 이야기</span>
               </div>
-              <div className="flex flex-col items-center gap-1 rounded-3xl bg-white p-4">
+              <div className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5">
                 <span aria-hidden className="text-2xl">💬</span>
-                <span className="text-2xl font-bold text-ink">{summary.chatCount}</span>
-                <span className="text-center text-sm font-semibold text-ink/60">대화 횟수</span>
+                <span className="text-xl font-bold text-sage">{summary.chatCount}회</span>
+                <span className="text-center text-xs text-[#8A7A68]">대화 횟수</span>
               </div>
               <Link
                 href="/my/badges"
-                className="flex flex-col items-center gap-1 rounded-3xl bg-white p-4 active:bg-base"
+                className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5 active:bg-white"
               >
-                <span aria-hidden className="text-2xl">🏅</span>
-                <span className="text-2xl font-bold text-ink">{summary.badgeCount}</span>
-                <span className="text-center text-sm font-semibold text-ink/60">획득한 배지</span>
+                <span aria-hidden className="text-2xl">🎖️</span>
+                {/* 시안의 Sunny 값 색상은 흰 바탕 대비 미달 — 동일 계열의 진한 색으로 보정 */}
+                <span className="text-xl font-bold text-[#B8860B]">{summary.badgeCount}개</span>
+                <span className="text-center text-xs text-[#8A7A68]">획득한 배지</span>
               </Link>
             </div>
           )}
         </section>
 
-        {/* 메뉴 — 공지사항·고객센터·이용안내·로그아웃 */}
-        <section className="flex flex-col overflow-hidden rounded-3xl bg-white">
+        {/* 설정 — 공지사항·고객센터·이용안내·로그아웃 */}
+        <section className="mt-6 overflow-hidden rounded-3xl border border-[#F0E4D3] bg-white shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
+          <h2 className="flex h-[57px] items-center border-b border-[#F0E4D3] px-5 text-base font-bold text-ink">설정</h2>
           {MENU_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex h-14 items-center justify-between border-b border-ink/5 px-5 text-lg font-semibold text-ink active:bg-base"
+              className="flex h-[63px] items-center gap-3 border-b border-[#F0E4D3] px-5 text-base text-ink active:bg-base"
             >
+              <span aria-hidden className="text-xl">
+                {item.icon}
+              </span>
               {item.label}
-              <span aria-hidden className="text-ink/30">›</span>
+              <span aria-hidden className="ml-auto text-[#8A7A68]">
+                ›
+              </span>
             </Link>
           ))}
+          <div aria-hidden className="h-1 bg-base" />
           <button
             type="button"
             onClick={() => {
               setLogoutError(null);
               setLogoutOpen(true);
             }}
-            className="flex h-14 items-center px-5 text-lg font-semibold text-berry active:bg-base"
+            className="flex h-14 w-full items-center px-5 text-base font-bold text-berry active:bg-base"
           >
             로그아웃
           </button>
         </section>
+
+        <p className="mt-10 text-center text-sm text-[#888888]">v1.0.0</p>
       </main>
 
       {/* 로그아웃 확인 팝업 — 확인 시 signOut → 1.1 로그인, 취소 시 현재 화면 유지 (3.1 화면 이동) */}
@@ -189,17 +183,17 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
           role="dialog"
           aria-modal="true"
           aria-label="로그아웃 확인"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#1E1A14]/50 px-6"
         >
-          <div className="flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-6 text-center">
-            <p className="text-xl font-bold text-ink">{LOGOUT_CONFIRM_MESSAGE}</p>
-            {logoutError && <p className="text-base font-semibold text-berry">{logoutError}</p>}
-            <div className="flex gap-3">
+          <div className="flex w-full max-w-[360px] flex-col gap-6 rounded-[20px] bg-white p-8 text-center shadow-[0_20px_60px_rgba(30,26,20,0.25)]">
+            <p className="text-lg font-bold text-[#1E1A14]">{LOGOUT_CONFIRM_MESSAGE}</p>
+            {logoutError && <p className="text-sm font-semibold text-berry">{logoutError}</p>}
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 disabled={loggingOut}
                 onClick={() => setLogoutOpen(false)}
-                className="h-12 flex-1 rounded-full bg-base text-lg font-bold text-ink active:opacity-80"
+                className="h-12 rounded-xl border border-[#E8E2DA] bg-[#F7F6F3] text-[15px] font-bold text-[#1E1A14] active:opacity-80"
               >
                 취소
               </button>
@@ -218,7 +212,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
                     setLoggingOut(false);
                   }
                 }}
-                className="h-12 flex-1 rounded-full bg-berry text-lg font-bold text-white active:bg-ink disabled:opacity-60"
+                className="h-12 rounded-xl bg-primary text-[15px] font-bold text-white active:bg-ink disabled:opacity-60"
               >
                 {loggingOut ? '로그아웃 중…' : '로그아웃'}
               </button>
