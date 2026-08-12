@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MissionPopup } from '@/components/mission-popup';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
+import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { substituteChildName } from '@/lib/child-name';
 import type { SttResult, ThinkingElement } from '@/lib/contracts';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
@@ -35,6 +36,8 @@ type DialogueSceneProps = {
   scene: DialogueScenePayload;
   /** 실명 호출(R-07) — 미전달 시 '친구야' 표기 폴백 (고정 오디오와 일치) */
   childName?: string | null;
+  /** 상태 카드 미니 프로필용 아이 아바타 (피그마 2.4.2) — 미전달 시 캐릭터 프로필 폴백 */
+  childAvatarKey?: string | null;
   /** CLOSING 오디오 종료 후 호출 — nextSceneId=null이면 대화 구간 마지막(후속 활동으로) */
   onSceneEnd: (nextSceneId: string | null) => void;
 };
@@ -110,7 +113,11 @@ function MicIcon({ className = 'size-[26px]' }: { className?: string }) {
   );
 }
 
-export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: DialogueSceneProps) {
+export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onSceneEnd }: DialogueSceneProps) {
+  const childAvatarSrc =
+    childAvatarKey && (['boy-1', 'boy-2', 'girl-1', 'girl-2'] as const).includes(childAvatarKey as AvatarKey)
+      ? avatarUrl(childAvatarKey as AvatarKey)
+      : null;
   const phase = useTurnStore((s) => s.phase);
   const sttText = useTurnStore((s) => s.sttText);
 
@@ -458,11 +465,11 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
           <div ref={historyEndRef} />
         </div>
 
-        {/* 상태 카드(대화 영역) — 미니 프로필 + 상태 3종/처리 중/안내·재시도 */}
+        {/* 상태 카드(대화 영역) — 미니 프로필(피그마: 아이 아바타, 폴백 캐릭터) + 상태 3종/처리 중/안내·재시도 */}
         <div className="relative mt-1 shrink-0 pl-[70px] lg:pl-[90px]">
-          {scene.characterImageUrl && (
+          {(childAvatarSrc || scene.characterImageUrl) && (
             <img
-              src={scene.characterImageUrl}
+              src={childAvatarSrc ?? scene.characterImageUrl}
               alt=""
               className="absolute top-1/2 left-0 size-20 -translate-y-1/2 rounded-full border border-primary bg-[#ffede3] object-cover shadow-[0_4px_15px_rgba(255,122,61,0.33)] lg:size-[96px]"
             />

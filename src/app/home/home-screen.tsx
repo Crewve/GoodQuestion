@@ -13,7 +13,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
-import { recommendedThumbnailUrls, storyThumbnailUrl } from '@/lib/assets';
+import { avatarUrl, recommendedThumbnailUrls, storyThumbnailUrl, type AvatarKey } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
 import { difficultyLabel } from '@/lib/stories-view';
 
@@ -66,11 +66,17 @@ function Chip({ tint, rounded = 'rounded-md', children }: { tint: string; rounde
 type HomeScreenProps = {
   childId: string;
   childName: string;
+  /** 헤더 프로필 버튼 (피그마 2.0 — 아이 아바타 이미지, 미보유 시 이모지 폴백) */
+  childAvatarKey: string | null;
   story: StoryMeta;
   hasSession: boolean;
 };
 
-export function HomeScreen({ childId, childName, story, hasSession }: HomeScreenProps) {
+export function HomeScreen({ childId, childName, childAvatarKey, story, hasSession }: HomeScreenProps) {
+  const avatarSrc =
+    childAvatarKey && (['boy-1', 'boy-2', 'girl-1', 'girl-2'] as const).includes(childAvatarKey as AvatarKey)
+      ? avatarUrl(childAvatarKey as AvatarKey)
+      : null;
   const router = useRouter();
   const [resume, setResume] = useState<SessionProgress | null>(null);
   const [resumeError, setResumeError] = useState(false);
@@ -116,9 +122,13 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
         <Link
           href="/profiles"
           aria-label="아이 프로필 선택으로 이동"
-          className="flex size-[71px] shrink-0 items-center justify-center rounded-[20px] border-2 border-primary bg-[#FFEDE3] text-4xl shadow-[0_4px_15px_rgba(255,122,61,0.5)] active:opacity-80"
+          className="flex size-[71px] shrink-0 items-center justify-center overflow-hidden rounded-[20px] border-2 border-primary bg-[#FFEDE3] text-4xl shadow-[0_4px_15px_rgba(255,122,61,0.5)] active:opacity-80"
         >
-          <span aria-hidden>👤</span>
+          {avatarSrc ? (
+            <Image src={avatarSrc} alt="" width={59} height={57} className="size-[59px] object-contain" />
+          ) : (
+            <span aria-hidden>👤</span>
+          )}
         </Link>
       </header>
 
@@ -132,7 +142,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
             {/* 시안 509×302 비율 고정 — 원본(4:3) 비율을 따르면 카드가 세로로 커져 추천 1행이 GNB에 잘림 */}
             <div className="relative aspect-[509/302] w-[44%] shrink-0 self-center overflow-hidden rounded-[20px] shadow-[0_4px_16px_rgba(58,44,30,0.08)]">
               <Image
-                src={storyThumbnailUrl(false)}
+                src={storyThumbnailUrl(true)}
                 alt=""
                 width={1448}
                 height={1086}

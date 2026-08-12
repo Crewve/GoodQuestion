@@ -29,6 +29,8 @@ type SessionPayload = {
   sessionId: string;
   /** 실명 호출(R-07) — 대화 화면 텍스트 치환 폴백용 */
   childName: string | null;
+  /** 상태 카드 미니 프로필 (피그마 2.4.2 — 아이 아바타) */
+  childAvatarKey: string | null;
   resumeSceneId: string | null;
   resumeSceneOrder: number;
   scenes: ScenePayload[];
@@ -161,6 +163,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
           sessionId={data.sessionId}
           scene={currentScene}
           childName={data.childName}
+          childAvatarKey={data.childAvatarKey}
           onSceneEnd={proceed} // 다음 장면 또는(마지막 대화) 학습완료 지점으로 — 선형 진행이라 order+1과 동치
         />
       ) : null}

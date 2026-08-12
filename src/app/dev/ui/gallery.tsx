@@ -180,6 +180,7 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
           <DialogueScene
             sessionId="dev-rehearsal"
             childName="진욱"
+            childAvatarKey="boy-2"
             scene={{
               id: dialogueScene.external_id,
               order: 3,
