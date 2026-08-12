@@ -29,7 +29,7 @@
 | 1 | 대화2 required_elements | 장면 테이블 `[PERSPECTIVE, EMOTION, REASON, SOLUTION]` vs 화면 흐름 `[PERSPECTIVE, EMPATHY, REASON, REQUEST]` — 진짜 충돌 | 장면 테이블(DB 매핑 기준) |
 | 2 | 대화1 요소의 `EXPRESSION` | 화면 흐름에만 등장, 8요소 허용값 아님 (REASON 오기 추정) | 장면 테이블의 `REASON` |
 | 3 | `preferred_turns` | DB 스키마상 필수인데 콘텐츠 문서에 값 없음 | `null` — 시드 시 기본값 필요 |
-| 4 | `post_activity_config` | 이 이야기의 카드·정답 순서·재구성 키워드 미정의 | `null` |
+| 4 | `post_activity_config` | 이 이야기의 카드·정답 순서·재구성 키워드 미정의 | 전개1~4 이미지 재사용 카드 4장+정답 순서+키워드 4개 임시 저작 (R-09/T051, story.banggui.json) |
 | 5 | 'ㅇㅇ' 자리표시자 | 대화1·대화4 오프닝에 아이 이름 포함 → 사전 생성 TTS와 충돌 | 미정 — 치환/런타임TTS 중 결정 |
 | 6 | 대화3 첫 대사 어미 | '없었소'(장면 테이블) vs '없었단다'(화면 흐름) | 장면 테이블 |
 | 7 | 시스템 대사 | STT 재시도 등 시스템 안내 문구가 기획 원문에 없음 | 제안 문구로 임시 (`source: "proposal"`) |

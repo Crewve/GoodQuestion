@@ -222,7 +222,7 @@
 
 ### 파트2 트랙
 
-- [ ] T051 \[US4\] (파트2) 임시 post_activity_config 저작 — 장면 이미지 4장+정답 순서+핵심 단어 4개를 `fixtures/story.banggui.json`에 추가(스키마 R-09, fixtures 변경이므로 파트1에 공유), `scripts/seed.ts` 재실행 반영 (기획 회신 시 데이터만 교체)
+- [x] T051 \[US4\] (파트2) 임시 post_activity_config 저작 — 장면 이미지 4장+정답 순서+핵심 단어 4개를 `fixtures/story.banggui.json`에 추가(스키마 R-09, fixtures 변경이므로 파트1에 공유), `scripts/seed.ts` 재실행 반영 (기획 회신 시 데이터만 교체) ✓ 완료(2026-08-12): 카드 4장=전개1\~4 장면 이미지 재사용(sc_banggui_02·04·06·08 — 참기→터짐→배나무→깨달음, 인과 사슬이 가장 명확한 4컷), answer_order=이야기 순서, keywords=`["방귀","갓","배나무","특별한 힘"]`. **규약(파트1 공유)**: cards 배열 순서=정답 순서로 기록(무작위 셔플은 T053 프런트 몫), keywords\[i\]는 answer_order\[i\] 장면과 인덱스 쌍(2.4.5 '4세트'), image_key는 storage-assets.json 키(`assetUrl()` 해석 — T055 컨테이너가 imageUrl로 변환해 props 전달). seed 재실행 9/9·stories.post_activity_config DB 반영 조회 확인. fixtures/README 미확정표 #4 임시 채택값 갱신
 
 - [ ] T052 \[US4\] (파트2) `src/app/api/post-activity/route.ts` — card-order 서버 판정(프런트 판정 금지)·attempt_count 증가 upsert, retelling 저장·completed_at·세션 완료 처리 (contracts/api-routes.md; T051 의존)
 
