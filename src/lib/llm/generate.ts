@@ -59,7 +59,7 @@ export function buildGenerateMessages(context: GenerateContext) {
     const targets = [context.guidanceTarget];
     guidance = `\n[유도 지시 — 이번 응답에서만]\n아이가 아직 말하지 못한 요소를 딱 ${targets.length}개만 자연스럽게 유도한다: ${targets
       .map((t) => `${t}(${GUIDANCE_HINTS[t]})`)
-      .join(', ')}\n다른 요소를 한꺼번에 묻지 않는다. 정답을 대신 말해 주지 않는다.`;
+      .join(', ')}\n다른 요소를 한꺼번에 묻지 않는다. 정답을 대신 말해 주지 않는다. 유도하더라도 아이의 직전 발화를 먼저 이어받은 다음 질문으로 연결한다.`;
   }
 
   const system = `너는 동화 「방귀 뀌는 며느리」의 캐릭터 '${character.display_name}'(${character.name})이다. 6~9세 아이와 음성으로 대화한다.
@@ -69,6 +69,11 @@ ${traits}
 
 [장면 목표] ${context.sceneGoal}
 
+[역할 유지 — 반드시 지킨다]
+- 어떤 경우에도 '${character.display_name}'의 입장·감정·말투를 벗어나지 않는다
+- 아이가 너와 다른 생각을 말하거나 다른 인물의 편을 들어도, 역할을 바꿔 다른 인물을 대변하지 않는다
+- 아이와 생각이 달라도 지적하지 않고, 네 입장을 지킨 채 아이의 생각을 더 물어본다
+
 [아동 안전 규칙 — 반드시 지킨다]
 - 아이의 말을 평가하거나 지적하지 않는다 (틀렸다·아니다·부족하다 금지)
 - 무섭거나 폭력적이거나 아이를 놀리는 표현 금지
@@ -76,7 +81,8 @@ ${traits}
 
 [응답 형식]
 - 1~2문장, 짧게 말한다 (음성으로 재생된다)
-- 먼저 아이의 말에 짧게 반응한 뒤, 대화를 이어가는 질문 1개로 끝낸다${guidance}`;
+- 먼저 아이의 말에 짧게 반응한 뒤, 대화를 이어가는 질문 1개로 끝낸다
+- 화제를 옮길 때는 아이가 방금 한 말의 단어나 생각을 받아서 이어간다 — 갑자기 새 화제로 점프하지 않는다${guidance}`;
 
   const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
     { role: 'system', content: system },

@@ -41,6 +41,19 @@ test('아동 안전 가드레일이 시스템 프롬프트에 포함된다 (평�
   expect(system).toContain('지적');
 });
 
+test('역할 유지 규칙이 시스템 프롬프트에 포함된다 — 아이가 다른 인물 편을 들어도 역할 이탈 금지 (T073, E2E 항목 17)', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('역할 유지');
+  expect(system).toContain('대변하지 않는다');
+  expect(system).toContain('입장');
+});
+
+test('화제 전환 브릿지 규칙이 포함된다 — 직전 발화를 받아 연결, 점프 금지 (T073, E2E 항목 22)', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('방금 한 말');
+  expect(system).toContain('점프');
+});
+
 test('GUIDED면 서버가 지정한 부족 요소만 유도 지시에 등장한다', () => {
   const messages = buildGenerateMessages(
     context({ mode: 'GUIDED', guidanceTarget: 'PERSPECTIVE', missingElements: ['PERSPECTIVE', 'SOLUTION'] }),
