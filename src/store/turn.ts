@@ -29,6 +29,8 @@ type TurnStore = {
   sttSucceeded: (result: SttResult) => void;
   /** STT 호출 자체가 실패(네트워크 등) — RECORDING 복귀 */
   sttFailed: () => void;
+  /** REVIEW에서 재녹음 (T072) — 보내기 전에는 저장된 것이 없으므로 STT 결과를 버리고 다시 녹음 */
+  rerecord: () => void;
   /** 보내기 클릭 — 이때만 /api/turn 호출 */
   submit: () => void;
   /** 캐릭터 응답 재생 시작 — 다음 턴 사이클 진입 */
@@ -56,6 +58,10 @@ export const useTurnStore = create<TurnStore>((set) => ({
   sttFailed: () =>
     set((state) =>
       state.phase === 'TRANSCRIBING' ? { phase: 'RECORDING', sttText: null, sttRawText: null } : state,
+    ),
+  rerecord: () =>
+    set((state) =>
+      state.phase === 'REVIEW' ? { phase: 'RECORDING', sttText: null, sttRawText: null } : state,
     ),
   submit: () => set((state) => (state.phase === 'REVIEW' ? { phase: 'SUBMITTED' } : state)),
   characterSpeaking: () =>

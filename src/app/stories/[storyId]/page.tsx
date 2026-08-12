@@ -1,6 +1,7 @@
 // 이야기 상세 (T049, 기능명세서 2.3) — Server Component 직접 조회.
 // 줄거리 = stories.summary + 고정 문구 한 문단, '이런 것을 배워요'는 고정 텍스트 박스.
 // 시작하기(T050)는 클라이언트 버튼이 /api/sessions 호출 후 /play/[sessionId]로 라우팅.
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StoryStartButton } from '@/components/story-start-button';
@@ -61,8 +62,15 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
       </Link>
 
       {story.id === BANGGUI_STORY_ID ? (
-        // eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴)
-        <img src={storyThumbnailUrl(false)} alt="" className="w-full rounded-3xl object-cover" />
+        <Image
+          src={storyThumbnailUrl(false)}
+          alt=""
+          width={1448}
+          height={1086}
+          sizes="(max-width: 640px) 100vw, 576px"
+          preload
+          className="w-full rounded-3xl object-cover"
+        />
       ) : (
         <div className="aspect-video w-full rounded-3xl bg-sunny/30" aria-hidden />
       )}

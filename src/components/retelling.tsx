@@ -124,8 +124,13 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
   const sendEnabled = phase === 'REVIEW' && !!stt?.text.trim(); // 텍스트 표시 완료 전까지 비활성 (2.4.5 구성요소)
 
   return (
-    <section className="flex flex-1 flex-col items-center gap-5 px-6 pb-8">
+    <section className="flex min-h-0 flex-1 flex-col items-center gap-5 overflow-y-auto px-6 pb-8">
       <audio ref={hintAudioRef} hidden />
+
+      {/* 활동 안내 (T067, E2E 항목 28) — 2.4.4 카드 배열 안내와 동일 스타일 */}
+      <p className="text-center font-display text-2xl text-ink">
+        장면 카드와 핵심 단어를 보고, 이야기를 처음부터 끝까지 말해보세요!
+      </p>
 
       {/* 장면 카드 + 핵심 단어 4세트 — 표시 전용, 사용자 조작 불가 (2.4.5 구성요소) */}
       <div className="grid w-full max-w-3xl grid-cols-4 gap-3">

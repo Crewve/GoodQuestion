@@ -1,6 +1,7 @@
 // 이야기 목록 (T049, 기능명세서 2.2) — Server Component 직접 조회 (contracts §읽기 기본).
 // 주제·난이도 각 단일 선택, AND 조건 — 필터는 쿼리 파라미터로 표현되어 링크 이동 = 재조회.
 // 아이 컨텍스트(child)는 홈(T048)→목록→상세→진행으로 쿼리 파라미터로 전파된다.
+import Image from 'next/image';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
 import { storyThumbnailUrl } from '@/lib/assets';
@@ -115,10 +116,13 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
                   className="flex h-full flex-col gap-2 rounded-2xl bg-white p-3 shadow-sm active:opacity-80"
                 >
                   {story.id === BANGGUI_STORY_ID ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴)
-                    <img
+                    <Image
                       src={storyThumbnailUrl(true)}
                       alt=""
+                      width={1448}
+                      height={1086}
+                      sizes="(max-width: 640px) 50vw, 240px"
+                      loading="eager"
                       className="aspect-square w-full rounded-xl object-cover"
                     />
                   ) : (

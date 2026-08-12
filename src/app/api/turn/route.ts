@@ -10,6 +10,7 @@ import { postprocessAnalysis } from '@/lib/llm/postprocess';
 import { missionForScene } from '@/lib/missions';
 import { evaluateTurn, type RuleState } from '@/lib/rules/engine';
 import { evaluateMissionExposure, type MissionPhase } from '@/lib/rules/mission';
+import { containsInappropriateLanguage } from '@/lib/safety';
 import { rules as ruleThresholds } from '@/lib/config';
 import type { ThinkingElement } from '@/lib/contracts';
 import { fixtureSceneByUuid } from '@/lib/story';
@@ -206,6 +207,12 @@ export async function POST(request: Request) {
     characterReplyText = sceneRow.character_closing ?? '';
     audioUrl = fixture ? fixedAudioUrl(`${fixture.external_id}__closing`) : null;
   } else {
+    // 입력측 부적절·주제 이탈 발화 (T075, E2E 항목 24) — 차단 없이 캐릭터가 따라 말하지 않고 주제 복귀
+    const redirect = containsInappropriateLanguage(text)
+      ? ('INAPPROPRIATE' as const)
+      : refined.utteranceValidity === 'OFF_TOPIC'
+        ? ('OFF_TOPIC' as const)
+        : undefined;
     try {
       characterReplyText = await withRetry(() =>
         generateReply({
@@ -214,6 +221,7 @@ export async function POST(request: Request) {
           mode: effectiveDecision.mode as 'NORMAL' | 'GUIDED',
           guidanceTarget: effectiveDecision.guidanceTarget,
           missingElements: effectiveDecision.missingElements,
+          redirect,
           childName,
           history: [
             ...(history ?? []).map((m) => ({

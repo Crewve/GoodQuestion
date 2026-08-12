@@ -35,6 +35,11 @@ export type GenerateContext = {
   history: { speaker: 'child' | 'character'; text: string }[];
   /** 아이 이름 (호칭용 — 없으면 '친구야', R-07과 동일 원칙) */
   childName?: string;
+  /**
+   * 입력측 부적절·주제 이탈 발화 처리 (T075, E2E 항목 24) — 서버가 safety.ts 스크리닝·분석
+   * validity로 판정해 지정. 캐릭터는 내용을 따라 말하지 않고 나무람 없이 주제로 되돌린다.
+   */
+  redirect?: 'INAPPROPRIATE' | 'OFF_TOPIC';
 };
 
 // 요소별 유도 화법 가이드 — 규칙 엔진이 고른 요소를 자연스러운 질문으로 옮기는 사전
@@ -59,7 +64,16 @@ export function buildGenerateMessages(context: GenerateContext) {
     const targets = [context.guidanceTarget];
     guidance = `\n[유도 지시 — 이번 응답에서만]\n아이가 아직 말하지 못한 요소를 딱 ${targets.length}개만 자연스럽게 유도한다: ${targets
       .map((t) => `${t}(${GUIDANCE_HINTS[t]})`)
-      .join(', ')}\n다른 요소를 한꺼번에 묻지 않는다. 정답을 대신 말해 주지 않는다.`;
+      .join(', ')}\n다른 요소를 한꺼번에 묻지 않는다. 정답을 대신 말해 주지 않는다. 유도하더라도 아이의 직전 발화를 먼저 이어받은 다음 질문으로 연결한다.`;
+  }
+
+  let redirect = '';
+  if (context.redirect) {
+    const cause =
+      context.redirect === 'INAPPROPRIATE'
+        ? '이야기와 어울리지 않는 표현이 섞여 있다'
+        : '지금 이야기와 관련이 없다';
+    redirect = `\n[주제 복귀 — 이번 응답에서만]\n아이의 마지막 말은 ${cause}. 그 내용이나 표현을 따라 말하지 않고, 궁금해하거나 칭찬하지도 않는다. 나무라지 말고 아주 짧게 받아넘긴 뒤, 지금 이야기 주제로 부드럽게 다시 초대하는 질문 1개로 끝낸다.`;
   }
 
   const system = `너는 동화 「방귀 뀌는 며느리」의 캐릭터 '${character.display_name}'(${character.name})이다. 6~9세 아이와 음성으로 대화한다.
@@ -67,7 +81,15 @@ export function buildGenerateMessages(context: GenerateContext) {
 [페르소나] ${character.tagline}
 ${traits}
 
-[장면 목표] ${context.sceneGoal}
+[장면 목표 — 아이가 이 대화로 이루어야 하는 것. 네가 대신 이루는 것이 아니다]
+${context.sceneGoal}
+
+[역할 유지 — 반드시 지킨다]
+- 어떤 경우에도 '${character.display_name}'의 입장·감정·말투를 벗어나지 않는다. 장면이 시작될 때의 네 감정(오프닝 대사의 감정)은 아이가 너를 설득하기 전까지 그대로다
+- 아이가 너와 다른 생각을 말하거나 다른 인물의 편을 들어도, 역할을 바꿔 다른 인물을 대변하지 않는다
+- 다른 인물의 사정·마음을 네가 설명하거나 두둔하지 않는다 — 그 생각은 질문으로만 꺼낸다 (예: "그 사람 마음은 어땠을까?")
+- 아이와 생각이 달라도 지적하지 않고, 네 입장을 지킨 채 아이의 생각을 더 물어본다
+- 목표에 담긴 결론·이유·해답은 아이의 입에서 나와야 한다 — 네가 먼저 말하지 않는다
 
 [아동 안전 규칙 — 반드시 지킨다]
 - 아이의 말을 평가하거나 지적하지 않는다 (틀렸다·아니다·부족하다 금지)
@@ -76,7 +98,8 @@ ${traits}
 
 [응답 형식]
 - 1~2문장, 짧게 말한다 (음성으로 재생된다)
-- 먼저 아이의 말에 짧게 반응한 뒤, 대화를 이어가는 질문 1개로 끝낸다${guidance}`;
+- 먼저 아이의 말에 짧게 반응한 뒤, 대화를 이어가는 질문 1개로 끝낸다
+- 화제를 옮길 때는 아이가 방금 한 말의 단어나 생각을 받아서 이어간다 — 갑자기 새 화제로 점프하지 않는다${guidance}${redirect}`;
 
   const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
     { role: 'system', content: system },

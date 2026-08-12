@@ -6,6 +6,7 @@
 // 카드별 수정·삭제 노출. 삭제는 확인 팝업(브라우저 confirm 아님 — 로그아웃 팝업과 동일하게 커스텀) 후
 // DELETE /api/profiles/[childId] — 학습 기록(세션·메시지·분석·활동 결과)까지 서버가 함께 삭제한다.
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
@@ -116,10 +117,11 @@ export function ManageProfilesScreen({ profiles }: { profiles: ChildProfile[] })
             return (
               <li key={profile.id} className="flex items-center gap-4 rounded-3xl bg-white p-4">
                 {hasAvatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴)
-                  <img
-                    src={avatarUrl(profile.avatarKey as AvatarKey, 'avatar')}
+                  <Image
+                    src={avatarUrl(profile.avatarKey as AvatarKey, 'select')}
                     alt=""
+                    width={64}
+                    height={64}
                     className="size-16 shrink-0 rounded-2xl object-contain"
                   />
                 ) : (

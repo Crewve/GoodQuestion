@@ -25,11 +25,21 @@ describe('evaluateMissionExposure — 공통', () => {
     expect(d.expose).toBe(false);
   });
 
-  it('이미 노출·완료된 미션은 재노출하지 않는다 (장면당 1회)', () => {
-    for (const missionPhase of ['exposed', 'completed'] as const) {
-      const d = evaluateMissionExposure(input({ missionPhase, detectedElements: ['SOLUTION'] }));
-      expect(d.expose).toBe(false);
-    }
+  it('완료된 미션은 재노출하지 않는다 (장면당 1회 완료)', () => {
+    const d = evaluateMissionExposure(input({ missionPhase: 'completed', detectedElements: ['SOLUTION'] }));
+    expect(d.expose).toBe(false);
+  });
+
+  it('노출됐지만 미완료(exposed)면 재노출한다 — 새로고침·재진입으로 팝업이 유실돼도 복구 (T074, E2E 항목 21)', () => {
+    const d = evaluateMissionExposure(input({ missionPhase: 'exposed', detectedElements: [] }));
+    expect(d).toEqual({ expose: true, reason: 'REEXPOSED' });
+  });
+
+  it('재노출은 미션2에도 동일 적용된다', () => {
+    const d = evaluateMissionExposure(
+      input({ mission: mission2, missionPhase: 'exposed', utteranceValidity: 'PLAYFUL' }),
+    );
+    expect(d).toEqual({ expose: true, reason: 'REEXPOSED' });
   });
 });
 

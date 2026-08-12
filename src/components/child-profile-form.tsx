@@ -5,6 +5,7 @@
 // 완료하기는 필수 필드+동의 채움 시 활성(구성요소 표), 클릭 시 전체 검증(검증 시점 규칙) — 날짜 유효성은
 // 클릭 시에만 판정한다. 생년월일은 숫자 외 입력 즉시 필터링(별도 에러 없음 — 2.1.1 예외 처리).
 import { useState } from 'react';
+import Image from 'next/image';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { isValidBirthDate } from '@/lib/profile-display';
 
@@ -101,7 +102,15 @@ export function ChildProfileForm({
                 avatarKey === key ? 'border-primary' : 'border-white'
               }`}
             >
-              <img src={avatarUrl(key, 'select')} alt={`캐릭터 ${key}`} className="aspect-square w-full object-contain" />
+              <Image
+                src={avatarUrl(key, 'select')}
+                alt={`캐릭터 ${key}`}
+                width={1052}
+                height={1008}
+                sizes="150px"
+                loading="eager"
+                className="aspect-square w-full object-contain"
+              />
             </button>
           ))}
         </div>

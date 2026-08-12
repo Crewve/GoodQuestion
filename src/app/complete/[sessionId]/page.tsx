@@ -2,6 +2,7 @@
 // 완료 안내·오늘의 이야기(대표 이미지·제목·학습 시간)·오늘 모은 배지·이동 버튼 2종.
 // 재진입 라우팅: completed_at 없음 → /play/[sessionId]/activity로 돌려보내 2.4.4/2.4.5 분기(서버 저장값 기준).
 // 배지 에셋은 미저작(T059 배지 화면도 정적 원안) — 완주 배지 1종을 이모지 카드로 임시 표시, 기획 회신 시 교체.
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { storyThumbnailUrl } from '@/lib/assets';
@@ -75,7 +76,13 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
         <div className="flex items-center gap-4">
           {story.id === BANGGUI_STORY_ID ? (
             // eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴)
-            <img src={storyThumbnailUrl(false)} alt="" className="size-24 shrink-0 rounded-2xl object-cover" />
+            <Image
+              src={storyThumbnailUrl(false)}
+              alt=""
+              width={96}
+              height={96}
+              className="size-24 shrink-0 rounded-2xl object-cover"
+            />
           ) : (
             <div className="size-24 shrink-0 rounded-2xl bg-sunny/30" aria-hidden />
           )}

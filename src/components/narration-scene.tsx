@@ -49,7 +49,7 @@ export function NarrationScene({
   }, [playCurrent]);
 
   return (
-    <section className="flex flex-1 flex-col items-center justify-between gap-4 px-6 pb-8">
+    <section className="flex min-h-0 flex-1 flex-col items-center justify-between gap-4 px-6 pb-8">
       <audio ref={audioRef} hidden />
       {imageUrl ? (
         <img
