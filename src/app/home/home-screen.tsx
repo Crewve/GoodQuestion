@@ -138,7 +138,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
                 height={1086}
                 sizes="(max-width: 1194px) 44vw, 509px"
                 loading="eager"
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover object-top"
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col">

@@ -87,7 +87,7 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
           height={1086}
           sizes="100vw"
           preload
-          className="h-[41dvh] w-full shrink-0 bg-[#FFE8C9] object-cover"
+          className="h-[41dvh] w-full shrink-0 bg-[#FFE8C9] object-contain"
         />
       ) : (
         <div className="h-[41dvh] w-full shrink-0 bg-sunny/15" aria-hidden />

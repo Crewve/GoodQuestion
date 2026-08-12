@@ -394,7 +394,7 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
       {/* 좌 — 장면 일러스트 (시안 640/1194 전면 배치) */}
       <div className="h-[24%] w-full shrink-0 lg:h-auto lg:min-h-0 lg:w-[53%] lg:flex-none">
         {scene.imageUrl ? (
-          <img src={scene.imageUrl} alt="" className="h-full w-full object-cover" />
+          <img src={scene.imageUrl} alt="" className="h-full w-full object-contain object-top" />
         ) : (
           <div className="h-full w-full bg-[#ffe8c9]" aria-hidden />
         )}

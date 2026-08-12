@@ -96,7 +96,7 @@ export function NarrationScene({
       {/* 장면 일러스트 — 시안 1154×592, 좌우 20px 여백·라운드 20 */}
       <div className="min-h-0 flex-1 px-5">
         {imageUrl ? (
-          <img src={imageUrl} alt="" className="h-full w-full rounded-[20px] bg-[#ffe8c9] object-cover" />
+          <img src={imageUrl} alt="" className="h-full w-full rounded-[20px] bg-[#ffe8c9] object-cover object-[50%_55%]" />
         ) : (
           <div className="h-full w-full rounded-[20px] bg-[#ffe8c9]" aria-hidden />
         )}
