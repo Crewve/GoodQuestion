@@ -309,13 +309,17 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
   }, [history]);
 
   const currentLine = [...history].reverse().find((b) => b.speaker === 'character')?.text ?? '';
+  // 이전 대화 목록 (T076, E2E 항목 15) — 캐릭터 대사 카드에 떠 있는 현재 대사는 목록에서 뺀다
+  const lastCharacterIndex = history.findLastIndex((b) => b.speaker === 'character');
+  const pastBubbles = history.filter((_, i) => i !== lastCharacterIndex);
   const badgeLabel = PHASE_LABELS[phase];
   // REVIEW에서도 마이크 활성 — 보내기 전 재녹음 허용 (T072, E2E 항목 13)
   const micEnabled = (phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting';
   const sendEnabled = phase === 'REVIEW' && !!sttText?.trim();
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col items-center gap-3 px-6 pb-6">
+    // 태블릿 가로·PC(lg+)는 좌=현재 턴 / 우=이전 대화 목록 2단, 좁은 화면은 세로 스택 (T076)
+    <section className="flex min-h-0 flex-1 flex-col items-center gap-3 px-6 pb-6 lg:flex-row lg:items-stretch lg:justify-center lg:gap-6">
       <audio ref={audioRef} hidden />
       <audio ref={hintAudioRef} hidden />
 
@@ -329,6 +333,8 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
         />
       )}
 
+      {/* 왼쪽 — 현재 턴 (E2E 항목 15: 최신 대사 출력은 현행 유지) */}
+      <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 lg:max-w-2xl">
       {scene.imageUrl && (
         <img src={scene.imageUrl} alt="" className="max-h-[28vh] w-full max-w-2xl rounded-3xl object-contain" />
       )}
@@ -383,29 +389,14 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
         )}
       </div>
 
-      {/* 대화 내역 — 말풍선 색·정렬로 구분, 누적 표시 */}
-      <div className="flex w-full max-w-2xl min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-        {history.map((bubble, i) => (
-          <p
-            key={i}
-            className={
-              bubble.speaker === 'child'
-                ? 'ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-lg text-white'
-                : 'mr-auto max-w-[85%] rounded-2xl rounded-bl-sm bg-white px-4 py-2 text-lg text-ink shadow-sm'
-            }
-          >
-            {bubble.text}
-          </p>
-        ))}
-        <div ref={historyEndRef} />
-      </div>
-
       {/* STT 미리보기 — 수정 불가, 표시 완료 시 보내기 활성 */}
       {phase === 'REVIEW' && sttText && (
         <p className="w-full max-w-2xl rounded-2xl border-2 border-primary bg-white px-4 py-3 text-center text-xl text-ink">
           “{sttText}”
         </p>
       )}
+
+      <div className="min-h-0 flex-1" aria-hidden /> {/* 버튼을 하단으로 밀착 — 내역이 왼쪽 열을 밀지 않게 */}
 
       {/* 마이크·보내기 — 터치 48px+, 색+아이콘+텍스트 병행 */}
       <div className="flex items-center gap-4">
@@ -429,6 +420,32 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
           보내기
         </button>
       </div>
+      </div>
+
+      {/* 오른쪽 — 이전 대화 목록 (T076, 기능명세서 2.4.3 대화 내역 리스트 필수).
+          화면 스크롤 미허용 원칙과의 조화: 목록 영역 내부 스크롤만 허용 */}
+      <aside
+        aria-label="이전 대화 내역"
+        className="flex max-h-40 w-full max-w-2xl min-h-0 flex-col gap-2 overflow-y-auto rounded-3xl bg-white/50 p-3 lg:max-h-none lg:w-80 lg:flex-none"
+      >
+        <p className="font-display text-lg text-ink">지금까지 나눈 이야기</p>
+        {pastBubbles.length === 0 && (
+          <p className="text-base text-ink/50">대화를 시작하면 여기에 쌓여요</p>
+        )}
+        {pastBubbles.map((bubble, i) => (
+          <p
+            key={i}
+            className={
+              bubble.speaker === 'child'
+                ? 'ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-lg text-white'
+                : 'mr-auto max-w-[85%] rounded-2xl rounded-bl-sm bg-white px-4 py-2 text-lg text-ink shadow-sm'
+            }
+          >
+            {bubble.text}
+          </p>
+        ))}
+        <div ref={historyEndRef} />
+      </aside>
     </section>
   );
 }
