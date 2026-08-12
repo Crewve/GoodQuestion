@@ -2,7 +2,7 @@
 // 로그인 화면 본체 (T044, 기능명세서 1.1.1 이메일 / 1.1.2 소셜) — 탭 자유 전환, 입력값은 전환해도 유지.
 // 이메일: Supabase Auth signInWithPassword(브라우저 클라이언트 T010 재사용) → 성공 시 2.1 프로필 선택 이동.
 // 에러 문구 3종(1.1.1 원문): 형식 오류는 클라이언트 검사, 미가입/비밀번호 오류는 Supabase가 같은
-// invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오 1개(R-10 — 심사 지연 시 구글 대체),
+// invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오+구글(T078 — R-10 대체 플랜 실행),
 // PKCE 콜백(/auth/callback)에서 세션 교환 후 복귀. 보호자 화면 — Pretendard·16px·터치 48px+(핸드오프 §3.3·§4).
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -72,11 +72,11 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
     }
   };
 
-  const handleKakaoLogin = async () => {
+  const handleSocialLogin = async (provider: 'kakao' | 'google') => {
     setSocialError(false);
     const supabase = getSupabaseBrowser();
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'kakao',
+      provider,
       // 보호 경로로 직접 돌아오면 proxy가 code를 유실시킴 — 공개 콜백에서 교환 후 이동 (auth/callback)
       options: { redirectTo: `${window.location.origin}/auth/callback?next=/profiles` },
     });
@@ -169,10 +169,17 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
             )}
             <button
               type="button"
-              onClick={() => void handleKakaoLogin()}
+              onClick={() => void handleSocialLogin('kakao')}
               className="h-12 rounded-full bg-[#fee500] text-base font-bold text-[#191919] active:opacity-80"
             >
               카카오로 시작하기
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSocialLogin('google')}
+              className="h-12 rounded-full border-2 border-[#747775] bg-white text-base font-bold text-[#1f1f1f] active:opacity-80"
+            >
+              구글로 시작하기
             </button>
           </div>
         )}
