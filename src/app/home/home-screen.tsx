@@ -79,7 +79,8 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
   return (
     <div className="flex min-h-dvh flex-col">
       {/* Header — 상단 고정 (핸드오프 §2.1) */}
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-base px-6 py-4">
+      {/* 태블릿 기준(1194×834) 한 화면 수납 — 이어하기+추천 3×2 동시 노출 시 세로 스크롤 금지 (E2E 후속 제보) */}
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-base px-6 py-3">
         <h1 className="font-display text-2xl text-ink">반가워요 {givenName(childName)} 어린이</h1>
         <Link
           href="/profiles"
@@ -90,19 +91,19 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
         </Link>
       </header>
 
-      <main className="flex flex-1 flex-col items-center gap-8 px-6 pb-8 pt-2">
+      <main className="flex flex-1 flex-col items-center gap-4 px-6 pb-4 pt-1">
         {/* 이어하기 — 진행 중인 이야기가 있는 경우에만 노출 (2.0) */}
         {hasSession && (
           <section aria-label="이어하기" className="flex w-full max-w-3xl flex-col gap-3">
             <h2 className="font-display text-xl text-ink">이어하기</h2>
-            <div className="flex items-center gap-4 rounded-3xl bg-white p-4 shadow">
+            <div className="flex items-center gap-4 rounded-3xl bg-white p-3 shadow">
               <Image
                 src={storyThumbnailUrl(false)}
                 alt=""
-                width={112}
-                height={112}
+                width={96}
+                height={96}
                 loading="eager"
-                className="h-28 w-28 shrink-0 rounded-2xl object-cover"
+                className="h-24 w-24 shrink-0 rounded-2xl object-cover"
               />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex flex-wrap gap-1">
@@ -160,11 +161,11 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
               모두 보기
             </Link>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             {!hasSession && (
               <Link
                 href={`/stories/${story.id}?child=${childId}`}
-                className="flex flex-col gap-2 rounded-3xl bg-white p-3 shadow transition-transform active:scale-95"
+                className="flex flex-col gap-2 rounded-3xl bg-white p-2 shadow transition-transform active:scale-95"
               >
                 <Image
                   src={storyThumbnailUrl(true)}
@@ -173,7 +174,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
                   height={1086}
                   sizes="240px"
                   loading="eager"
-                  className="aspect-square w-full rounded-2xl object-cover"
+                  className="aspect-[16/9] w-full rounded-2xl object-cover"
                 />
                 <p className="truncate text-lg font-bold text-ink">{story.title}</p>
                 <p className="truncate text-sm text-ink">
@@ -183,7 +184,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
             )}
             {dummySlots.map((dummy) => (
               // 미공개 이야기 — 클릭 이벤트 미부여(커서 default·무반응), 별도 에러 없음 (2.0 예외 처리)
-              <div key={dummy.title} aria-disabled className="flex flex-col gap-2 rounded-3xl bg-white/60 p-3">
+              <div key={dummy.title} aria-disabled className="flex flex-col gap-2 rounded-3xl bg-white/60 p-2">
                 <Image
                   src={dummy.url}
                   alt=""
@@ -191,7 +192,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
                   height={400}
                   sizes="240px"
                   loading="eager"
-                  className="aspect-square w-full rounded-2xl object-cover opacity-70"
+                  className="aspect-[16/9] w-full rounded-2xl object-cover opacity-70"
                 />
                 <p className="truncate text-lg font-bold text-ink/60">{dummy.title}</p>
                 <p className="truncate text-sm text-ink/60">

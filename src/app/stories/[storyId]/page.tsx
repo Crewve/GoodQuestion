@@ -55,8 +55,9 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
   const childId = await resolveChildId(searchChild);
   const backHref = searchChild ? `/stories?child=${searchChild}` : '/stories';
 
+  // 태블릿 기준(1194×834) 한 화면 수납 — 상세 이미지는 max-h 캡으로 세로 스크롤 방지 (E2E 후속 제보)
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-5 py-6">
+    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-5 py-5">
       <Link href={backHref} className="flex h-12 items-center gap-1 self-start font-semibold text-ink active:opacity-70">
         <span aria-hidden>‹</span> 이야기 모음
       </Link>
@@ -69,7 +70,7 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
           height={1086}
           sizes="(max-width: 640px) 100vw, 576px"
           preload
-          className="w-full rounded-3xl object-cover"
+          className="max-h-[34vh] w-full rounded-3xl object-cover"
         />
       ) : (
         <div className="aspect-video w-full rounded-3xl bg-sunny/30" aria-hidden />

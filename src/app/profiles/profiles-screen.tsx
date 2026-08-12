@@ -62,7 +62,8 @@ export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
         <p className="text-lg text-ink">아직 등록된 친구가 없어요</p>
       )}
 
-      <div className="grid w-full max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+      {/* 고정 4열 그리드는 아이가 1~2명일 때 빈 열 탓에 왼쪽 쏠림 — 내용 기준 중앙 정렬로 (E2E 항목 11 후속) */}
+      <div className="flex w-full max-w-3xl flex-wrap justify-center gap-4">
         {profiles.map((profile) => {
           const age = koreanAge(profile.birthDate);
           const hasAvatar = !!profile.avatarKey && AVATAR_KEYS.has(profile.avatarKey);
@@ -71,7 +72,7 @@ export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
               key={profile.id}
               type="button"
               onClick={() => selectChild(profile.id)}
-              className={`flex flex-col items-center gap-2 rounded-3xl border-4 bg-white p-4 transition-colors ${
+              className={`flex w-44 flex-col items-center gap-2 rounded-3xl border-4 bg-white p-4 transition-colors ${
                 selectedId === profile.id ? 'border-primary' : 'border-white'
               }`}
             >
@@ -109,7 +110,7 @@ export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
           <button
             type="button"
             onClick={() => setView('add')}
-            className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-3xl border-4 border-dashed border-ink/30 text-ink"
+            className="flex min-h-40 w-44 flex-col items-center justify-center gap-2 rounded-3xl border-4 border-dashed border-ink/30 text-ink"
           >
             <span aria-hidden className="text-4xl">
               ＋
