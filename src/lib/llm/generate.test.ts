@@ -71,6 +71,23 @@ test('NORMAL이면 유도 지시가 없다', () => {
   expect(all).not.toContain('유도');
 });
 
+test('redirect=INAPPROPRIATE면 따라 말하지 않기·주제 복귀 지시가 들어간다 (T075, E2E 항목 24)', () => {
+  const system = buildGenerateMessages(context({ redirect: 'INAPPROPRIATE' }))[0].content;
+  expect(system).toContain('주제 복귀');
+  expect(system).toContain('따라 말하');
+  expect(system).toContain('나무라지');
+});
+
+test('redirect=OFF_TOPIC도 주제 복귀 지시가 들어간다', () => {
+  const system = buildGenerateMessages(context({ redirect: 'OFF_TOPIC' }))[0].content;
+  expect(system).toContain('주제 복귀');
+});
+
+test('redirect가 없으면 주제 복귀 지시가 없다', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).not.toContain('주제 복귀');
+});
+
 test('대화 내역이 messages로 전달된다', () => {
   const messages = buildGenerateMessages(context());
   const all = messages.map((m) => m.content).join('\n');

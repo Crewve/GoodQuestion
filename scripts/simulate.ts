@@ -16,6 +16,7 @@ import { postprocessAnalysis } from '../src/lib/llm/postprocess';
 import { missionForScene } from '../src/lib/missions';
 import { evaluateTurn, initialRuleState, type SceneRuleData } from '../src/lib/rules/engine';
 import { evaluateMissionExposure, type MissionPhase } from '../src/lib/rules/mission';
+import { containsInappropriateLanguage } from '../src/lib/safety';
 
 type ScenarioTurn = string | { text: string; isMission?: boolean };
 
@@ -131,6 +132,12 @@ async function main() {
       mode: effectiveDecision.mode,
       guidanceTarget: effectiveDecision.guidanceTarget,
       missingElements: effectiveDecision.missingElements,
+      // T075 미러 — /api/turn과 동일한 입력측 스크리닝·주제 복귀
+      redirect: containsInappropriateLanguage(utterance)
+        ? 'INAPPROPRIATE'
+        : refined.utteranceValidity === 'OFF_TOPIC'
+          ? 'OFF_TOPIC'
+          : undefined,
       history,
       childName: scenario.childName,
     });
