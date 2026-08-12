@@ -48,6 +48,34 @@ const VIEWS = [
 ] as const;
 type ViewKey = (typeof VIEWS)[number]['key'];
 
+/** 실제 라우트 미리보기 컨텍스트 — page.tsx(서버)가 조회해 내려준다 */
+export type RouteContext = {
+  loggedIn: boolean;
+  childId: string | null;
+  storyId: string;
+  completedSessionId: string | null;
+};
+
+/** 실제 라우트 화면 — iframe으로 마운트 (로그인 세션·데이터는 실제 것 사용) */
+function routeViews(ctx: RouteContext): { label: string; url: string | null; note?: string }[] {
+  const child = ctx.childId ? `?child=${ctx.childId}` : null;
+  return [
+    { label: '로그인 1.1', url: '/login' },
+    { label: '회원가입 1.2', url: '/signup' },
+    { label: '프로필 선택 2.1', url: ctx.loggedIn ? '/profiles' : null, note: '로그인 필요' },
+    { label: '홈 2.0', url: child ? `/home${child}` : null, note: '로그인+아이 필요' },
+    { label: '이야기 목록 2.2', url: child ? `/stories${child}` : null, note: '로그인+아이 필요' },
+    { label: '이야기 상세 2.3', url: child ? `/stories/${ctx.storyId}${child}` : null, note: '로그인+아이 필요' },
+    { label: '학습 완료 2.5', url: ctx.completedSessionId ? `/complete/${ctx.completedSessionId}` : null, note: '완료 세션 필요' },
+    { label: '내정보 3.1', url: ctx.loggedIn ? '/my' : null, note: '로그인 필요' },
+    { label: '프로필 관리 3.2', url: ctx.loggedIn ? '/my/profiles' : null, note: '로그인 필요' },
+    { label: '공지사항 3.3', url: ctx.loggedIn ? '/my/notices' : null, note: '로그인 필요' },
+    { label: '고객센터 3.4', url: ctx.loggedIn ? '/my/support' : null, note: '로그인 필요' },
+    { label: '이용안내 3.5', url: ctx.loggedIn ? '/my/guide' : null, note: '로그인 필요' },
+    { label: '배지 3.6', url: ctx.loggedIn ? '/my/badges' : null, note: '로그인 필요' },
+  ];
+}
+
 const DIALOGUE_PHASES: { phase: TurnPhase; label: string; sttText?: string }[] = [
   { phase: 'CHAR_SPEAKING', label: '듣는 중' },
   { phase: 'RECORDING', label: '녹음' },
@@ -55,8 +83,9 @@ const DIALOGUE_PHASES: { phase: TurnPhase; label: string; sttText?: string }[] =
   { phase: 'REVIEW', label: 'REVIEW', sttText: '며느리가 방귀를 참느라 얼굴이 빨개진 것 같아요.' },
 ];
 
-export function UiRehearsalGallery() {
+export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
   const [view, setView] = useState<ViewKey>('intro');
+  const [route, setRoute] = useState<string | null>(null); // 실제 라우트 iframe 미리보기
   const phase = useTurnStore((s) => s.phase);
 
   // 화면 전환 시 턴 스토어 초기화 — 이전 뷰의 강제 상태가 남지 않게
@@ -75,15 +104,38 @@ export function UiRehearsalGallery() {
           <button
             key={v.key}
             type="button"
-            onClick={() => setView(v.key)}
+            onClick={() => {
+              setView(v.key);
+              setRoute(null);
+            }}
             className={`rounded-lg px-2 py-1.5 text-left font-semibold ${
-              view === v.key ? 'bg-primary text-white' : 'bg-base text-ink active:bg-[#FFE8C9]'
+              view === v.key && !route ? 'bg-primary text-white' : 'bg-base text-ink active:bg-[#FFE8C9]'
             }`}
           >
             {v.label}
           </button>
         ))}
-        {view === 'dialogue' && (
+        <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">실제 화면 (iframe)</p>
+        {routeViews(ctx).map((r) => (
+          <button
+            key={r.label}
+            type="button"
+            disabled={!r.url}
+            onClick={() => r.url && setRoute(r.url)}
+            title={r.url ? undefined : r.note}
+            className={`rounded-lg px-2 py-1.5 text-left font-semibold ${
+              route === r.url && route
+                ? 'bg-sky text-white'
+                : r.url
+                  ? 'bg-base text-ink active:bg-[#FFE8C9]'
+                  : 'bg-base text-ink/30'
+            }`}
+          >
+            {r.label}
+            {!r.url && <span className="block text-[10px] font-normal">{r.note}</span>}
+          </button>
+        ))}
+        {!route && view === 'dialogue' && (
           <>
             <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">대화 상태</p>
             {DIALOGUE_PHASES.map((p) => (
@@ -108,8 +160,9 @@ export function UiRehearsalGallery() {
         )}
       </aside>
 
-      {/* 스테이지 — 실제 컴포넌트 마운트 */}
-      {(view === 'intro' || view === 'develop') && (
+      {/* 스테이지 — 실제 라우트 iframe 또는 컴포넌트 마운트 */}
+      {route && <iframe src={route} title="실제 화면 미리보기" className="h-full w-full border-0" />}
+      {!route && (view === 'intro' || view === 'develop') && (
         <>
           <ProgressHeader title="방귀 뀌는 며느리" n={view === 'intro' ? 1 : 2} N={4} onExit={noop} />
           <NarrationScene
@@ -121,7 +174,7 @@ export function UiRehearsalGallery() {
         </>
       )}
 
-      {view === 'dialogue' && (
+      {!route && view === 'dialogue' && (
         <>
           <ProgressHeader title="방귀 뀌는 며느리" n={3} N={4} onExit={noop} />
           <DialogueScene
@@ -140,7 +193,7 @@ export function UiRehearsalGallery() {
         </>
       )}
 
-      {(view === 'm1' || view === 'm1s' || view === 'm2' || view === 'm2s') && (
+      {!route && (view === 'm1' || view === 'm1s' || view === 'm2' || view === 'm2s') && (
         <MissionPopup
           key={view}
           missionId={view.startsWith('m1') ? 'mission_1' : 'mission_2'}
@@ -151,7 +204,7 @@ export function UiRehearsalGallery() {
         />
       )}
 
-      {(view === 'cardA' || view === 'cardB') && (
+      {!route && (view === 'cardA' || view === 'cardB') && (
         <CardOrdering
           key={view}
           cards={PREVIEW_CARDS}
@@ -160,7 +213,7 @@ export function UiRehearsalGallery() {
         />
       )}
 
-      {view === 'retell' && (
+      {!route && view === 'retell' && (
         <Retelling cards={PREVIEW_CARDS} keywords={PREVIEW_KEYWORDS} onSubmit={asyncNoop} />
       )}
     </div>
