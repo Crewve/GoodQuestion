@@ -1,7 +1,7 @@
 // T046 프로필 저장 페이로드 검증 테스트 — POST /api/profiles 요청 본문 파싱·정규화.
 // 검증 규칙은 signup-validation(T045)을 재사용해 화면과 서버가 같은 기준을 쓴다.
 import { describe, expect, test } from 'vitest';
-import { parseProfilesPayload } from './profiles-payload';
+import { parseChildUpdatePayload, parseProfilesPayload } from './profiles-payload';
 
 const TODAY = new Date(2026, 7, 11);
 
@@ -66,5 +66,29 @@ describe('parseProfilesPayload — 거부 경로', () => {
     expect(parse({ children: [{ ...validChild, birth_date: '2020031' }], child_consent: true }).ok).toBe(false);
     expect(parse({ children: [{ ...validChild, birth_date: '20230230' }], child_consent: true }).ok).toBe(false);
     expect(parse({ children: [{ ...validChild, birth_date: '20260812' }], child_consent: true }).ok).toBe(false);
+  });
+});
+
+describe('parseChildUpdatePayload — PATCH /api/profiles/[childId] (수정 폼 전체 필드 제출)', () => {
+  test('정상: 등록과 동일하게 정규화 (ISO 날짜·출생연도 파생·이름 트림), 동의 재요구 없음', () => {
+    const result = parseChildUpdatePayload({ ...validChild, name: '  김하늘 ' }, TODAY);
+    expect(result).toEqual({
+      ok: true,
+      child: { name: '김하늘', avatarKey: 'boy-1', birthDate: '2020-03-15', birthYear: 2020 },
+    });
+  });
+
+  test('본문이 객체가 아니면 거부', () => {
+    expect(parseChildUpdatePayload(null, TODAY).ok).toBe(false);
+    expect(parseChildUpdatePayload([validChild], TODAY).ok).toBe(false);
+  });
+
+  test('필드 검증은 등록과 동일 규칙 (아바타·이름·생년월일)', () => {
+    expect(parseChildUpdatePayload({ ...validChild, avatar_key: 'cat-1' }, TODAY)).toEqual({
+      ok: false,
+      message: '캐릭터 선택이 올바르지 않습니다.',
+    });
+    expect(parseChildUpdatePayload({ ...validChild, name: ' ' }, TODAY).ok).toBe(false);
+    expect(parseChildUpdatePayload({ ...validChild, birth_date: '20260812' }, TODAY).ok).toBe(false);
   });
 });

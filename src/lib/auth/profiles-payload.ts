@@ -21,6 +21,51 @@ export type ProfilesPayloadResult =
   | { ok: true; children: NormalizedChild[] }
   | { ok: false; message: string };
 
+export type ChildUpdateResult =
+  | { ok: true; child: NormalizedChild }
+  | { ok: false; message: string };
+
+/** 아이 1명 원시 값 → 검증·정규화 — 등록(POST)·수정(PATCH) 공통 규칙 */
+function normalizeChild(raw: unknown, today: Date): ChildUpdateResult {
+  const child = (typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? raw : {}) as {
+    name?: unknown;
+    avatar_key?: unknown;
+    birth_date?: unknown;
+  };
+  const name = typeof child.name === 'string' ? child.name.trim() : '';
+  const avatarKey = child.avatar_key as AvatarKey;
+  const birthDate = typeof child.birth_date === 'string' ? child.birth_date : '';
+
+  if (!AVATAR_KEYS.includes(avatarKey)) {
+    return { ok: false, message: '캐릭터 선택이 올바르지 않습니다.' };
+  }
+  // 이름·생년월일은 화면(T045)과 동일 규칙 — 검증 실패 문구도 명세 문구 재사용
+  const errors = validateChild({ avatar: avatarKey, name, birthDate }, today);
+  const firstError = errors.name ?? errors.birthDate ?? validateBirthDate(birthDate, today);
+  if (firstError) return { ok: false, message: firstError };
+
+  return {
+    ok: true,
+    child: {
+      name,
+      avatarKey,
+      birthDate: `${birthDate.slice(0, 4)}-${birthDate.slice(4, 6)}-${birthDate.slice(6, 8)}`,
+      birthYear: Number(birthDate.slice(0, 4)),
+    },
+  };
+}
+
+/**
+ * PATCH /api/profiles/[childId] 본문 검증 — 수정 폼이 전체 필드를 제출한다(부분 수정 아님).
+ * 동의(child_consents)는 등록 시 1회 기록을 유지하므로 재요구하지 않는다.
+ */
+export function parseChildUpdatePayload(body: unknown, today: Date = new Date()): ChildUpdateResult {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return { ok: false, message: '요청 본문 형식이 올바르지 않습니다.' };
+  }
+  return normalizeChild(body, today);
+}
+
 /** 요청 본문 → 검증·정규화. 실패 메시지는 400 응답 본문으로 그대로 나간다. */
 export function parseProfilesPayload(body: unknown, today: Date = new Date()): ProfilesPayloadResult {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
@@ -40,29 +85,9 @@ export function parseProfilesPayload(body: unknown, today: Date = new Date()): P
 
   const normalized: NormalizedChild[] = [];
   for (const raw of children) {
-    const child = (typeof raw === 'object' && raw !== null ? raw : {}) as {
-      name?: unknown;
-      avatar_key?: unknown;
-      birth_date?: unknown;
-    };
-    const name = typeof child.name === 'string' ? child.name.trim() : '';
-    const avatarKey = child.avatar_key as AvatarKey;
-    const birthDate = typeof child.birth_date === 'string' ? child.birth_date : '';
-
-    if (!AVATAR_KEYS.includes(avatarKey)) {
-      return { ok: false, message: '캐릭터 선택이 올바르지 않습니다.' };
-    }
-    // 이름·생년월일은 화면(T045)과 동일 규칙 — 검증 실패 문구도 명세 문구 재사용
-    const errors = validateChild({ avatar: avatarKey, name, birthDate }, today);
-    const firstError = errors.name ?? errors.birthDate ?? validateBirthDate(birthDate, today);
-    if (firstError) return { ok: false, message: firstError };
-
-    normalized.push({
-      name,
-      avatarKey,
-      birthDate: `${birthDate.slice(0, 4)}-${birthDate.slice(4, 6)}-${birthDate.slice(6, 8)}`,
-      birthYear: Number(birthDate.slice(0, 4)),
-    });
+    const result = normalizeChild(raw, today);
+    if (!result.ok) return result;
+    normalized.push(result.child);
   }
   return { ok: true, children: normalized };
 }
