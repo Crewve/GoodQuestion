@@ -7,6 +7,7 @@
 // Header·GNB는 상하단 고정(핸드오프 §2.1), GNB는 파트2 T049의 BottomNav 공용(단어장 이동 없음,
 // 아이 컨텍스트 child 쿼리 전파) — 팀원 브랜치 파일을 동일 내용으로 선반영해 합류 시 충돌 없음.
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
@@ -95,9 +96,12 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
           <section aria-label="이어하기" className="flex w-full max-w-3xl flex-col gap-3">
             <h2 className="font-display text-xl text-ink">이어하기</h2>
             <div className="flex items-center gap-4 rounded-3xl bg-white p-4 shadow">
-              <img
+              <Image
                 src={storyThumbnailUrl(false)}
                 alt=""
+                width={112}
+                height={112}
+                loading="eager"
                 className="h-28 w-28 shrink-0 rounded-2xl object-cover"
               />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -162,7 +166,15 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
                 href={`/stories/${story.id}?child=${childId}`}
                 className="flex flex-col gap-2 rounded-3xl bg-white p-3 shadow transition-transform active:scale-95"
               >
-                <img src={storyThumbnailUrl(true)} alt="" className="aspect-square w-full rounded-2xl object-cover" />
+                <Image
+                  src={storyThumbnailUrl(true)}
+                  alt=""
+                  width={1448}
+                  height={1086}
+                  sizes="240px"
+                  loading="eager"
+                  className="aspect-square w-full rounded-2xl object-cover"
+                />
                 <p className="truncate text-lg font-bold text-ink">{story.title}</p>
                 <p className="truncate text-sm text-ink">
                   {story.topics.join(' · ')} · {story.difficulty} · {story.estimatedMinutes}분
@@ -172,7 +184,15 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
             {dummySlots.map((dummy) => (
               // 미공개 이야기 — 클릭 이벤트 미부여(커서 default·무반응), 별도 에러 없음 (2.0 예외 처리)
               <div key={dummy.title} aria-disabled className="flex flex-col gap-2 rounded-3xl bg-white/60 p-3">
-                <img src={dummy.url} alt="" className="aspect-square w-full rounded-2xl object-cover opacity-70" />
+                <Image
+                  src={dummy.url}
+                  alt=""
+                  width={400}
+                  height={400}
+                  sizes="240px"
+                  loading="eager"
+                  className="aspect-square w-full rounded-2xl object-cover opacity-70"
+                />
                 <p className="truncate text-lg font-bold text-ink/60">{dummy.title}</p>
                 <p className="truncate text-sm text-ink/60">
                   {dummy.keywords.join(' · ')} · {dummy.difficulty} · {dummy.minutes}분

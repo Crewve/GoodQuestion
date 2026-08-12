@@ -4,6 +4,7 @@
 // (배지 카드만 클릭 → 3.6)·메뉴 버튼(공지/고객센터/이용안내)·로그아웃 확인 팝업.
 // 로그아웃은 Supabase signOut 후 1.1 로그인 화면으로 — 실패 시 팝업 유지·재시도 (3.2 삭제 팝업과 동일 관례).
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
@@ -94,10 +95,11 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
                 return (
                   <li key={profile.id} className="flex items-center gap-4 rounded-3xl bg-white p-4">
                     {hasAvatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴)
-                      <img
+                      <Image
                         src={avatarUrl(profile.avatarKey as AvatarKey, 'select')}
                         alt=""
+                        width={64}
+                        height={64}
                         className="size-16 shrink-0 rounded-2xl object-contain"
                       />
                     ) : (

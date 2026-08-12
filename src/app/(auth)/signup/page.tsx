@@ -5,6 +5,7 @@
 // - 최종 처리: Supabase Auth signUp → POST /api/profiles(T046)로 parents/children/child_consents 기록.
 // - 검증 규칙·문구는 src/lib/auth/signup-validation.ts (테스트 동반) 단일 소스.
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
@@ -320,7 +321,15 @@ export default function SignupPage() {
                       selected ? 'border-primary' : 'border-transparent'
                     }`}
                   >
-                    <img src={avatarUrl(key, 'select')} alt="" className="aspect-square w-full object-cover" />
+                    <Image
+                      src={avatarUrl(key, 'select')}
+                      alt=""
+                      width={1052}
+                      height={1008}
+                      sizes="150px"
+                      loading="eager"
+                      className="aspect-square w-full object-cover"
+                    />
                   </button>
                 );
               })}

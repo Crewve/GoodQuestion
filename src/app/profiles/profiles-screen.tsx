@@ -4,6 +4,7 @@
 // 추가 폼은 별도 화면(2.1.1) 요건 — URL 추가 없이 화면 내 뷰 전환으로 구현(완료/취소 시 2.1 목록 복귀).
 // 저장은 파트2 T046(/api/profiles) 합류 지점 — save-profile.ts 인터페이스만 호출, 미구현 동안 대기 안내.
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChildProfileForm } from '@/components/child-profile-form';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
@@ -75,9 +76,13 @@ export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
               }`}
             >
               {hasAvatar ? (
-                <img
+                <Image
                   src={avatarUrl(profile.avatarKey as AvatarKey, 'select')}
                   alt=""
+                  width={1052}
+                  height={1008}
+                  sizes="240px"
+                  loading="eager"
                   className="aspect-square w-full rounded-2xl object-contain"
                 />
               ) : (
