@@ -125,7 +125,7 @@ export function ManageProfilesScreen({ profiles }: { profiles: ChildProfile[] })
                     className="size-16 shrink-0 rounded-2xl object-contain"
                   />
                 ) : (
-                  <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-base text-3xl">
+                  <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-background text-3xl">
                     🙂
                   </span>
                 )}
@@ -191,7 +191,7 @@ export function ManageProfilesScreen({ profiles }: { profiles: ChildProfile[] })
                 type="button"
                 disabled={deleting}
                 onClick={() => setDeleteTarget(null)}
-                className="h-12 flex-1 rounded-full bg-base text-lg font-bold text-ink active:opacity-80"
+                className="h-12 flex-1 rounded-full bg-background text-lg font-bold text-ink active:opacity-80"
               >
                 취소
               </button>

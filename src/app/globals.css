@@ -14,8 +14,10 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* 디자인시스템 팔레트 — 클래스: bg-primary, text-sunny, border-sage … */
-  --color-base: #fff8ee;
+  /* 디자인시스템 팔레트 — 클래스: bg-primary, text-sunny, border-sage …
+     ⚠️ 'Base'(#fff8ee)는 색 토큰으로 만들면 안 됨: --color-base가 폰트 크기 유틸 text-base(16px)를
+     "크림색 글자"로 뒤집는 이름 충돌(T078 스테이징 제보 — 소셜 버튼 글자 실종의 진범).
+     Base 색이 필요하면 동일값인 bg-background를 쓸 것. */
   --color-primary: #ff7a3d;
   --color-sunny: #ffc93c;
   --color-sage: #3dbe8b; /* Sage+ */

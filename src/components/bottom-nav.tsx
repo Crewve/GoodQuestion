@@ -23,7 +23,7 @@ export function BottomNav({ active, childId }: { active: Tab; childId: string | 
         const isActive = tab.key === active;
         const className = `flex h-16 flex-1 flex-col items-center justify-center gap-0.5 text-xs font-semibold ${
           isActive ? 'text-primary' : 'text-ink/50'
-        } active:bg-base`;
+        } active:bg-background`;
         const body = (
           <>
             <span aria-hidden className="text-xl">

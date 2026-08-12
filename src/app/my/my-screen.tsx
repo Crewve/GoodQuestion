@@ -56,7 +56,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
 
         {/* 사용자 정보 카드 — 프로필 이미지는 하나로 고정(표시 전용) */}
         <section className="flex items-center gap-4 rounded-3xl bg-white p-4">
-          <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-base text-3xl">
+          <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-background text-3xl">
             👤
           </span>
           <div className="min-w-0">
@@ -103,7 +103,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
                         className="size-16 shrink-0 rounded-2xl object-contain"
                       />
                     ) : (
-                      <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-base text-3xl">
+                      <span aria-hidden className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-background text-3xl">
                         🙂
                       </span>
                     )}
@@ -148,7 +148,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
               </div>
               <Link
                 href="/my/badges"
-                className="flex flex-col items-center gap-1 rounded-3xl bg-white p-4 active:bg-base"
+                className="flex flex-col items-center gap-1 rounded-3xl bg-white p-4 active:bg-background"
               >
                 <span aria-hidden className="text-2xl">🏅</span>
                 <span className="text-2xl font-bold text-ink">{summary.badgeCount}</span>
@@ -164,7 +164,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
             <Link
               key={item.href}
               href={item.href}
-              className="flex h-14 items-center justify-between border-b border-ink/5 px-5 text-lg font-semibold text-ink active:bg-base"
+              className="flex h-14 items-center justify-between border-b border-ink/5 px-5 text-lg font-semibold text-ink active:bg-background"
             >
               {item.label}
               <span aria-hidden className="text-ink/30">›</span>
@@ -176,7 +176,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
               setLogoutError(null);
               setLogoutOpen(true);
             }}
-            className="flex h-14 items-center px-5 text-lg font-semibold text-berry active:bg-base"
+            className="flex h-14 items-center px-5 text-lg font-semibold text-berry active:bg-background"
           >
             로그아웃
           </button>
@@ -199,7 +199,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
                 type="button"
                 disabled={loggingOut}
                 onClick={() => setLogoutOpen(false)}
-                className="h-12 flex-1 rounded-full bg-base text-lg font-bold text-ink active:opacity-80"
+                className="h-12 flex-1 rounded-full bg-background text-lg font-bold text-ink active:opacity-80"
               >
                 취소
               </button>

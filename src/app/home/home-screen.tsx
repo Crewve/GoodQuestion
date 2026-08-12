@@ -80,7 +80,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
     <div className="flex min-h-dvh flex-col">
       {/* Header — 상단 고정 (핸드오프 §2.1) */}
       {/* 태블릿 기준(1194×834) 한 화면 수납 — 이어하기+추천 3×2 동시 노출 시 세로 스크롤 금지 (E2E 후속 제보) */}
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-base px-6 py-3">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-background px-6 py-3">
         <h1 className="font-display text-2xl text-ink">반가워요 {givenName(childName)} 어린이</h1>
         <Link
           href="/profiles"
@@ -123,7 +123,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
                       장면 {resume.progress.n}/{resume.progress.N} 진행 중 ··· {percent}%
                     </p>
                     <div
-                      className="h-3 overflow-hidden rounded-full bg-base"
+                      className="h-3 overflow-hidden rounded-full bg-background"
                       role="progressbar"
                       aria-valuenow={percent}
                       aria-valuemin={0}

@@ -57,7 +57,7 @@ export default function BadgesPage() {
             </span>
           </div>
           <div
-            className="mt-2 h-3 overflow-hidden rounded-full bg-base"
+            className="mt-2 h-3 overflow-hidden rounded-full bg-background"
             role="progressbar"
             aria-valuenow={3}
             aria-valuemin={0}

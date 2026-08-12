@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 export function AccordionItem({ title, meta, children }: { title: string; meta?: string; children: ReactNode }) {
   return (
     <details className="group border-b border-ink/5 last:border-b-0">
-      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden active:bg-base">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden active:bg-background">
         <span className="min-w-0">
           <span className="block text-lg font-semibold text-ink">{title}</span>
           {meta && <span className="block text-sm text-ink/50">{meta}</span>}

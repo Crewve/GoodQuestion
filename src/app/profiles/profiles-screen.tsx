@@ -89,7 +89,7 @@ export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
               ) : (
                 <span
                   aria-hidden
-                  className="flex aspect-square w-full items-center justify-center rounded-2xl bg-base text-4xl"
+                  className="flex aspect-square w-full items-center justify-center rounded-2xl bg-background text-4xl"
                 >
                   🙂
                 </span>
