@@ -176,7 +176,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
         }}
         aria-pressed={selected}
         aria-label={`${card.label} 카드${selected ? ' 선택됨' : ''}`}
-        className={`h-full min-h-0 w-full overflow-hidden rounded-2xl border-[1.5px] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)] transition-transform ${
+        className={`mx-auto aspect-[210/218] w-full max-h-full min-h-0 self-center overflow-hidden rounded-2xl border-[1.5px] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)] transition-transform ${
           selected ? 'scale-105 border-primary ring-4 ring-primary' : 'border-[#F0E4D3]'
         } ${locked ? '' : 'cursor-grab active:cursor-grabbing'}`}
       >
@@ -206,7 +206,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
         aria-label="카드 보관함"
       >
         {trayIds.map((cardId) => (
-          <div key={cardId} className="min-h-0">
+          <div key={cardId} className="flex min-h-0 justify-center">
             {renderCard(cardId)}
           </div>
         ))}
@@ -225,7 +225,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
             onClick={() => handleSlotTap(index)}
             role="button"
             aria-label={`${index + 1}번 슬롯${cardId ? ` — ${cardById.get(cardId)?.label ?? ''}` : ' (비어 있음)'}`}
-            className={`flex min-h-0 flex-col rounded-2xl border-2 bg-white p-2 ${
+            className={`mx-auto flex aspect-[210/218] w-full max-h-full min-h-0 self-center flex-col rounded-2xl border-2 bg-white p-2 ${
               selectedId && !locked ? 'border-primary/60' : 'border-[#F0E4D3]'
             }`}
           >

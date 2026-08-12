@@ -229,7 +229,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
                   height={1086}
                   sizes="370px"
                   loading="eager"
-                  className="aspect-[369/130] w-full object-cover"
+                  className="aspect-[5/2] w-full object-cover"
                 />
                 <div className="flex flex-col gap-2 p-3.5">
                   <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
@@ -265,7 +265,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
                     height={400}
                     sizes="370px"
                     loading="eager"
-                    className="aspect-[369/130] w-full object-cover"
+                    className="aspect-[5/2] w-full object-cover"
                   />
                   <div className="flex flex-col gap-2 p-3.5">
                     <p className="truncate font-display text-[22px] leading-tight text-ink">{dummy.title}</p>

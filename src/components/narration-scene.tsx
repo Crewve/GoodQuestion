@@ -103,7 +103,8 @@ export function NarrationScene({
       </div>
 
       {/* 자막 행 — 이전(흰)/다음(잉크) 화살표 + 문장 카드 */}
-      <div className="flex min-h-24 shrink-0 items-center gap-3 px-5 py-2.5">
+      {/* 자막 카드 — 피그마는 일러스트 하단에 60px 겹쳐 떠 있음 (이미지 631px 확보) */}
+      <div className="relative z-10 -mt-[60px] flex min-h-24 shrink-0 items-center gap-3 px-5 py-2.5">
         {/* 첫 문장에서는 이전 화살표 자체를 노출하지 않는다 (2.4.1) — 자리는 유지해 레이아웃 고정 */}
         {index > 0 ? (
           <button

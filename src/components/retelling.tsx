@@ -145,8 +145,9 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
           const keyword = keywords[index];
           const included = !!keyword && !!stt?.text.includes(keyword); // 포함 여부 시각 피드백 (비차단)
           return (
-            <figure key={card.id} className="flex min-h-0 flex-col gap-2.5">
-              <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border-[1.5px] border-[#F0E4D3] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)]">
+            <figure key={card.id} className="my-auto flex min-h-0 flex-col gap-2.5">
+              {/* 피그마 장면 카드 275×218 비율 고정 — flex 잔여 공간이 카드를 세로로 늘리지 않게 */}
+              <div className="aspect-[275/218] w-full min-h-0 overflow-hidden rounded-2xl border-[1.5px] border-[#F0E4D3] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)]">
                 {/* eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴) */}
                 <img src={card.imageUrl} alt={card.label} className="h-full w-full object-cover" />
               </div>

@@ -68,7 +68,8 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
     <main className="flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#CDE8F8_0%,#EAF6E2_100%)] px-6 py-5">
       <section className="flex max-h-full w-full max-w-4xl flex-col gap-5 rounded-[33px] border border-primary bg-white p-7">
         {/* 히어로 일러스트 — 시안 하이파이브 컷 대체: 이야기 마지막 장면 (Storage 재사용) */}
-        <div className="min-h-24 flex-1 basis-56 overflow-hidden rounded-[22px] bg-sunny/20">
+        {/* 피그마 히어로 932×293 와이드 크롭 비율 고정 — flex 잔여 공간에 따라 세로로 늘지 않게 */}
+        <div className="aspect-[932/293] min-h-24 w-full shrink overflow-hidden rounded-[22px] bg-sunny/20">
           {isBanggui ? (
             <Image
               src={sceneImageUrl('sc_banggui_08')}
