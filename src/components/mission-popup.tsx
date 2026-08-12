@@ -111,6 +111,7 @@ export function MissionPopup({ missionId, sceneId, onSubmit, onContinue }: Missi
       recorder.stop(); // 재클릭으로 종료 → onComplete
       return;
     }
+    setStt(null); // REVIEW에서 재녹음 시 이전 STT 결과 폐기 (T072) — 보내기 전에는 저장된 것 없음
     setStatusMessage(null);
     setPhase('RECORDING');
     void recorder.start();
@@ -136,7 +137,9 @@ export function MissionPopup({ missionId, sceneId, onSubmit, onContinue }: Missi
     void requestSubmit(stt.text, stt.sttRawText);
   }, [phase, requestSubmit, stt]);
 
-  const micEnabled = (phase === 'IDLE' || phase === 'RECORDING') && recorder.status !== 'requesting';
+  // REVIEW에서도 마이크 활성 — 보내기 전 재녹음 허용 (T072, E2E 항목 13)
+  const micEnabled =
+    (phase === 'IDLE' || phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting';
   const sendEnabled = phase === 'REVIEW' && !!stt?.text.trim();
   const missionNumber = missionId === 'mission_2' ? (2 as const) : (1 as const);
 
@@ -237,7 +240,7 @@ export function MissionPopup({ missionId, sceneId, onSubmit, onContinue }: Missi
                   recorder.isRecording ? 'bg-primary text-white' : 'bg-white text-ink shadow'
                 } disabled:opacity-40`}
               >
-                🎤 {recorder.isRecording ? '말 끝났어요!' : '눌러서 말하기'}
+                🎤 {recorder.isRecording ? '말 끝났어요!' : phase === 'REVIEW' ? '다시 말하기' : '눌러서 말하기'}
               </button>
               <button
                 type="button"

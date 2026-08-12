@@ -235,6 +235,8 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
       recorder.stop(); // 녹음 종료 → onComplete
       return;
     }
+    // REVIEW에서 재클릭 = 재녹음 (T072) — 보내기 전까지 아무것도 저장되지 않으므로 STT 결과만 버린다
+    useTurnStore.getState().rerecord();
     // 게이트/STT 실패 후 재입력 — 마이크 재클릭으로 재시작 (권한 거부 시 시스템 팝업 재노출 경로 겸용)
     setStatusMessage(null);
     void recorder.start();
@@ -308,7 +310,8 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
 
   const currentLine = [...history].reverse().find((b) => b.speaker === 'character')?.text ?? '';
   const badgeLabel = PHASE_LABELS[phase];
-  const micEnabled = phase === 'RECORDING' && recorder.status !== 'requesting';
+  // REVIEW에서도 마이크 활성 — 보내기 전 재녹음 허용 (T072, E2E 항목 13)
+  const micEnabled = (phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting';
   const sendEnabled = phase === 'REVIEW' && !!sttText?.trim();
 
   return (
@@ -415,7 +418,7 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
             recorder.isRecording ? 'bg-primary text-white' : 'bg-white text-ink shadow'
           } disabled:opacity-40`}
         >
-          🎤 {recorder.isRecording ? '말 끝났어요!' : '눌러서 말하기'}
+          🎤 {recorder.isRecording ? '말 끝났어요!' : phase === 'REVIEW' ? '다시 말하기' : '눌러서 말하기'}
         </button>
         <button
           type="button"

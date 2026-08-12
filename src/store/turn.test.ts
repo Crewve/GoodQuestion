@@ -61,6 +61,28 @@ test('현재 단계에 맞지 않는 전이는 무시된다 (예: CHAR_SPEAKING�
   expect(useTurnStore.getState().phase).toBe('CHAR_SPEAKING');
 });
 
+test('REVIEW에서 재녹음 → RECORDING 복귀, 이전 STT 텍스트는 버린다 (T072 — 보내기 전 재녹음)', () => {
+  const store = useTurnStore.getState();
+  store.characterAudioEnded();
+  store.stopRecording();
+  store.sttSucceeded({ text: '잘못 인식된 말', sttRawText: '잘못 인식된 말', failed: false });
+  expect(useTurnStore.getState().phase).toBe('REVIEW');
+  useTurnStore.getState().rerecord();
+  expect(useTurnStore.getState().phase).toBe('RECORDING');
+  expect(useTurnStore.getState().sttText).toBeNull();
+  expect(useTurnStore.getState().sttRawText).toBeNull();
+});
+
+test('REVIEW가 아닌 단계의 재녹음 요청은 무시된다 (SUBMITTED 이후 되돌리기 불가)', () => {
+  const store = useTurnStore.getState();
+  store.characterAudioEnded();
+  store.stopRecording();
+  store.sttSucceeded({ text: '텍스트', sttRawText: '텍스트', failed: false });
+  store.submit();
+  useTurnStore.getState().rerecord();
+  expect(useTurnStore.getState().phase).toBe('SUBMITTED');
+});
+
 test('failed=true SttResult는 REVIEW로 가지 않고 RECORDING 복귀 (계약 불변 조건 1의 UI 측)', () => {
   const store = useTurnStore.getState();
   store.characterAudioEnded();
