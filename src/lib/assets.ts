@@ -47,7 +47,11 @@ export function storyThumbnailUrl(titled = true): string {
   return assetUrl(`stories/banggui/${titled ? "thumbnail-titled" : "thumbnail"}.png`);
 }
 
-/** 아이 프로필 아바타 4종 + 보호자 — children.avatar_key 값으로 사용 (data-model §3-2) */
+/**
+ * 아이 프로필 아바타 4종 + 보호자 — children.avatar_key 값으로 사용 (data-model §3-2).
+ * ⚠️ avatar/ 세트와 select/ 세트는 같은 키라도 화풍이 달라 다른 캐릭터로 보임(E2E 항목 5) —
+ * 표시 화면도 선택 화면과 같은 select/ 변형으로 통일한다(T068). avatar/ 세트는 에셋 정리 전까지 미사용.
+ */
 export type AvatarKey = "boy-1" | "boy-2" | "girl-1" | "girl-2";
 
 export function avatarUrl(avatar: AvatarKey, variant: "avatar" | "select" | "select-bg" = "avatar"): string {

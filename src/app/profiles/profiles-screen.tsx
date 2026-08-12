@@ -76,7 +76,7 @@ export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
             >
               {hasAvatar ? (
                 <img
-                  src={avatarUrl(profile.avatarKey as AvatarKey, 'avatar')}
+                  src={avatarUrl(profile.avatarKey as AvatarKey, 'select')}
                   alt=""
                   className="aspect-square w-full rounded-2xl object-contain"
                 />

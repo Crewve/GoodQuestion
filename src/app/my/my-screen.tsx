@@ -96,7 +96,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
                     {hasAvatar ? (
                       // eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴)
                       <img
-                        src={avatarUrl(profile.avatarKey as AvatarKey, 'avatar')}
+                        src={avatarUrl(profile.avatarKey as AvatarKey, 'select')}
                         alt=""
                         className="size-16 shrink-0 rounded-2xl object-contain"
                       />
