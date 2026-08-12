@@ -2,13 +2,12 @@
 // 완료 안내·오늘의 이야기(대표 이미지·제목·학습 시간)·오늘 모은 배지·이동 버튼 2종.
 // 재진입 라우팅: completed_at 없음 → /play/[sessionId]/activity로 돌려보내 2.4.4/2.4.5 분기(서버 저장값 기준).
 // 스타일: 피그마 「개발 배포용」 2.5 — 흰 콘텐츠 카드(주황 테두리) + 히어로 일러스트 + 요약 카드 2종 + 버튼 2종.
-// 시안의 초원 배경·하이파이브 일러스트·배지 그래픽은 Storage 미보유 에셋 — 배경은 하늘→초원 그라데이션,
-// 히어로는 이야기 마지막 장면(sc_banggui_08), 배지는 이모지 타일로 대체(figx 이미지 리포 복사 금지 규칙).
+// 초원 배경·하이파이브 히어로·하트 메달 배지는 피그마 내장 원본에서 추출(public/complete-*.png) — 시안 동일 에셋.
 // 배지 명칭은 시안 "마음 나누기"가 데이터에 없어 기존 완주 배지 1종 표기 유지(실획득분만 표시 — 2.5 유효성).
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { sceneImageUrl, storyThumbnailUrl } from '@/lib/assets';
+import { storyThumbnailUrl } from '@/lib/assets';
 import { BANGGUI_STORY_ID } from '@/lib/story';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthedUser } from '@/lib/supabase-server';
@@ -65,23 +64,19 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
 
   return (
     // h-dvh 고정 — 아이 화면 세로 스크롤 금지 (T071). 히어로가 flex-1로 줄어들며 한 화면 수납.
-    <main className="flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#CDE8F8_0%,#EAF6E2_100%)] px-6 py-5">
+    // 배경·히어로·배지 그래픽은 피그마 내장 원본 추출본(public/complete-*.png) — 시안 2.5와 동일 에셋.
+    <main className="flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#CDE8F8_0%,#EAF6E2_100%)] bg-[url('/complete-bg.png')] bg-cover bg-center px-6 py-5">
       <section className="flex max-h-full w-full max-w-4xl flex-col gap-5 rounded-[33px] border border-primary bg-white p-7">
-        {/* 히어로 일러스트 — 시안 하이파이브 컷 대체: 이야기 마지막 장면 (Storage 재사용) */}
-        {/* 피그마 히어로 932×293 와이드 크롭 비율 고정 — flex 잔여 공간에 따라 세로로 늘지 않게 */}
+        {/* 히어로 — 시안 하이파이브 일러스트 (932×293 와이드 크롭 비율 고정) */}
         <div className="aspect-[932/293] min-h-24 w-full shrink overflow-hidden rounded-[22px] bg-sunny/20">
-          {isBanggui ? (
-            <Image
-              src={sceneImageUrl('sc_banggui_08')}
-              alt=""
-              width={932}
-              height={293}
-              className="h-full w-full object-cover"
-              priority
-            />
-          ) : (
-            <div className="h-full w-full bg-sunny/30" aria-hidden />
-          )}
+          <Image
+            src="/complete-hero.png"
+            alt=""
+            width={932}
+            height={293}
+            className="h-full w-full object-cover"
+            priority
+          />
         </div>
 
         {/* 완료 안내 */}
@@ -117,12 +112,13 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
             </div>
           </section>
           <section className="flex items-center gap-5 rounded-[22px] bg-[#FFFDE7] px-5 py-4">
-            <span
-              className="flex size-[88px] shrink-0 items-center justify-center rounded-2xl bg-sunny/40 text-5xl"
-              aria-hidden
-            >
-              🏅
-            </span>
+            <Image
+              src="/complete-badge.png"
+              alt=""
+              width={88}
+              height={88}
+              className="size-[88px] shrink-0 rounded-2xl object-cover"
+            />
             <div className="min-w-0">
               <h2 className="font-display text-lg text-[#B84A12]">오늘 모은 배지</h2>
               <p className="mt-1 truncate font-display text-[22px] text-ink">이야기 완주 배지</p>
