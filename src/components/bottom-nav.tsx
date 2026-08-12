@@ -13,16 +13,17 @@ const TABS: { key: Tab; label: string; icon: string; href: (child: string | null
 ];
 
 export function BottomNav({ active, childId }: { active: Tab; childId: string | null }) {
+  // 피그마 BottomGNB: 흰 배경·상단 보더 #F0E4D3·활성 #FF7A3D/비활성 #C4B49F·아이콘+라벨 수직
   return (
     <nav
       aria-label="주요 메뉴"
-      className="sticky bottom-0 mt-auto flex border-t border-ink/10 bg-white"
+      className="sticky bottom-0 mt-auto flex border-t border-[#F0E4D3] bg-white"
     >
       {TABS.map((tab) => {
         const href = tab.href(childId);
         const isActive = tab.key === active;
-        const className = `flex h-16 flex-1 flex-col items-center justify-center gap-0.5 text-xs font-semibold ${
-          isActive ? 'text-primary' : 'text-ink/50'
+        const className = `flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[13px] font-semibold ${
+          isActive ? 'text-primary' : 'text-[#C4B49F]'
         } active:bg-base`;
         const body = (
           <>
