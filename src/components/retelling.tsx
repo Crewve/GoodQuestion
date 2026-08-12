@@ -137,7 +137,7 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
               <img src={card.imageUrl} alt={card.label} className="aspect-square w-full rounded-xl object-cover" />
               {keyword && (
                 <figcaption
-                  className={`rounded-full px-3 py-1 text-base font-semibold ${
+                  className={`rounded-full px-3 py-1 text-lg font-semibold ${
                     included ? 'bg-sage text-white' : 'bg-sunny text-ink'
                   }`}
                 >

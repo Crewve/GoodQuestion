@@ -5,6 +5,7 @@
 // 대화 장면 UI는 파트2 T037(dialogue-scene) 합류 지점 — T038 공동 배선 전까지 자리표시자를 렌더한다.
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Attribution } from '@/components/attribution';
 import { DialogueScene } from '@/components/dialogue-scene';
 import { NarrationScene } from '@/components/narration-scene';
 import { ProgressHeader } from '@/components/progress-header';
@@ -45,14 +46,14 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
   useAudioUnlock(); // 첫 제스처에서 오디오 언락 (iPad)
 
   const [data, setData] = useState<SessionPayload | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [currentOrder, setCurrentOrder] = useState<number | null>(null);
+  // 컨텍스트 결측은 상태가 아니라 파생값 — effect 내 동기 setState 금지(react-hooks/set-state-in-effect)
+  const error =
+    !childId || !storyId ? '세션 정보가 없어요. 이야기 상세에서 다시 시작해 주세요.' : fetchError;
 
   useEffect(() => {
-    if (!childId || !storyId) {
-      setError('세션 정보가 없어요. 이야기 상세에서 다시 시작해 주세요.');
-      return;
-    }
+    if (!childId || !storyId) return;
     let cancelled = false;
     (async () => {
       try {
@@ -70,7 +71,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
         setData(payload);
         setCurrentOrder(payload.resumeSceneOrder);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : '세션을 불러오지 못했어요.');
+        if (!cancelled) setFetchError(e instanceof Error ? e.message : '세션을 불러오지 못했어요.');
       }
     })();
     return () => {
@@ -78,7 +79,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
     };
   }, [childId, storyId, sessionId]);
 
-  const scenes = data?.scenes ?? [];
+  const scenes = useMemo(() => data?.scenes ?? [], [data]);
   const lastOrder = scenes.length > 0 ? scenes[scenes.length - 1].order : 0;
   const currentScene = useMemo(
     () => scenes.find((s) => s.order === currentOrder) ?? null,
@@ -162,6 +163,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
           onSceneEnd={proceed} // 다음 장면 또는(마지막 대화) 학습완료 지점으로 — 선형 진행이라 order+1과 동치
         />
       ) : null}
+      <Attribution /> {/* 타입캐스트 출처 표기 (T061, FR-013) — TTS 재생 화면 공통 크레딧 */}
     </main>
   );
 }

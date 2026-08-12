@@ -183,7 +183,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
           draggable={false}
           className="aspect-square w-full rounded-xl object-cover"
         />
-        <span className="text-center text-base leading-tight text-ink">{card.label}</span>
+        <span className="text-center text-lg leading-tight text-ink">{card.label}</span>
       </button>
     );
   };
