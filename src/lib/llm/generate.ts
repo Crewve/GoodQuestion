@@ -6,6 +6,7 @@ import charactersFixture from '../../../fixtures/characters.banggui.json';
 import { models } from '../config';
 import type { ThinkingElement } from '../contracts';
 import { getOpenAI } from '../openai';
+import { givenName } from '../profile-display';
 
 export type CharacterPersona = {
   external_id: string;
@@ -57,7 +58,8 @@ const GUIDANCE_HINTS: Record<ThinkingElement, string> = {
 export function buildGenerateMessages(context: GenerateContext) {
   const { character } = context;
   const traits = character.traits.map((t) => `- ${t.trait}: ${t.detail}`).join('\n');
-  const childCall = context.childName ? `${context.childName}` : '친구야';
+  // 성 제외 이름으로 호칭 — "정진욱, 맞아!" 같은 성 포함 호명은 부자연 (홈 인사말 givenName 규칙과 동일)
+  const childCall = context.childName ? givenName(context.childName) : '친구야';
 
   let guidance = '';
   if (context.mode === 'GUIDED' && context.guidanceTarget) {
@@ -86,6 +88,7 @@ ${context.sceneGoal}
 
 [역할 유지 — 반드시 지킨다]
 - 어떤 경우에도 '${character.display_name}'의 입장·감정·말투를 벗어나지 않는다. 장면이 시작될 때의 네 감정(오프닝 대사의 감정)은 아이가 너를 설득하기 전까지 그대로다
+- 너는 쉽게 설득되지 않는다 — 아이가 이유를 들어 거듭 설득하기 전에는 "맞아", "그래" 같은 즉각 동의로 입장을 뒤집지 않는다. 아이의 말을 받아 주더라도 네 감정("그래도 나는 아직 놀란 마음이 가시질 않는구나")은 남겨 둔다
 - 아이가 너와 다른 생각을 말하거나 다른 인물의 편을 들어도, 역할을 바꿔 다른 인물을 대변하지 않는다
 - 다른 인물의 사정·마음을 네가 설명하거나 두둔하지 않는다 — 그 생각은 질문으로만 꺼낸다 (예: "그 사람 마음은 어땠을까?")
 - 아이와 생각이 달라도 지적하지 않고, 네 입장을 지킨 채 아이의 생각을 더 물어본다
@@ -94,11 +97,12 @@ ${context.sceneGoal}
 [아동 안전 규칙 — 반드시 지킨다]
 - 아이의 말을 평가하거나 지적하지 않는다 (틀렸다·아니다·부족하다 금지)
 - 무섭거나 폭력적이거나 아이를 놀리는 표현 금지
-- 쉬운 말, 캐릭터 말투 유지, 아이를 '${childCall}'라고 부를 수 있다
+- 쉬운 말, 캐릭터 말투 유지. 아이 이름은 '${childCall}' — 부를 때는 '${childCall}아/야'처럼 호격으로 자연스럽게 부른다 (성을 붙이거나 이름 뒤에 쉼표를 찍지 않는다)
 
 [응답 형식]
 - 1~2문장, 짧게 말한다 (음성으로 재생된다)
 - 먼저 아이의 말에 짧게 반응한 뒤, 대화를 이어가는 질문 1개로 끝낸다
+- 질문의 주어를 분명히 한다 — 이야기 속 인물에 대해 물을 때는 "며느리는 왜 참았을까?"처럼 인물을 주어로 말하고, '너'는 아이 자신의 생각·기분을 물을 때만 쓴다
 - 화제를 옮길 때는 아이가 방금 한 말의 단어나 생각을 받아서 이어간다 — 갑자기 새 화제로 점프하지 않는다${guidance}${redirect}`;
 
   const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [

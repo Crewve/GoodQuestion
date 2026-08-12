@@ -54,6 +54,22 @@ test('화제 전환 브릿지 규칙이 포함된다 — 직전 발화를 받아
   expect(system).toContain('점프');
 });
 
+test('점진적 설득 규칙 — 즉각 동의로 입장을 뒤집지 않는다 (T073 후속, 시아버지 과속 동의 제보)', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('쉽게 설득되지 않는다');
+});
+
+test('질문 주어 명확화 — 인물 질문에 "너" 오용 금지 (T073 후속, "너는 왜 참았을까" 제보)', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('주어를 분명히');
+});
+
+test('아이 호칭은 성 제외 이름 — "김서윤" → "서윤" (홈 인사말 givenName 규칙과 동일)', () => {
+  const system = buildGenerateMessages(context({ childName: '김서윤' }))[0].content;
+  expect(system).toContain("'서윤'");
+  expect(system).not.toContain('김서윤');
+});
+
 test('GUIDED면 서버가 지정한 부족 요소만 유도 지시에 등장한다', () => {
   const messages = buildGenerateMessages(
     context({ mode: 'GUIDED', guidanceTarget: 'PERSPECTIVE', missingElements: ['PERSPECTIVE', 'SOLUTION'] }),
