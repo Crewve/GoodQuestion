@@ -110,9 +110,11 @@ function MicIcon({ className = 'size-6' }: { className?: string }) {
 }
 
 /** 팝업 로컬 단계 — 전역 턴 상태머신과 분리 (미션 중 대화 턴은 정지 상태) */
-type MissionPhase = 'IDLE' | 'RECORDING' | 'TRANSCRIBING' | 'REVIEW' | 'SUBMITTING' | 'SUCCESS';
+export type MissionPhase = 'IDLE' | 'RECORDING' | 'TRANSCRIBING' | 'REVIEW' | 'SUBMITTING' | 'SUCCESS';
 
 export type MissionPopupProps = {
+  /** dev UI 리허설(/dev/ui) 전용 — 초기 화면 상태 강제(성공 화면 미리보기). 실제 플로우에서는 전달하지 않는다. */
+  devInitialPhase?: MissionPhase;
   /** fixtures `missions` 키 — 'mission_1'(대화3)·'mission_2'(대화4) */
   missionId: string;
   /** STT 장면 어휘 힌트용 external_id (sc_banggui_07 등) — /api/turn 응답의 노출 장면과 일치시킬 것 */
@@ -126,11 +128,11 @@ export type MissionPopupProps = {
   onContinue: () => void;
 };
 
-export function MissionPopup({ missionId, sceneId, onSubmit, onContinue }: MissionPopupProps) {
+export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, onContinue }: MissionPopupProps) {
   const mission = missions[missionId];
   if (!mission) throw new Error(`fixtures missions에 없는 키: ${missionId}`); // 배선 오탈자 조기 발견 (assets.ts 관례)
 
-  const [phase, setPhase] = useState<MissionPhase>('IDLE');
+  const [phase, setPhase] = useState<MissionPhase>(devInitialPhase ?? 'IDLE');
   const [stt, setStt] = useState<{ text: string; sttRawText: string } | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [submitRetry, setSubmitRetry] = useState(false);
