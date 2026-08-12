@@ -70,7 +70,9 @@ export function useRecorder(options: UseRecorderOptions = {}) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rafRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    onCompleteRef.current = onComplete; // 최신 콜백 유지 — 렌더 중 ref 쓰기 금지(react-hooks/refs)
+  });
 
   const cleanup = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
