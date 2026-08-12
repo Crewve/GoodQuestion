@@ -3,6 +3,9 @@
 /* 디자인 토큰 — design/디자인시스템 V1 컬러 7종 (design/README.md).
    아동 대상 라이트 테마 고정: 다크모드 분기 없음 (핸드오프 가이드 §5 색상 원칙). */
 :root {
+  /* 브라우저 강제 다크(크롬 자동 다크·삼성 인터넷 다크모드)가 글자색만 반전시켜
+     흰 바탕+흰 글자를 만드는 것 차단 — 라이트 고정 원칙의 표준 선언 (T078 스테이징 제보) */
+  color-scheme: only light;
   --background: #fff8ee; /* Base */
   --foreground: #3a2c1e; /* Text */
 }
