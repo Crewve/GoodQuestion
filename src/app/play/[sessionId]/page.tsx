@@ -102,6 +102,13 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
     setCurrentOrder((order) => (order === null ? order : order + 1));
   }, []);
 
+  // 모든 장면 완료(재개 시 resumeSceneId=null 포함) — 학습완료 활동으로 이동 (T055 배선).
+  // 재진입 라우팅(2.4.4/2.4.5/2.5 분기)은 activity 서버 컨테이너가 저장값 기준으로 판정한다.
+  const finished = data !== null && currentOrder !== null && currentOrder > lastOrder;
+  useEffect(() => {
+    if (finished) router.replace(`/play/${sessionId}/activity`);
+  }, [finished, router, sessionId]);
+
   if (error) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
@@ -125,19 +132,11 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
     );
   }
 
-  // 모든 장면 완료(재개 시 resumeSceneId=null 포함) — 학습완료 후속 활동(US4, T053~T055)으로 이어질 지점
-  if (currentOrder > lastOrder) {
+  if (finished) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="font-display text-2xl text-ink">이야기를 끝까지 들었어요! 🎉</p>
-        <p className="text-lg text-ink">학습완료 활동은 준비 중이에요.</p>
-        <button
-          type="button"
-          onClick={exitToDetail}
-          className="h-12 rounded-full bg-primary px-6 text-lg font-bold text-white"
-        >
-          이야기 상세로
-        </button>
+        <p className="text-lg text-ink">학습완료 활동으로 이동하고 있어요…</p>
       </main>
     );
   }
