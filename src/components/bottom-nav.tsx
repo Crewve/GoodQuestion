@@ -17,12 +17,12 @@ export function BottomNav({ active, childId }: { active: Tab; childId: string | 
   return (
     <nav
       aria-label="주요 메뉴"
-      className="sticky bottom-0 mt-auto flex border-t border-[#F0E4D3] bg-white"
+      className="sticky bottom-0 mt-auto flex border-t border-[#F0E4D3] bg-white shadow-[0_-4px_20px_rgba(58,44,30,0.08)]"
     >
       {TABS.map((tab) => {
         const href = tab.href(childId);
         const isActive = tab.key === active;
-        const className = `flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[13px] font-semibold ${
+        const className = `flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-lg leading-tight font-semibold ${
           isActive ? 'text-primary' : 'text-[#C4B49F]'
         } active:bg-base`;
         const body = (
