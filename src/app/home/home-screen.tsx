@@ -129,15 +129,16 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
             aria-label="이어하기"
             className="flex shrink-0 gap-[30px] rounded-3xl bg-[#FFE8C9] p-6 shadow-[0_6px_24px_rgba(58,44,30,0.1)]"
           >
-            <div className="relative w-[44%] shrink-0 self-stretch overflow-hidden rounded-[20px] shadow-[0_4px_16px_rgba(58,44,30,0.08)]">
+            {/* 시안 509×302 비율 고정 — 원본(4:3) 비율을 따르면 카드가 세로로 커져 추천 1행이 GNB에 잘림 */}
+            <div className="relative aspect-[509/302] w-[44%] shrink-0 self-center overflow-hidden rounded-[20px] shadow-[0_4px_16px_rgba(58,44,30,0.08)]">
               <Image
                 src={storyThumbnailUrl(false)}
                 alt=""
                 width={1448}
                 height={1086}
-                sizes="509px"
+                sizes="(max-width: 1194px) 44vw, 509px"
                 loading="eager"
-                className="h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col">
