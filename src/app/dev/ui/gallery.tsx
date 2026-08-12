@@ -16,6 +16,7 @@ import story from '../../../../fixtures/story.banggui.json';
 type FixtureScene = {
   external_id: string;
   scene_order: number;
+  type?: string;
   label?: string;
   narration?: string;
   character?: string;
@@ -23,6 +24,14 @@ type FixtureScene = {
 };
 const scenes = story.scenes as FixtureScene[];
 const sceneByOrder = (order: number) => scenes.find((s) => s.scene_order === order)!;
+// 장면 선택기 — 내레이션 5(도입·전개1~4)·대화 4(대화1~4) 전 장면 검토 가능해야 한다
+const narrationScenes = scenes.filter((s) => s.type === 'narration');
+const dialogueScenes = scenes.filter((s) => s.type === 'dialogue');
+const CHARACTER_NAMES: Record<string, string> = {
+  ch_banggui_daughter_in_law: '방귀 며느리',
+  ch_banggui_father_in_law: '시아버지',
+  ch_banggui_village_chief: '마을이장',
+};
 
 const noop = () => {};
 const asyncNoop = async () => {};
@@ -35,8 +44,7 @@ const PREVIEW_CARDS: PostActivityCard[] = [1, 3, 7, 9].map((order) => {
 const PREVIEW_KEYWORDS = ['방귀', '걱정', '배나무', '웃음'];
 
 const VIEWS = [
-  { key: 'intro', label: '도입 2.4.1' },
-  { key: 'develop', label: '전개 2.4.1' },
+  { key: 'narration', label: '도입·전개 2.4.1' },
   { key: 'dialogue', label: '대화 2.4.2' },
   { key: 'm1', label: '미션1 진행' },
   { key: 'm1s', label: '미션1 성공' },
@@ -84,16 +92,19 @@ const DIALOGUE_PHASES: { phase: TurnPhase; label: string; sttText?: string }[] =
 ];
 
 export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
-  const [view, setView] = useState<ViewKey>('intro');
+  const [view, setView] = useState<ViewKey>('narration');
   const [route, setRoute] = useState<string | null>(null); // 실제 라우트 iframe 미리보기
+  const [narrIdx, setNarrIdx] = useState(0); // 내레이션 장면 선택 (도입·전개1~4)
+  const [dlgIdx, setDlgIdx] = useState(0); // 대화 장면 선택 (대화1~4)
   const phase = useTurnStore((s) => s.phase);
 
-  // 화면 전환 시 턴 스토어 초기화 — 이전 뷰의 강제 상태가 남지 않게
+  // 화면·장면 전환 시 턴 스토어 초기화 — 이전 뷰의 강제 상태가 남지 않게
   useEffect(() => {
     useTurnStore.getState().reset();
-  }, [view]);
+  }, [view, dlgIdx]);
 
-  const dialogueScene = sceneByOrder(3);
+  const narrScene = narrationScenes[narrIdx];
+  const dialogueScene = dialogueScenes[dlgIdx];
 
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden bg-base">
@@ -135,8 +146,38 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
             {!r.url && <span className="block text-[10px] font-normal">{r.note}</span>}
           </button>
         ))}
+        {!route && view === 'narration' && (
+          <>
+            <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">장면 선택</p>
+            {narrationScenes.map((s, i) => (
+              <button
+                key={s.external_id}
+                type="button"
+                onClick={() => setNarrIdx(i)}
+                className={`rounded-lg px-2 py-1.5 text-left ${
+                  narrIdx === i ? 'bg-sunny text-ink' : 'bg-base text-ink active:bg-[#FFE8C9]'
+                }`}
+              >
+                {s.scene_order}. {s.label}
+              </button>
+            ))}
+          </>
+        )}
         {!route && view === 'dialogue' && (
           <>
+            <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">장면 선택</p>
+            {dialogueScenes.map((s, i) => (
+              <button
+                key={s.external_id}
+                type="button"
+                onClick={() => setDlgIdx(i)}
+                className={`rounded-lg px-2 py-1.5 text-left ${
+                  dlgIdx === i ? 'bg-sunny text-ink' : 'bg-base text-ink active:bg-[#FFE8C9]'
+                }`}
+              >
+                {s.scene_order}. {s.label} ({CHARACTER_NAMES[s.character ?? ''] ?? '?'})
+              </button>
+            ))}
             <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">대화 상태</p>
             {DIALOGUE_PHASES.map((p) => (
               <button
@@ -162,13 +203,13 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
 
       {/* 스테이지 — 실제 라우트 iframe 또는 컴포넌트 마운트 */}
       {route && <iframe src={route} title="실제 화면 미리보기" className="h-full w-full border-0" />}
-      {!route && (view === 'intro' || view === 'develop') && (
+      {!route && view === 'narration' && (
         <>
-          <ProgressHeader title="방귀 뀌는 며느리" n={view === 'intro' ? 1 : 2} N={4} onExit={noop} />
+          <ProgressHeader title="방귀 뀌는 며느리" n={narrScene.scene_order} N={scenes.length} onExit={noop} />
           <NarrationScene
-            key={view}
-            description={sceneByOrder(view === 'intro' ? 1 : 2).narration ?? ''}
-            imageUrl={sceneImageUrl(view === 'intro' ? 'sc_banggui_01' : 'sc_banggui_02')}
+            key={narrScene.external_id}
+            description={narrScene.narration ?? ''}
+            imageUrl={sceneImageUrl(narrScene.external_id)}
             onProceed={noop}
           />
         </>
@@ -176,15 +217,16 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
 
       {!route && view === 'dialogue' && (
         <>
-          <ProgressHeader title="방귀 뀌는 며느리" n={3} N={4} onExit={noop} />
+          <ProgressHeader title="방귀 뀌는 며느리" n={dialogueScene.scene_order} N={scenes.length} onExit={noop} />
           <DialogueScene
+            key={dialogueScene.external_id}
             sessionId="dev-rehearsal"
             childName="진욱"
             childAvatarKey="boy-2"
             scene={{
               id: dialogueScene.external_id,
-              order: 3,
-              characterName: '방귀 며느리',
+              order: dialogueScene.scene_order,
+              characterName: CHARACTER_NAMES[dialogueScene.character ?? ''] ?? '캐릭터',
               characterImageUrl: characterImageUrl(dialogueScene.character ?? 'ch_banggui_daughter_in_law'),
               openingText: dialogueScene.character_opening,
               imageUrl: sceneImageUrl(dialogueScene.external_id),
