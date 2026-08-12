@@ -69,7 +69,8 @@ export function PostActivityFlow({
   );
 
   return (
-    <main className="flex min-h-dvh flex-col">
+    // h-dvh 고정 — 아이 화면 스크롤 미허용 (T071). 뷰포트가 극단적으로 짧을 때만 하위 섹션이 내부 스크롤로 수용
+    <main className="flex h-dvh flex-col overflow-hidden">
       <ProgressHeader
         title={storyTitle}
         n={step === 'card-order' ? 1 : 2}

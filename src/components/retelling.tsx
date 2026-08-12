@@ -124,7 +124,7 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
   const sendEnabled = phase === 'REVIEW' && !!stt?.text.trim(); // 텍스트 표시 완료 전까지 비활성 (2.4.5 구성요소)
 
   return (
-    <section className="flex flex-1 flex-col items-center gap-5 px-6 pb-8">
+    <section className="flex min-h-0 flex-1 flex-col items-center gap-5 overflow-y-auto px-6 pb-8">
       <audio ref={hintAudioRef} hidden />
 
       {/* 활동 안내 (T067, E2E 항목 28) — 2.4.4 카드 배열 안내와 동일 스타일 */}

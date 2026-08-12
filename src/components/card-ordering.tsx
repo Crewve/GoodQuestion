@@ -189,7 +189,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
   };
 
   return (
-    <section className="flex flex-1 flex-col items-center gap-5 px-6 pb-8">
+    <section className="flex min-h-0 flex-1 flex-col items-center gap-5 overflow-y-auto px-6 pb-8">
       {/* 안내 + 판정 결과 — 색+아이콘+텍스트 병행 (FR-020) */}
       <p className="text-center font-display text-2xl text-ink">
         이야기 순서에 맞게 카드를 놓아보세요!

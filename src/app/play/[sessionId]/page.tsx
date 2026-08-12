@@ -143,7 +143,8 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col">
+    // h-dvh 고정 — min-h면 대화 내역이 쌓일 때 페이지가 자라 화면 스크롤 발생 (T071, 핸드오프 §2.2 아이 화면 스크롤 미허용)
+    <main className="flex h-dvh flex-col overflow-hidden">
       <ProgressHeader title={STORY_TITLE} n={currentPair} N={totalPairs} onExit={exitToDetail} />
       {currentScene && currentScene.type !== '대화' ? (
         <NarrationScene
