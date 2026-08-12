@@ -90,7 +90,7 @@ export function HomeScreen({ childId, childName, story, hasSession }: HomeScreen
         </Link>
       </header>
 
-      <main className="flex flex-1 flex-col gap-8 px-6 pb-8 pt-2">
+      <main className="flex flex-1 flex-col items-center gap-8 px-6 pb-8 pt-2">
         {/* 이어하기 — 진행 중인 이야기가 있는 경우에만 노출 (2.0) */}
         {hasSession && (
           <section aria-label="이어하기" className="flex w-full max-w-3xl flex-col gap-3">

@@ -301,7 +301,7 @@
 
 - [x] T069 \[P\] (공동→파트2 대행) 이미지 로딩 최적화 — 프로필 아바타·이야기 목록/홈 썸네일 렌더링 지연 해소: Storage 원격 이미지는 next/image `sizes` 적용 (E2E 항목 3·7. 기획 무충돌 성능 보완) ✓ 완료(2026-08-12): **원인은 원본 크기** — 썸네일 2MB(1448×1086)·select 아바타 0.75MB·avatar 1.2MB를 원본 그대로 로드. next.config `images.remotePatterns`(base_url은 storage-assets.json에서 파생) + `<img>`→`next/image` 전환 9곳: child-profile-form·signup 아바타 그리드(sizes 150px·eager), profiles-screen 카드(240px·eager), manage/my 64px 아바타, home 이어하기 112px·추천 그리드(240px·eager), stories 목록(50vw/240px·eager)·상세(LCP — `preload`, priority는 Next 16 deprecated), complete 96px. **play 흐름 화면(장면·대화·미션·카드배열·재구성)은 미전환** — E2E 지연 지적 없음+데모 직전 리스크 회피, 필요 시 동일 패턴 적용. 실측: `/_next/image` w=256 요청이 750KB→20KB(200), 재요청 캐시 5ms. tsc·next build 통과
 
-- [ ] T070 \[P\] (공동 — 화면 소유별) UI 중앙 정렬 점검 — 전 화면 콘텐츠 영역 max-width + 좌우 여백 가운데 정렬 일괄 점검·수정 (E2E 항목 11. 핸드오프 가이드 §2.2 "PC 확장: 콘텐츠 max-width 제한, 가운데 정렬" 명시 위반)
+- [x] T070 \[P\] (공동→파트2 대행) UI 중앙 정렬 점검 — 전 화면 콘텐츠 영역 max-width + 좌우 여백 가운데 정렬 일괄 점검·수정 (E2E 항목 11. 핸드오프 가이드 §2.2 "PC 확장: 콘텐츠 max-width 제한, 가운데 정렬" 명시 위반) ✓ 완료(2026-08-12): 전 화면(로그인·가입·프로필·홈·목록·상세·play·activity·complete·my 5종) 최상위 컨테이너 전수 점검 — **위반 1곳 발견·수정**: 홈 `<main>`에 `items-center` 누락으로 이어하기·추천 섹션(max-w-3xl)이 넓은 화면에서 좌측 쏠림. 나머지는 `mx-auto` 또는 `items-center` 기적용 확인(Header·GNB 풀블리드는 §2.1 고정 원칙대로 유지)
 
 - [ ] T071 \[P\] (파트2) 아이 화면 스크롤 제거 — E2E에서 발견된 스크롤 발생 화면 특정 후 뷰포트 내 수납(파트1 소유 화면은 T062에서 점검 완료 — 대화 `dialogue-scene`·학습완료 활동 화면 등 파트2 소유 화면 유력) (E2E 항목 30. 핸드오프 가이드 §2.2 "아이 대상 화면 스크롤 미허용" 명시 위반)
 
