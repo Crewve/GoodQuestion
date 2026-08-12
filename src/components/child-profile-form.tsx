@@ -31,6 +31,8 @@ export type ChildProfileFormProps = {
   /** 1.2.2 재사용 대비 — 동의를 화면 상위에서 1회만 받는 경우 false (기본 true, 2.1.1은 폼 안에서 1회) */
   showConsent?: boolean;
   submitLabel?: string;
+  /** 수정 모드(3.2 프로필 관리) 초기값 — 지정 시 기존 값으로 시작 (등록 경로는 미지정, 동작 불변) */
+  initialValue?: ChildProfileFormValue;
 };
 
 export function ChildProfileForm({
@@ -38,10 +40,11 @@ export function ChildProfileForm({
   onCancel,
   showConsent = true,
   submitLabel = '완료하기',
+  initialValue,
 }: ChildProfileFormProps) {
-  const [avatarKey, setAvatarKey] = useState<AvatarKey | null>(null);
-  const [name, setName] = useState('');
-  const [birthDigits, setBirthDigits] = useState('');
+  const [avatarKey, setAvatarKey] = useState<AvatarKey | null>(initialValue?.avatarKey ?? null);
+  const [name, setName] = useState(initialValue?.name ?? '');
+  const [birthDigits, setBirthDigits] = useState(initialValue?.birthDate ?? '');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
