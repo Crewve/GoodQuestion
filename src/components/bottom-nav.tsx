@@ -5,11 +5,16 @@ import Link from 'next/link';
 
 type Tab = 'home' | 'stories' | 'wordbook' | 'my';
 
+/** 아이 컨텍스트(child 쿼리) 보존 링크 — GNB와 my 계열 내부 링크가 공통 사용해 왕복 내내 유지한다 (A3) */
+export function withChild(href: string, childId: string | null): string {
+  return childId ? `${href}?child=${encodeURIComponent(childId)}` : href;
+}
+
 const TABS: { key: Tab; label: string; icon: string; href: (child: string | null) => string | null }[] = [
-  { key: 'home', label: '홈', icon: '🏠', href: (c) => (c ? `/home?child=${c}` : '/home') },
-  { key: 'stories', label: '이야기', icon: '📖', href: (c) => (c ? `/stories?child=${c}` : '/stories') },
+  { key: 'home', label: '홈', icon: '🏠', href: (c) => withChild('/home', c) },
+  { key: 'stories', label: '이야기', icon: '📖', href: (c) => withChild('/stories', c) },
   { key: 'wordbook', label: '단어장', icon: '📒', href: () => null }, // 이동 없음 (MVP)
-  { key: 'my', label: '마이페이지', icon: '👤', href: () => '/my' },
+  { key: 'my', label: '마이페이지', icon: '👤', href: (c) => withChild('/my', c) },
 ];
 
 export function BottomNav({ active, childId }: { active: Tab; childId: string | null }) {

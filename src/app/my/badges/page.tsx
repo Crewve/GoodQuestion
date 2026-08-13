@@ -6,7 +6,7 @@
 // 자리표시 타일(이야기 상세와 동일 패턴). 시안의 금메달 벡터는 추출 불가 — 🏅 이모지+어둠 오버레이로 대체.
 // 시안에 없는 뒤로가기·하단 GNB는 내비게이션 유실 방지를 위해 유지(마이페이지 계열 공통 패턴).
 import Link from 'next/link';
-import { BottomNav } from '@/components/bottom-nav';
+import { BottomNav, withChild } from '@/components/bottom-nav';
 import { recommendedThumbnailUrls, storyThumbnailUrl } from '@/lib/assets';
 
 type ReadState = '읽기 완료' | '읽는 중' | '읽기 전';
@@ -18,7 +18,11 @@ const STATE_CHIP: Record<ReadState, string> = {
   '읽기 전': 'bg-primary/15 text-[#6F6152]',
 };
 
-export default function BadgesPage() {
+export default async function BadgesPage(props: PageProps<'/my/badges'>) {
+  // 아이 컨텍스트(?child=)는 GNB·링크로 그대로 전파만 한다 (A3 — 홈 복귀 시 유지)
+  const { child } = await props.searchParams;
+  const childId = typeof child === 'string' ? child : null;
+
   const recommended = recommendedThumbnailUrls(); // 01선녀~06개미 순서 (fixtures/storage-assets.json)
   // 정적 카드 8종 — 읽기 완료 3종(진행바 3/7 정합)·읽는 중 1종·읽기 전 4종
   const cards: { title: string; imageUrl: string | null; state: ReadState }[] = [
@@ -34,27 +38,27 @@ export default function BadgesPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      {/* 헤더 — 중앙 제목 (시안), 뒤로가기는 내비게이션 유지용 */}
-      <header className="relative flex h-[70px] shrink-0 items-center justify-center">
+      {/* 헤더 — 중앙 제목 (시안), 뒤로가기는 내비게이션 유지용. 세로 스크롤 화면이라 상단 고정 (핸드오프 §2.1) */}
+      <header className="sticky top-0 z-40 flex h-[70px] shrink-0 items-center justify-center bg-background">
         <Link
-          href="/my"
+          href={withChild('/my', childId)}
           className="absolute left-2 flex h-12 items-center gap-1 px-3 font-semibold text-ink active:opacity-70"
         >
           <span aria-hidden>‹</span> 내정보
         </Link>
-        <h1 className="font-display text-[32px] text-ink">전래동화 이야기 여행</h1>
+        <h1 className="text-[32px] font-bold text-ink">전래동화 이야기 여행</h1>
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-5 pb-6 pt-2">
-        <p className="px-4 font-display text-xl text-[#B84A12]">
+        <p className="px-4 text-xl font-bold text-[#B84A12]">
           8편을 모두 완주하면 나만의 이야기책이 완성돼요! 이야기를 읽고, 배지를 모아보세요 🎖️
         </p>
 
         {/* 수행 현황 진행바 3/7권 — 명세 예시 원문 고정값 (기존 데이터 규칙 유지) */}
         <section className="rounded-3xl border border-[#EDE5D8] bg-white px-5 py-4 shadow-[0_4px_16px_rgba(58,44,30,0.08)]">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl text-[#6F6152]">내가 읽은 책</h2>
-            <p className="font-display text-xl" aria-label="7권 중 3권 완료">
+            <h2 className="text-xl font-bold text-[#6F6152]">내가 읽은 책</h2>
+            <p className="text-xl font-bold" aria-label="7권 중 3권 완료">
               <span className="text-[#177A4F]">3</span>
               <span className="text-[#6F6152]"> / 7 권</span>
             </p>
@@ -100,7 +104,7 @@ export default function BadgesPage() {
                     )}
                   </div>
                   <div className="flex flex-col items-center gap-1.5 px-2 pb-2.5 pt-2">
-                    <p className="max-w-full truncate font-display text-xl font-normal text-ink">{card.title}</p>
+                    <p className="max-w-full truncate text-xl font-bold text-ink">{card.title}</p>
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-1 text-lg font-bold ${STATE_CHIP[card.state]}`}
                     >
@@ -114,13 +118,13 @@ export default function BadgesPage() {
         </section>
 
         <Link
-          href="/stories"
-          className="flex h-12 items-center justify-center gap-2.5 self-center rounded-3xl bg-primary px-6 font-display text-xl text-ink shadow-[0_6px_16px_rgba(255,122,61,0.25)] active:bg-ink active:text-white"
+          href={withChild('/stories', childId)}
+          className="flex h-12 items-center justify-center gap-2.5 self-center rounded-3xl bg-primary px-6 text-xl font-bold text-ink shadow-[0_6px_16px_rgba(255,122,61,0.25)] active:bg-ink active:text-white"
         >
           <span aria-hidden>📖</span> 다른 이야기 보기 <span aria-hidden>→</span>
         </Link>
       </main>
-      <BottomNav active="my" childId={null} />
+      <BottomNav active="my" childId={childId} />
     </div>
   );
 }

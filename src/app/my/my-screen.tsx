@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
-import { BottomNav } from '@/components/bottom-nav';
+import { BottomNav, withChild } from '@/components/bottom-nav';
 import { assetUrl } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
@@ -41,9 +41,11 @@ type MyScreenProps = {
   profiles: ChildProfile[];
   /** null이면 학습 현황 조회 실패 — 화면 유지 후 재조회 (3.1 예외 처리) */
   summary: WeeklySummary | null;
+  /** 아이 컨텍스트(?child=) — GNB·내부 링크로 전파만 한다 (A3, 홈 복귀 시 유지) */
+  childId: string | null;
 };
 
-export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps) {
+export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScreenProps) {
   const router = useRouter();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -73,7 +75,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-ink">등록된 아이</h2>
             <Link
-              href="/my/profiles"
+              href={withChild('/my/profiles', childId)}
               className="-my-2 flex min-h-12 items-center text-sm font-bold text-primary active:opacity-70"
             >
               프로필 관리 →
@@ -84,7 +86,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
               <p className="text-base text-ink/70">{EMPTY_PROFILES_MESSAGE}</p>
               {/* 아이 추가 버튼을 통해 프로필 등록 가능 (3.1 예외 처리) — 등록은 3.2에서 */}
               <Link
-                href="/my/profiles"
+                href={withChild('/my/profiles', childId)}
                 className="flex h-12 items-center rounded-full bg-primary px-6 text-base font-bold text-white active:bg-ink"
               >
                 ＋ 아이 추가
@@ -131,7 +133,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
                 <span className="text-center text-xs text-[#8A7A68]">대화 횟수</span>
               </div>
               <Link
-                href="/my/badges"
+                href={withChild('/my/badges', childId)}
                 className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5 active:bg-white"
               >
                 <span aria-hidden className="text-2xl">🎖️</span>
@@ -149,7 +151,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
           {MENU_ITEMS.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              href={withChild(item.href, childId)}
               className="flex h-[63px] items-center gap-3 border-b border-[#F0E4D3] px-5 text-base text-ink active:bg-background"
             >
               <span aria-hidden className="text-xl">
@@ -220,7 +222,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
           </div>
         </div>
       )}
-      <BottomNav active="my" childId={null} />
+      <BottomNav active="my" childId={childId} />
     </div>
   );
 }

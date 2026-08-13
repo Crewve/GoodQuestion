@@ -150,15 +150,15 @@ export function ChildProfileCard({ profile, displayName, index, showAge = true, 
             🙂
           </span>
         )}
-        <span aria-hidden className="absolute -top-1.5 right-0 font-display text-sm text-sunny">
+        <span aria-hidden className="absolute -top-1.5 right-0 text-sm text-sunny">
           ★
         </span>
-        <span aria-hidden className={`absolute -left-1 top-1 font-display text-[10px] ${palette.sparkle}`}>
+        <span aria-hidden className={`absolute -left-1 top-1 text-[10px] ${palette.sparkle}`}>
           ✦
         </span>
       </span>
       <span className="flex max-w-full items-center gap-2">
-        <span className="min-w-0 truncate font-display text-2xl text-ink">{displayName}</span>
+        <span className="min-w-0 truncate text-2xl font-bold text-ink">{displayName}</span>
         {showAge && age !== null && (
           <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${palette.badge}`}>만 {age}세</span>
         )}
