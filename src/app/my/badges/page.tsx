@@ -3,20 +3,51 @@
 // 구성(시안): 중앙 제목 "전래동화 이야기 여행"·완주 안내 문구·수행 현황 진행바·동화 카드 8종·다른 이야기 보기.
 // 수치(3/7권)는 명세 예시 원문 그대로의 고정값 유지 — 완료 3종 배치로 진행바와 정합(기존 데이터 규칙).
 // 카드 8종 중 이미지가 있는 7종은 기존 에셋(방귀 썸네일+추천 6종) 재사용, 8종째(흥부와 놀부)는 에셋 미존재라
-// 자리표시 타일(이야기 상세와 동일 패턴). 시안의 금메달 벡터는 추출 불가 — 🏅 이모지+어둠 오버레이로 대체.
-// 시안에 없는 뒤로가기·하단 GNB는 내비게이션 유실 방지를 위해 유지(마이페이지 계열 공통 패턴).
+// 자리표시 타일(이야기 상세와 동일 패턴). 시안 금메달은 벡터(fig 내장 PNG 아님)라 SVG로 재현(2026-08-13 실측:
+// 금 원판 #F7C325/#EDB01B·크림 별 #FFF3C4·리본 #CE4444/#983535·스파클). 하단 GNB는 스토리보드에 없어 제거(뒤로가기로 복귀).
 import Link from 'next/link';
-import { BottomNav } from '@/components/bottom-nav';
 import { recommendedThumbnailUrls, storyThumbnailUrl } from '@/lib/assets';
 
 type ReadState = '읽기 완료' | '읽는 중' | '읽기 전';
 
-/** 상태 칩 — 시안 3.6 읽기 상태 칩 2종 + 기존 '읽는 중' 상태는 sunny 변형으로 유지 (텍스트로 구분, 색상 단독 구분 금지) */
+/** 상태 칩 — 스토리보드 실측: 완료 #C4E0F3/파랑·읽는 중 #DDF5EC/민트·읽기 전 피치 (텍스트는 대비 하한 준수값) */
 const STATE_CHIP: Record<ReadState, string> = {
   '읽기 완료': 'bg-[#C4E0F3] text-[#175E94]',
-  '읽는 중': 'bg-sunny/50 text-ink',
+  '읽는 중': 'bg-[#DDF5EC] text-[#177A4F]',
   '읽기 전': 'bg-primary/15 text-[#6F6152]',
 };
+
+/** 완료 메달 — 시안 3.6 금별+빨간 리본 로제트 벡터 재현 (스토리보드 픽셀 실측 색) */
+function MedalIcon({ className = 'size-24' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 96 104" className={className} aria-hidden>
+      <path d="M37 58 23 92l12-5 7 12 13-28z" fill="#CE4444" />
+      <path d="M59 58l14 34-12-5-7 12-13-28z" fill="#983535" />
+      <circle cx="48" cy="38" r="30" fill="#F7C325" />
+      <circle cx="48" cy="38" r="23" fill="#EDB01B" />
+      <path d="M48 24l5 10.1 11.2 1.6-8.1 7.9 1.9 11.1L48 49.5l-10 5.2 1.9-11.1-8.1-7.9 11.1-1.6z" fill="#FFF3C4" />
+      <path d="M20 4l2.4 5.6L28 12l-5.6 2.4L20 20l-2.4-5.6L12 12l5.6-2.4z" fill="#FFF3C4" />
+    </svg>
+  );
+}
+
+/** 흰 아웃라인 펼친 책 글리프 — 스토리보드 '다른 이야기 보기' 아이콘 */
+function BookIcon({ className = 'size-6' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5.5C10.5 4.2 8.4 3.6 6 3.6c-1 0-2 .13-3 .4v14.5c1-.27 2-.4 3-.4 2.4 0 4.5.63 6 1.9 1.5-1.27 3.6-1.9 6-1.9 1 0 2 .13 3 .4V4c-1-.27-2-.4-3-.4-2.4 0-4.5.63-6 1.9v14.1" />
+    </svg>
+  );
+}
 
 export default function BadgesPage() {
   const recommended = recommendedThumbnailUrls(); // 01선녀~06개미 순서 (fixtures/storage-assets.json)
@@ -46,8 +77,9 @@ export default function BadgesPage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-5 pb-6 pt-2">
-        <p className="px-4 font-display text-xl text-[#B84A12]">
-          8편을 모두 완주하면 나만의 이야기책이 완성돼요! 이야기를 읽고, 배지를 모아보세요 🎖️
+        <p className="flex items-center gap-1.5 px-4 font-display text-xl text-[#B84A12]">
+          8편을 모두 완주하면 나만의 이야기책이 완성돼요! 이야기를 읽고, 배지를 모아보세요
+          <MedalIcon className="size-7 shrink-0" />
         </p>
 
         {/* 수행 현황 진행바 3/7권 — 명세 예시 원문 고정값 (기존 데이터 규칙 유지) */}
@@ -91,11 +123,9 @@ export default function BadgesPage() {
                       <div className="absolute inset-0 bg-sunny/30" aria-hidden />
                     )}
                     {done && (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(180deg,rgba(30,20,8,0.65)_0%,rgba(17,17,17,0.25)_100%)]"
-                        aria-hidden
-                      >
-                        <span className="text-5xl drop-shadow-[3px_3px_4px_rgba(0,0,0,0.4)]">🏅</span>
+                      // 스토리보드: 옅은 디밍 + 중앙 로제트 메달 (기존 강한 그라데이션·이모지 대체)
+                      <div className="absolute inset-0 flex items-center justify-center bg-[rgba(30,20,8,0.22)]" aria-hidden>
+                        <MedalIcon className="size-24 drop-shadow-[2px_3px_4px_rgba(0,0,0,0.3)]" />
                       </div>
                     )}
                   </div>
@@ -113,14 +143,14 @@ export default function BadgesPage() {
           </ul>
         </section>
 
+        {/* 스토리보드: 주황 필 + 흰 글자·흰 책 글리프 (대비 2.9:1 — 시안 확정값 채택) */}
         <Link
           href="/stories"
-          className="flex h-12 items-center justify-center gap-2.5 self-center rounded-3xl bg-primary px-6 font-display text-xl text-ink shadow-[0_6px_16px_rgba(255,122,61,0.25)] active:bg-ink active:text-white"
+          className="flex h-12 items-center justify-center gap-2.5 self-center rounded-3xl bg-primary px-6 font-display text-xl font-bold text-white shadow-[0_6px_16px_rgba(255,122,61,0.25)] active:bg-ink"
         >
-          <span aria-hidden>📖</span> 다른 이야기 보기 <span aria-hidden>→</span>
+          <BookIcon /> 다른 이야기 보기 <span aria-hidden>→</span>
         </Link>
       </main>
-      <BottomNav active="my" childId={null} />
     </div>
   );
 }

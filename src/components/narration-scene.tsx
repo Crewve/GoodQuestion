@@ -1,8 +1,9 @@
 'use client';
 // 도입/전개 내레이션 화면 (T036, 기능명세서 2.4.1·2.4.2) — scene_description 온점 분리 문장을
-// 한 문장씩 노출·자동 재생. 문장 종료 시 자동 전환 없음(화살표로만 진행), 문장 오디오 종료 전에는
-// 화살표·진행하기 비활성(개발 환경 제외 — 수정사항 A2), 첫 문장은 이전 화살표 미노출,
-// 마지막 문장은 다음 화살표 대신 '진행하기'. 오디오는 문장별 사전 생성본(pregenerate-audio `_s{i}` 파일).
+// 한 문장씩 노출·자동 재생. 문장 종료 시 자동 전환 없음(화살표·진행하기로만 진행), 문장 오디오 종료 전에는
+// 화살표·진행하기 비활성(개발 환경 제외 — 수정사항 A2), 첫 문장은 이전 화살표 미노출.
+// 진행하기는 다시 듣기와 상시 병행 노출(스토리보드) — 전개 중에는 다음 화살표와 동일 동작,
+// 마지막 문장(다음 화살표 미노출)에서는 장면 진행. 오디오는 문장별 사전 생성본(pregenerate-audio `_s{i}` 파일).
 // 재생 실패 시 별도 에러 없이 텍스트만 노출하고 '다시 듣기'가 재시도를 겸한다 (TTS 폴백 매트릭스).
 // 마크업은 피그마 「개발 배포용」 2.4.1 도입/전개 프레임 대조: 장면 일러스트(라운드 20)
 // → 자막 카드(웨이브 배지+문장, 좌 흰 화살표/우 잉크 화살표) → 하단 다시 듣기(sage)·진행하기(primary).
@@ -165,7 +166,8 @@ export function NarrationScene({
         )}
       </div>
 
-      {/* 하단 버튼 — 다시 듣기(sage) 항상, 진행하기(primary)는 마지막 문장에서만 */}
+      {/* 하단 버튼 — 다시 듣기(sage)·진행하기(primary) 상시 병행 (스토리보드 대조 2026-08-13).
+          진행하기는 전개 중에는 다음 화살표와 동일하게 다음 문장, 마지막 문장에서는 장면 진행 */}
       <div className="flex h-[88px] shrink-0 items-center justify-center gap-[30px] px-5 pb-4">
         <button
           type="button"
@@ -175,16 +177,14 @@ export function NarrationScene({
           <RepeatIcon />
           다시 듣기
         </button>
-        {isLast && (
-          <button
-            type="button"
-            disabled={locked}
-            onClick={onProceed}
-            className="flex h-14 items-center rounded-full border border-background bg-primary px-8 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white disabled:opacity-40"
-          >
-            {proceedLabel}
-          </button>
-        )}
+        <button
+          type="button"
+          disabled={locked}
+          onClick={() => (isLast ? onProceed() : setIndex(index + 1))}
+          className="flex h-14 items-center rounded-full border border-background bg-primary px-8 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white disabled:opacity-40"
+        >
+          {proceedLabel}
+        </button>
       </div>
     </section>
   );

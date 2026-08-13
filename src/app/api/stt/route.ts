@@ -5,6 +5,7 @@
 // 인증은 Supabase 세션 미들웨어(T010, 파트2) 계층 담당 — 여기서 중복 검사하지 않는다.
 import { toFile } from 'openai';
 import { speechToText, buildSttHint } from '@/lib/stt';
+import { devSttFallbackText } from '@/lib/stt/dev-fallback';
 import type { SttResult } from '@/lib/contracts';
 
 const CONTEXTS = new Set(['dialogue', 'mission', 'retelling']);
@@ -57,12 +58,21 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const result = await speechToText(file, { hint });
-    const body: SttResult = { text: result.text, sttRawText: result.sttRawText, failed: result.failed };
+    let body: SttResult = { text: result.text, sttRawText: result.sttRawText, failed: result.failed };
+    // 로컬 개발 전용: 게이트 실패(무의미한 소리 등)면 장면 정석 예시로 대체해 이야기 진행을 확인 가능하게
+    // 한다 (dev-fallback.ts — NODE_ENV=development 외에는 null이라 배포 동작 불변)
+    if (body.failed) {
+      const fallback = devSttFallbackText(context, sceneId);
+      if (fallback) body = { text: fallback, sttRawText: result.sttRawText || fallback, failed: false };
+    }
     return Response.json(body);
   } catch (error) {
     // 폴백 매트릭스: Whisper 실패/타임아웃 → failed:true 200 — 클라이언트는 재녹음 유도, 메시지 미생성
     console.error('[api/stt] Whisper 호출 실패:', error);
-    const body: SttResult = { text: '', sttRawText: '', failed: true };
+    const fallback = devSttFallbackText(context, sceneId);
+    const body: SttResult = fallback
+      ? { text: fallback, sttRawText: fallback, failed: false }
+      : { text: '', sttRawText: '', failed: true };
     return Response.json(body);
   }
 }
