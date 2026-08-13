@@ -1,6 +1,7 @@
 // T027 — 캐릭터 생성 LLM 순수부 테스트: 페르소나 프롬프트 조립·후검증(길이·금칙어)
 // API 호출부는 simulate CLI로 검증한다.
 import { expect, test } from 'vitest';
+import charactersFixture from '../../../fixtures/characters.banggui.json';
 import { buildGenerateMessages, loadCharacter, validateReply, type GenerateContext } from './generate';
 
 function context(overrides: Partial<GenerateContext> = {}): GenerateContext {
@@ -62,6 +63,94 @@ test('점진적 설득 규칙 — 즉각 동의로 입장을 뒤집지 않는다
 test('질문 주어 명확화 — 인물 질문에 "너" 오용 금지 (T073 후속, "너는 왜 참았을까" 제보)', () => {
   const system = buildGenerateMessages(context())[0].content;
   expect(system).toContain('주어를 분명히');
+});
+
+// ── C1 (LLM 생성 표현 고도화) — staging 로그 어색 패턴 기반 프롬프트 규칙 ──
+
+test('C1-P1: 자기 3인칭 지칭 금지 — 며느리가 자신을 "며느리"라 부르지 않는다 (staging: "며느리도 그런 마음이…")', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('3인칭');
+  // 자기 마음을 묻는 것 자체는 장면 설계상 필요(요소 유도) — 단 1인칭으로 묻는다
+  expect(system).toContain("'나'로 묻는다");
+});
+
+test('C1-P1 예시 오염 방지: 주어 예시는 fixtures에서 화자 아닌 인물로 파생 — 전 캐릭터 불변식 (리뷰 필수 2)', () => {
+  for (const c of charactersFixture.characters) {
+    const system = buildGenerateMessages(context({ character: loadCharacter(c.external_id) }))[0].content;
+    // 중립 템플릿 사용 (스포일러·오프씬 사건 예시 금지) + 예시 주어는 화자 자신이 아니어야 한다
+    expect(system).toMatch(/왜 그랬을까\?/);
+    expect(system).not.toContain(`${c.name}은 왜 그랬을까`);
+    expect(system).not.toContain(`${c.name}는 왜 그랬을까`);
+  }
+});
+
+test('C1 리뷰 필수 1: redirect 시 [주제 복귀]가 핵심 단어 에코 규칙보다 우선한다고 명시된다', () => {
+  for (const redirect of ['INAPPROPRIATE', 'OFF_TOPIC'] as const) {
+    const system = buildGenerateMessages(context({ redirect }))[0].content;
+    expect(system).toContain('우선');
+    expect(system).toContain('되받지 않는다');
+  }
+});
+
+test('C1 리뷰 필수 3: 조사 비문 없음 — "마을 이장님"에 \'라고\'를 붙이지 않는다', () => {
+  const system = buildGenerateMessages(
+    context({ character: loadCharacter('ch_banggui_village_chief') }),
+  )[0].content;
+  expect(system).not.toContain("'마을 이장님'라고");
+});
+
+test('C1 리뷰 권고: 호격 예시는 확정 렌더 — "서윤아", 슬래시 미노출', () => {
+  const system = buildGenerateMessages(context({ childName: '김서윤' }))[0].content;
+  expect(system).toContain("'서윤아'");
+  expect(system).not.toContain('아/야');
+});
+
+test('C1 리뷰 권고: 타 인물 마음 예시도 이름 사용 — "그 사람" 대명사 예시 제거', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('시아버지 마음은 어땠을까');
+  expect(system).not.toContain('그 사람 마음은');
+});
+
+test('C1-P5 강화: 아이가 네 편을 들어도 다른 인물을 대신 변호하지 않는다 (simulate 회귀: 시아버지 "그녀도 힘들었던 거야")', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('네 편을 들어도');
+});
+
+test('C1 번역투 금지 — "그녀" 같은 번역투 대명사를 쓰지 않는다 (simulate 회귀: 시아버지 "그녀도")', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('번역투');
+});
+
+test('C1-P2: 질문은 물음표 1개 — 한 턴 질문 2개 연발 금지 (staging: "편해질까? …궁금해.")', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('물음표');
+  expect(system).toContain('마지막 문장');
+});
+
+test('C1-P3: 호명 빈도 제한 — 매 턴 이름으로 시작하지 않는다 (staging: 10턴 중 7턴 "정진욱,")', () => {
+  const system = buildGenerateMessages(context({ childName: '김서윤' }))[0].content;
+  expect(system).toContain('매번 부르지 않는다');
+});
+
+test('C1-P4: "맞아/그래/그렇지" 첫마디 맞장구 금지 — 정답 판정형 동의로 시작하지 않는다 (staging 4건 + simulate 회귀 재발)', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('첫마디');
+  expect(system).toContain("'그렇지'");
+});
+
+test('C1-P7: 아이 문장 장황 에코 금지 — 핵심 단어만 받아 짧게 잇는다 (staging: 비문 에코 3건)', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain('핵심 단어');
+});
+
+test('C1-P9: 표기 고정 — "방귀를 뀌다" (staging: 캐릭터가 "방귀를 끼는/껴야" 생성 2건)', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).toContain("'방귀를 뀌다'");
+});
+
+test('C1 보조: childName 없으면 호격 지시가 "친구야아/야"로 깨지지 않는다', () => {
+  const system = buildGenerateMessages(context())[0].content;
+  expect(system).not.toContain('친구야아');
 });
 
 test('아이 호칭은 성 제외 이름 — "김서윤" → "서윤" (홈 인사말 givenName 규칙과 동일)', () => {
