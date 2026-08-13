@@ -10,6 +10,7 @@ import { DialogueScene } from '@/components/dialogue-scene';
 import { NarrationScene } from '@/components/narration-scene';
 import { ProgressHeader } from '@/components/progress-header';
 import { useAudioUnlock } from '@/hooks/useAudioUnlock';
+import { narrationSentenceAudioUrl, splitNarrationSentences } from '@/lib/narration';
 import story from '../../../../fixtures/story.banggui.json';
 
 type ScenePayload = {
@@ -112,6 +113,31 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
     if (finished) router.replace(`/play/${sessionId}/activity`);
   }, [finished, router, sessionId]);
 
+  // 다음 장면 이미지·오디오 프리로드 — 현재 장면에 머무는 동안 브라우저 HTTP 캐시에 미리 적재해
+  // 전환 직후 이미지가 자막보다 늦게 뜨는 지연을 줄인다 (수정사항 C2)
+  useEffect(() => {
+    if (currentOrder === null) return;
+    const next = scenes.find((s) => s.order === currentOrder + 1);
+    if (!next) return;
+    for (const src of [next.imageUrl, next.characterImageUrl]) {
+      if (src) new window.Image().src = src;
+    }
+    const audioBase = next.openingAudioUrl;
+    if (!audioBase) return;
+    // 내레이션 장면은 문장별 파생 파일(_s{i})을 실제로 재생하므로 파생 URL들을 받는다
+    const urls =
+      next.type === '대화'
+        ? [audioBase]
+        : splitNarrationSentences(next.description ?? '').map((_, i) =>
+            narrationSentenceAudioUrl(audioBase, i),
+          );
+    for (const url of urls) {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.src = url;
+    }
+  }, [scenes, currentOrder]);
+
   if (error) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-background px-6 text-center">
@@ -119,7 +145,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
         <button
           type="button"
           onClick={exitToDetail}
-          className="h-14 rounded-full bg-primary px-8 font-display text-xl text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:bg-ink"
+          className="h-14 rounded-full bg-primary px-8 font-display text-xl text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:bg-ink active:text-white"
         >
           돌아가기
         </button>
@@ -146,7 +172,8 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
 
   return (
     // h-dvh 고정 — min-h면 대화 내역이 쌓일 때 페이지가 자라 화면 스크롤 발생 (T071, 핸드오프 §2.2 아이 화면 스크롤 미허용)
-    <main className="flex h-dvh flex-col overflow-hidden bg-background">
+    // max-w 1194px — 시안 가로폭. 초광폭 모니터에서 무제한 확장 방지(핸드오프 §2), body 배경이 같은 Base 색이라 바깥 여백은 자연스럽게 이어진다
+    <main className="mx-auto flex h-dvh w-full max-w-[1194px] flex-col overflow-hidden bg-background">
       <ProgressHeader title={STORY_TITLE} n={currentPair} N={totalPairs} onExit={exitToDetail} />
       {currentScene && currentScene.type !== '대화' ? (
         <NarrationScene
