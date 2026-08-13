@@ -1,6 +1,7 @@
 'use client';
 // 도입/전개 내레이션 화면 (T036, 기능명세서 2.4.1·2.4.2) — scene_description 온점 분리 문장을
-// 한 문장씩 노출·자동 재생. 문장 종료 시 자동 전환 없음(화살표로만 진행), 첫 문장은 이전 화살표 미노출,
+// 한 문장씩 노출·자동 재생. 문장 종료 시 자동 전환 없음(화살표로만 진행), 문장 오디오 종료 전에는
+// 화살표·진행하기 비활성(개발 환경 제외 — 수정사항 A2), 첫 문장은 이전 화살표 미노출,
 // 마지막 문장은 다음 화살표 대신 '진행하기'. 오디오는 문장별 사전 생성본(pregenerate-audio `_s{i}` 파일).
 // 재생 실패 시 별도 에러 없이 텍스트만 노출하고 '다시 듣기'가 재시도를 겸한다 (TTS 폴백 매트릭스).
 // 마크업은 피그마 「개발 배포용」 2.4.1 도입/전개 프레임 대조: 장면 일러스트(라운드 20)
@@ -70,16 +71,23 @@ export function NarrationScene({
 }: NarrationSceneProps) {
   const sentences = useMemo(() => splitNarrationSentences(description), [description]);
   const [index, setIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isLast = index === sentences.length - 1;
+  // 문장 오디오 종료 전에는 화살표·진행하기 잠금 — 개발 환경은 확인 편의상 즉시 넘김 허용
+  const locked = isPlaying && process.env.NODE_ENV !== 'development';
 
   const playCurrent = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !narrationAudioUrl) return;
     audio.src = narrationSentenceAudioUrl(narrationAudioUrl, index);
     audio.currentTime = 0;
-    // 실패(자동재생 차단·파일 부재)는 조용히 무시 — 텍스트는 이미 노출, '다시 듣기'가 재시도 경로
-    void audio.play().catch(() => undefined);
+    setIsPlaying(true);
+    // 실패(자동재생 차단·파일 부재)는 조용히 무시 — 텍스트는 이미 노출, '다시 듣기'가 재시도 경로.
+    // 잠금 해제는 재생 미시작으로 남은 때만 — 연타로 이전 play()가 중단된 rejection이 새 재생의 잠금을 풀지 않게
+    void audio.play().catch(() => {
+      if (audio.paused) setIsPlaying(false);
+    });
   }, [index, narrationAudioUrl]);
 
   // 진입·문장 전환 시 자동 재생, 언마운트/전환 시 이전 재생 중단
@@ -88,6 +96,19 @@ export function NarrationScene({
     const audio = audioRef.current;
     return () => audio?.pause();
   }, [playCurrent]);
+
+  // 정상 종료(ended)·로드 실패(error) 모두 잠금 해제 — 오디오 없이 텍스트만 남는 폴백에서 진행이 막히지 않게
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const unlock = () => setIsPlaying(false);
+    audio.addEventListener('ended', unlock);
+    audio.addEventListener('error', unlock);
+    return () => {
+      audio.removeEventListener('ended', unlock);
+      audio.removeEventListener('error', unlock);
+    };
+  }, []);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col">
@@ -110,8 +131,9 @@ export function NarrationScene({
           <button
             type="button"
             aria-label="이전 문장"
+            disabled={locked}
             onClick={() => setIndex(index - 1)}
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-ink shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-ink active:text-white"
+            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-ink shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-ink active:text-white disabled:opacity-40"
           >
             <ChevronIcon direction="left" />
           </button>
@@ -121,7 +143,8 @@ export function NarrationScene({
 
         <div className="flex min-h-[72px] min-w-0 flex-1 items-center gap-3.5 rounded-2xl border border-primary/15 bg-white px-[18px] py-3 shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
           <WaveBadge />
-          <p className="min-w-0 flex-1 font-display text-[22px] leading-[30px] text-ink">
+          {/* 행간 33px = 1.5배 — 핸드오프 §3 아이 화면 행간 하한 */}
+          <p className="min-w-0 flex-1 font-display text-[22px] leading-[33px] text-ink">
             {sentences[index] ?? ''}
           </p>
         </div>
@@ -131,8 +154,9 @@ export function NarrationScene({
           <button
             type="button"
             aria-label="다음 문장"
+            disabled={locked}
             onClick={() => setIndex(index + 1)}
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink text-white shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-primary"
+            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink text-white shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-primary disabled:opacity-40"
           >
             <ChevronIcon direction="right" />
           </button>
@@ -146,7 +170,7 @@ export function NarrationScene({
         <button
           type="button"
           onClick={playCurrent}
-          className="flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-white shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink"
+          className="flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white"
         >
           <RepeatIcon />
           다시 듣기
@@ -154,8 +178,9 @@ export function NarrationScene({
         {isLast && (
           <button
             type="button"
+            disabled={locked}
             onClick={onProceed}
-            className="flex h-14 items-center rounded-full border border-background bg-primary px-8 font-display text-2xl text-white shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink"
+            className="flex h-14 items-center rounded-full border border-background bg-primary px-8 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white disabled:opacity-40"
           >
             {proceedLabel}
           </button>
