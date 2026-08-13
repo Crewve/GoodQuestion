@@ -60,7 +60,11 @@ const fixtureScenes = (story as { scenes: FixtureSceneLite[] }).scenes;
 
 const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
 
-/** 아이 격려 고정 문구 — 시안 상태 카드(대화 영역) 하단 공통 표기 */
+/**
+ * 아이 격려 고정 문구 — 시안 상태 카드(대화 영역) 하단 공통 표기.
+ * fixture mission_2.examples와 같은 문장이지만 미션 예시 유출 버그가 아니라 확정된 최종 카피(2026-08-13 기획 확인).
+ * 미션 팝업 쪽 동일 문구는 A1 버그였고 미션별 fixture 콘텐츠로 교체됨 — 이 상수는 수정 대상 아님.
+ */
 const ENCOURAGEMENT = '질문이 많은 친구는 새로운 생각을 찾을 수 있어요.';
 
 function SpeakerIcon({ className = 'size-5' }: { className?: string }) {
