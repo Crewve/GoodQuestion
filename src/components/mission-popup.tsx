@@ -100,7 +100,7 @@ export type MissionPopupProps = {
   /** dev UI 리허설(/dev/ui) 전용 — 초기 화면 상태 강제(성공 화면 미리보기). 실제 플로우에서는 전달하지 않는다. */
   devInitialPhase?: MissionPhase;
   /** fixtures `missions` 키 — 'mission_1'(대화3)·'mission_2'(대화4) */
-  missionId: string;
+  missionId: MissionId;
   /** STT 장면 어휘 힌트용 external_id (sc_banggui_07 등) — /api/turn 응답의 노출 장면과 일치시킬 것 */
   sceneId: string;
   /**
@@ -113,10 +113,11 @@ export type MissionPopupProps = {
 };
 
 export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, onContinue }: MissionPopupProps) {
-  const mission = loadMission(missionId as MissionId); // 미등록 키는 loadMission이 throw — 배선 오탈자 조기 발견
+  const mission = loadMission(missionId);
   // 하단 스트립 안내는 공통 고정 문구가 아니라 미션별 fixture 콘텐츠 — 미션2 examples·미션1 guide_points.
-  // 고정 문구를 쓰면 미션1 팝업에 미션2 예시 문장이 노출된다 (수정사항 A1)
-  const guideItems = mission.examples.length > 0 ? mission.examples : mission.guidePoints;
+  // 고정 문구를 쓰면 미션1 팝업에 미션2 예시 문장이 노출된다 (수정사항 A1). 둘 다 비면 goal로 폴백.
+  const missionItems = [...mission.examples, ...mission.guidePoints];
+  const guideItems = missionItems.length > 0 ? missionItems : [mission.goal];
 
   const [phase, setPhase] = useState<MissionPhase>(devInitialPhase ?? 'IDLE');
   const [stt, setStt] = useState<{ text: string; sttRawText: string } | null>(null);
@@ -241,7 +242,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
                 <button
                   type="button"
                   onClick={() => void requestSubmit(stt.text, stt.sttRawText)}
-                  className="h-12 rounded-full bg-primary px-5 font-display text-lg text-white active:bg-ink"
+                  className="h-12 rounded-full bg-primary px-5 font-display text-lg text-ink active:bg-ink active:text-white"
                 >
                   다시 보내기
                 </button>
@@ -272,8 +273,8 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
               <span className="flex min-w-0 items-center gap-2.5 font-display text-lg text-ink/70">
                 <SpeakerIcon className="size-6 shrink-0" />
                 <span className="min-w-0">
-                  {guideItems.map((item) => (
-                    <span key={item} className="block leading-normal">
+                  {guideItems.map((item, i) => (
+                    <span key={i} className="block leading-normal">
                       {item}
                     </span>
                   ))}

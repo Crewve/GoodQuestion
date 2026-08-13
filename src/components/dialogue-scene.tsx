@@ -16,6 +16,7 @@ import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { substituteChildName } from '@/lib/child-name';
 import type { SttResult, ThinkingElement } from '@/lib/contracts';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
+import type { MissionId } from '@/lib/missions';
 import { PHASE_LABELS, useTurnStore } from '@/store/turn';
 import story from '../../fixtures/story.banggui.json';
 
@@ -48,8 +49,8 @@ type TurnResponse = {
   mode: 'NORMAL' | 'GUIDED' | 'CLOSING';
   characterReplyText: string;
   audioUrl: string | null;
-  /** 미션 분기 (T041) — 노출은 이 필드로만 전달, 판정은 서버 전용 */
-  exposeMission?: string;
+  /** 미션 분기 (T041) — 노출은 이 필드로만 전달, 판정은 서버 전용 (/api/turn이 mission.id를 내려줌) */
+  exposeMission?: MissionId;
   missionPhase?: 'progress' | 'success';
   sceneEnd?: { reason: 'GOAL_MET' | 'MAX_TURNS'; nextSceneId: string | null };
   progress: { accumulated: ThinkingElement[]; missing: ThinkingElement[]; turn: number; maxTurns: number };
@@ -130,7 +131,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   const [lastAudioUrl, setLastAudioUrl] = useState<string | null>(null);
   const [turnRetry, setTurnRetry] = useState<{ text: string; sttRawText: string } | null>(null);
   /** 열린 미션 팝업 (T042 배선) — 서버 exposeMission으로만 열린다 */
-  const [activeMission, setActiveMission] = useState<string | null>(null);
+  const [activeMission, setActiveMission] = useState<MissionId | null>(null);
   /** 미션 응답의 캐릭터 대사 — 팝업 [성공 완료]가 닫힐 때 재생 (기능명세서 ⓕ→⑦) */
   const heldReplyRef = useRef<Pick<TurnResponse, 'characterReplyText' | 'audioUrl' | 'sceneEnd'> | null>(null);
 
@@ -507,15 +508,16 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                   <button
                     type="button"
                     onClick={() => void requestTurn(turnRetry.text, turnRetry.sttRawText)}
-                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-white active:bg-ink"
+                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-ink active:bg-ink active:text-white"
                   >
                     다시 보내기
                   </button>
                 </>
               )}
             </div>
+            {/* opacity를 얹으면 카드 톤(ink/70)과 곱해져 대비 하한 미달 — 톤 상속 그대로 표시 */}
             {!turnRetry && !statusMessage && !recorder.error && (
-              <p className="mt-0.5 font-display text-lg opacity-75">{ENCOURAGEMENT}</p>
+              <p className="mt-0.5 font-display text-lg">{ENCOURAGEMENT}</p>
             )}
           </div>
         </div>
@@ -540,7 +542,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
               type="button"
               onClick={handleSubmit}
               disabled={!sendEnabled}
-              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-white active:bg-ink disabled:opacity-40"
+              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-ink active:bg-ink active:text-white disabled:opacity-40"
             >
               보내기 →
             </button>
