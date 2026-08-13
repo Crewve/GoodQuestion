@@ -110,9 +110,9 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
   const storyDifficulty = difficultyChip(story.difficulty);
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-base">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background">
       {/* Header — 상단 고정 (핸드오프 §2.1, 피그마 h104·하단 보더 #F0E4D3) */}
-      <header className="flex h-[104px] shrink-0 items-center justify-between gap-4 border-b border-[#F0E4D3] bg-base/90 px-10">
+      <header className="flex h-[104px] shrink-0 items-center justify-between gap-4 border-b border-[#F0E4D3] bg-background/90 px-10">
         <div className="flex min-w-0 flex-col gap-1">
           <p className="font-display text-lg font-bold text-[#75664F]">반가워요!</p>
           <h1 className="truncate font-display text-[32px] leading-none text-ink">

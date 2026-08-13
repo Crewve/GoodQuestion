@@ -71,7 +71,7 @@ export function PostActivityFlow({
 
   return (
     // h-dvh 고정 — 아이 화면 스크롤 미허용 (T071). 행들이 flex 비율로 줄어들어 한 화면에 수납된다.
-    <main className="flex h-dvh flex-col overflow-hidden bg-base">
+    <main className="flex h-dvh flex-col overflow-hidden bg-background">
       <h1 className="sr-only">{storyTitle} — 학습완료 활동</h1>
       {/* 2.4.4/2.4.5 공통 헤더 — 나가기 필 + 진행 배지 (피그마 header 1194×101) */}
       <header className="flex shrink-0 items-center justify-between border-b border-[#F0E4D3] px-6 py-4">

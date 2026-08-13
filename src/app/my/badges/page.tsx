@@ -33,7 +33,7 @@ export default function BadgesPage() {
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col bg-base">
+    <div className="flex min-h-dvh flex-col bg-background">
       {/* 헤더 — 중앙 제목 (시안), 뒤로가기는 내비게이션 유지용 */}
       <header className="relative flex h-[70px] shrink-0 items-center justify-center">
         <Link

@@ -150,7 +150,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
             <Link
               key={item.href}
               href={item.href}
-              className="flex h-[63px] items-center gap-3 border-b border-[#F0E4D3] px-5 text-base text-ink active:bg-base"
+              className="flex h-[63px] items-center gap-3 border-b border-[#F0E4D3] px-5 text-base text-ink active:bg-background"
             >
               <span aria-hidden className="text-xl">
                 {item.icon}
@@ -161,14 +161,14 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
               </span>
             </Link>
           ))}
-          <div aria-hidden className="h-1 bg-base" />
+          <div aria-hidden className="h-1 bg-background" />
           <button
             type="button"
             onClick={() => {
               setLogoutError(null);
               setLogoutOpen(true);
             }}
-            className="flex h-14 w-full items-center px-5 text-base font-bold text-berry active:bg-base"
+            className="flex h-14 w-full items-center px-5 text-base font-bold text-berry active:bg-background"
           >
             로그아웃
           </button>

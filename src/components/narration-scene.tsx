@@ -146,7 +146,7 @@ export function NarrationScene({
         <button
           type="button"
           onClick={playCurrent}
-          className="flex h-14 items-center gap-1.5 rounded-full border border-base bg-sage px-5 font-display text-2xl text-white shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink"
+          className="flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-white shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink"
         >
           <RepeatIcon />
           다시 듣기
@@ -155,7 +155,7 @@ export function NarrationScene({
           <button
             type="button"
             onClick={onProceed}
-            className="flex h-14 items-center rounded-full border border-base bg-primary px-8 font-display text-2xl text-white shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink"
+            className="flex h-14 items-center rounded-full border border-background bg-primary px-8 font-display text-2xl text-white shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink"
           >
             {proceedLabel}
           </button>

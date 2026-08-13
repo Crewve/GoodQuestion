@@ -43,7 +43,7 @@ export default function SupportPage() {
           </span>
           <a
             href="#inquiry"
-            className="flex h-[52px] flex-1 items-center justify-center text-[15px] text-[#7A7268] active:bg-base"
+            className="flex h-[52px] flex-1 items-center justify-center text-[15px] text-[#7A7268] active:bg-background"
           >
             1:1 문의 내역
           </a>

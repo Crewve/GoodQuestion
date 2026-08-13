@@ -408,7 +408,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
       </div>
 
       {/* 우 — 대화 패널 (라운드 50·primary 보더) */}
-      <div className="mx-2 mb-2 flex min-h-0 min-w-0 flex-1 flex-col rounded-[32px] border border-primary bg-base p-4 shadow-[0_4px_15px_rgba(255,122,61,0.22)] lg:mx-0 lg:mb-[9px] lg:rounded-[50px] lg:p-5">
+      <div className="mx-2 mb-2 flex min-h-0 min-w-0 flex-1 flex-col rounded-[32px] border border-primary bg-background p-4 shadow-[0_4px_15px_rgba(255,122,61,0.22)] lg:mx-0 lg:mb-[9px] lg:rounded-[50px] lg:p-5">
         {/* 캐릭터 상단 — 프로필·이름 */}
         <div className="flex shrink-0 items-center gap-3">
           {scene.characterImageUrl && (

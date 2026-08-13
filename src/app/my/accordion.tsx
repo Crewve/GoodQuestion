@@ -13,7 +13,7 @@ import { koreanAge } from '@/lib/profile-display';
 /** 상단 고정 헤더 — 피그마 공통 스펙: 높이 81, bg Base, 하단 보더 #F0E4D3, 타이틀 22px Bold(좌측 72 정렬) */
 export function MyPageHeader({ backHref }: { backHref?: string }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#F0E4D3] bg-base">
+    <header className="sticky top-0 z-40 border-b border-[#F0E4D3] bg-background">
       <div className="flex h-[81px] items-center px-6">
         {backHref ? (
           <Link
@@ -55,7 +55,7 @@ export function AccordionItem({ title, meta, icon, tone = 'muted', separated = f
           : 'group border-b border-[#E8E2DA] last:border-b-0'
       }
     >
-      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-4 px-5 py-[18px] active:bg-base [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-4 px-5 py-[18px] active:bg-background [&::-webkit-details-marker]:hidden">
         {icon && (
           <span aria-hidden className="flex size-[52px] shrink-0 items-center justify-center rounded-[14px] bg-[#FFEDE3] text-2xl">
             {icon}

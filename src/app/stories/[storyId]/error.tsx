@@ -3,7 +3,7 @@
 // UI 리뉴얼 (피그마 2.3 톤 대조): base 배경·Cafe24 헤드라인·주황 알약 버튼(r48·주황 그림자).
 export default function StoryDetailError({ reset }: { reset: () => void }) {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-base px-6 text-center">
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-background px-6 text-center">
       <p className="font-display text-2xl text-ink">이야기 정보를 불러오지 못했습니다</p>
       <button
         type="button"

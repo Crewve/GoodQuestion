@@ -231,7 +231,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
       <audio ref={hintAudioRef} hidden />
       {phase !== 'SUCCESS' ? (
         /* [미션 진행 중] — 그라데이션 헤더 + 미션 일러스트(안내 포인트 포함) + 안내/미리보기 스트립 + 마이크·보내기 */
-        <section className="flex max-h-full w-full max-w-[770px] flex-col overflow-hidden rounded-[32px] bg-base shadow-[0_24px_64px_rgba(58,44,30,0.45)]">
+        <section className="flex max-h-full w-full max-w-[770px] flex-col overflow-hidden rounded-[32px] bg-background shadow-[0_24px_64px_rgba(58,44,30,0.45)]">
           <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 bg-gradient-to-b from-primary to-berry px-6 py-2">
             <span className="shrink-0 rounded-xl bg-white px-3 py-1 font-display text-lg text-primary">
               미션 {missionNumber}
@@ -244,7 +244,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
           <img
             src={missionImageUrl(missionNumber)}
             alt={mission.goal}
-            className="min-h-0 w-full flex-1 bg-base object-contain"
+            className="min-h-0 w-full flex-1 bg-background object-contain"
           />
 
           {/* 안내/상태/미리보기 스트립 — 대화 화면과 동일 표기 규칙 (색+아이콘+텍스트 병행) */}

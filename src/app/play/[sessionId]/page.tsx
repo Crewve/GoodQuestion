@@ -114,7 +114,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
 
   if (error) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-base px-6 text-center">
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-background px-6 text-center">
         <p className="font-display text-xl text-ink">{error}</p>
         <button
           type="button"
@@ -129,7 +129,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
 
   if (!data || currentOrder === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-base">
+      <main className="flex min-h-dvh items-center justify-center bg-background">
         <p className="font-display text-xl text-ink">이야기를 준비하고 있어요…</p>
       </main>
     );
@@ -137,7 +137,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
 
   if (finished) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-base px-6 text-center">
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <p className="font-display text-3xl text-ink">이야기를 끝까지 들었어요! 🎉</p>
         <p className="font-display text-xl text-ink">학습완료 활동으로 이동하고 있어요…</p>
       </main>
@@ -146,7 +146,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
 
   return (
     // h-dvh 고정 — min-h면 대화 내역이 쌓일 때 페이지가 자라 화면 스크롤 발생 (T071, 핸드오프 §2.2 아이 화면 스크롤 미허용)
-    <main className="flex h-dvh flex-col overflow-hidden bg-base">
+    <main className="flex h-dvh flex-col overflow-hidden bg-background">
       <ProgressHeader title={STORY_TITLE} n={currentPair} N={totalPairs} onExit={exitToDetail} />
       {currentScene && currentScene.type !== '대화' ? (
         <NarrationScene

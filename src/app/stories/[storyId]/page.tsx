@@ -69,7 +69,7 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
 
   // 태블릿 기준(1194×834) 한 화면 수납 — 히어로는 41dvh 캡, CTA는 mt-auto 하단 고정 (세로 스크롤 금지)
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-base">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <div className="flex h-20 shrink-0 items-center px-5">
         <Link
           href={backHref}

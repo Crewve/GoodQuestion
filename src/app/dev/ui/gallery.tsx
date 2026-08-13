@@ -107,7 +107,7 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
   const dialogueScene = dialogueScenes[dlgIdx];
 
   return (
-    <div className="relative flex h-dvh flex-col overflow-hidden bg-base">
+    <div className="relative flex h-dvh flex-col overflow-hidden bg-background">
       {/* 좌측 컨트롤 레일 */}
       <aside className="fixed top-1/2 left-2 z-50 flex max-h-[92dvh] -translate-y-1/2 flex-col gap-1 overflow-y-auto rounded-2xl bg-white/95 p-2 text-xs shadow-[0_4px_20px_rgba(58,44,30,0.25)]">
         <p className="px-1 pb-1 font-bold text-ink">UI 리허설 (dev)</p>
@@ -120,7 +120,7 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
               setRoute(null);
             }}
             className={`rounded-lg px-2 py-1.5 text-left font-semibold ${
-              view === v.key && !route ? 'bg-primary text-white' : 'bg-base text-ink active:bg-[#FFE8C9]'
+              view === v.key && !route ? 'bg-primary text-white' : 'bg-background text-ink active:bg-[#FFE8C9]'
             }`}
           >
             {v.label}
@@ -138,8 +138,8 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
               route === r.url && route
                 ? 'bg-sky text-white'
                 : r.url
-                  ? 'bg-base text-ink active:bg-[#FFE8C9]'
-                  : 'bg-base text-ink/30'
+                  ? 'bg-background text-ink active:bg-[#FFE8C9]'
+                  : 'bg-background text-ink/30'
             }`}
           >
             {r.label}
@@ -155,7 +155,7 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
                 type="button"
                 onClick={() => setNarrIdx(i)}
                 className={`rounded-lg px-2 py-1.5 text-left ${
-                  narrIdx === i ? 'bg-sunny text-ink' : 'bg-base text-ink active:bg-[#FFE8C9]'
+                  narrIdx === i ? 'bg-sunny text-ink' : 'bg-background text-ink active:bg-[#FFE8C9]'
                 }`}
               >
                 {s.scene_order}. {s.label}
@@ -172,7 +172,7 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
                 type="button"
                 onClick={() => setDlgIdx(i)}
                 className={`rounded-lg px-2 py-1.5 text-left ${
-                  dlgIdx === i ? 'bg-sunny text-ink' : 'bg-base text-ink active:bg-[#FFE8C9]'
+                  dlgIdx === i ? 'bg-sunny text-ink' : 'bg-background text-ink active:bg-[#FFE8C9]'
                 }`}
               >
                 {s.scene_order}. {s.label} ({CHARACTER_NAMES[s.character ?? ''] ?? '?'})
@@ -191,7 +191,7 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
                   })
                 }
                 className={`rounded-lg px-2 py-1.5 text-left ${
-                  phase === p.phase ? 'bg-sage text-white' : 'bg-base text-ink active:bg-[#FFE8C9]'
+                  phase === p.phase ? 'bg-sage text-white' : 'bg-background text-ink active:bg-[#FFE8C9]'
                 }`}
               >
                 {p.label}

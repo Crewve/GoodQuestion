@@ -44,14 +44,14 @@ export default function GuidePage() {
         <div className="mt-10 flex overflow-hidden border border-[#E8E2DA] bg-white">
           <a
             href="#terms"
-            className="flex h-[52px] flex-1 items-center justify-center text-[15px] text-[#7A7268] active:bg-base"
+            className="flex h-[52px] flex-1 items-center justify-center text-[15px] text-[#7A7268] active:bg-background"
           >
             서비스 이용약관
           </a>
           <a
             href="#usage"
             aria-current="true"
-            className="flex h-[52px] flex-1 items-center justify-center border-b-2 border-[#1E1A14] text-[15px] font-bold text-[#1E1A14] active:bg-base"
+            className="flex h-[52px] flex-1 items-center justify-center border-b-2 border-[#1E1A14] text-[15px] font-bold text-[#1E1A14] active:bg-background"
           >
             서비스 이용 가이드
           </a>
