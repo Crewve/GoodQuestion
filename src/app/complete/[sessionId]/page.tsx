@@ -14,6 +14,47 @@ import { getAuthedUser } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
+/** 아웃라인 트로피 글리프 — 스토리보드 '모은 배지 확인하기' 아이콘 (주황 라인 스타일, currentColor 상속) */
+function TrophyIcon({ className = 'size-7' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+      <path d="M4 22h16" />
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21c1.18.54 2.03 2.03 2.03 3.79" />
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+    </svg>
+  );
+}
+
+/** 흰 아웃라인 펼친 책 글리프 — 스토리보드 '다른 이야기 보기' 아이콘 (이모지 📖는 플랫폼별 파란 표지로 렌더돼 시안과 다름) */
+function BookIcon({ className = 'size-7' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5.5C10.5 4.2 8.4 3.6 6 3.6c-1 0-2 .13-3 .4v14.5c1-.27 2-.4 3-.4 2.4 0 4.5.63 6 1.9 1.5-1.27 3.6-1.9 6-1.9 1 0 2 .13 3 .4V4c-1-.27-2-.4-3-.4-2.4 0-4.5.63-6 1.9v14.1" />
+    </svg>
+  );
+}
+
 /** 학습 시간 — 세션 시작→완료를 분 단위 올림(최소 1분). 완료 화면 표시 전용 */
 function learningMinutes(startedAt: string | null, completedAt: string | null): number | null {
   if (!startedAt || !completedAt) return null;
@@ -127,18 +168,19 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
           </section>
         </div>
 
-        {/* 이동 버튼 2종 — 링크 대상 유지 */}
+        {/* 이동 버튼 2종 — 링크 대상 유지. 스토리보드 실측(2026-08-13): 높이 60px·테두리 2px,
+            글자 색은 #B84A12·ink 그대로 시안과 일치(아동 대비 하한 준수값) */}
         <Link
           href="/my/badges"
-          className="flex h-16 shrink-0 items-center justify-center gap-3 rounded-[22px] border-[3px] border-primary bg-[#FFFDE7] font-display text-2xl text-[#B84A12] shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-primary active:text-ink"
+          className="flex h-[60px] shrink-0 items-center justify-center gap-3 rounded-[22px] border-2 border-primary bg-[#FFFDE7] font-display text-2xl text-[#B84A12] shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-primary active:text-ink"
         >
-          <span aria-hidden>🏆</span> 모은 배지 확인하기 <span aria-hidden>→</span>
+          <TrophyIcon /> 모은 배지 확인하기 <span aria-hidden>→</span>
         </Link>
         <Link
           href={storiesHref}
-          className="flex h-16 shrink-0 items-center justify-center gap-3 rounded-[22px] bg-primary font-display text-2xl text-ink shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-ink active:text-white"
+          className="flex h-[60px] shrink-0 items-center justify-center gap-3 rounded-[22px] bg-primary font-display text-2xl text-ink shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-ink active:text-white"
         >
-          <span aria-hidden>📖</span> 다른 이야기 보기 <span aria-hidden>→</span>
+          <BookIcon className="size-7 text-white" /> 다른 이야기 보기 <span aria-hidden>→</span>
         </Link>
       </section>
     </main>

@@ -1,6 +1,8 @@
 'use client';
 // 카드 순서 배열 화면 (T053, 기능명세서 2.4.4 "장면 카드 맞추기") — 무작위 4장을 슬롯 1~4에 배치.
 // 드래그앤드롭 기본 + Tap-to-Move 보조(FR-020, 핸드오프 §6.1 — 저학년 드래그 미숙 대비 병행 제공).
+// 드래그는 Pointer Events 직접 구현(2026-08-13) — HTML5 DnD API는 터치(태블릿 1순위 타깃)에서
+// 동작하지 않아 교체. 이동 8px 전에는 탭으로 취급해 Tap-to-Move와 충돌하지 않는다.
 // 4개 슬롯이 모두 채워지면 자동 제출 — 판정은 서버(/api/post-activity, 프런트 판정 금지 FR-016)이며
 // 이 컴포넌트의 접점은 onSubmit(제출)·onProceed("정답이에요!" 클릭) 콜백뿐, 호출·저장은 컨테이너(파트2 T055) 소유.
 // 오답 시 카드는 슬롯에 놓인 상태 그대로 유지·재드래그 후 재제출(제출마다 attempt_count+1는 서버 몫).
@@ -145,19 +147,50 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
     [locked, placeCard, selectedId, slots],
   );
 
-  const handleDragStart = (event: React.DragEvent, cardId: string) => {
-    if (locked) {
-      event.preventDefault();
-      return;
-    }
-    event.dataTransfer.setData('text/plain', cardId);
-    event.dataTransfer.effectAllowed = 'move';
+  // --- Pointer 드래그 (터치·마우스 공용) ---
+
+  /** 드래그 중 고스트 표시 상태 — 렌더용. 판정은 refs 기준 */
+  const [drag, setDrag] = useState<{ cardId: string; x: number; y: number; w: number; h: number } | null>(null);
+  const dragRef = useRef<{ cardId: string; startX: number; startY: number; w: number; h: number; started: boolean } | null>(null);
+  const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
+  /** 드래그로 끝난 pointerup 뒤에 따라오는 click 1회 무시 — Tap-to-Move 오발동 방지 */
+  const suppressClickRef = useRef(false);
+  const DRAG_THRESHOLD_PX = 8;
+
+  const handlePointerDown = (event: React.PointerEvent, cardId: string) => {
+    if (locked) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { cardId, startX: event.clientX, startY: event.clientY, w: rect.width, h: rect.height, started: false };
   };
 
-  const droppedCardId = (event: React.DragEvent): string | null => {
-    event.preventDefault();
-    const id = event.dataTransfer.getData('text/plain');
-    return id && cardById.has(id) ? id : null;
+  const handlePointerMove = (event: React.PointerEvent, cardId: string) => {
+    const state = dragRef.current;
+    if (!state || state.cardId !== cardId) return;
+    if (!state.started) {
+      const moved = Math.hypot(event.clientX - state.startX, event.clientY - state.startY);
+      if (moved < DRAG_THRESHOLD_PX) return; // 미세 이동은 탭으로 취급
+      state.started = true;
+      suppressClickRef.current = true;
+      setSelectedId(null); // 드래그 시작 — 탭 선택 상태와 겹치지 않게
+    }
+    setDrag({ cardId, x: event.clientX, y: event.clientY, w: state.w, h: state.h });
+  };
+
+  const handlePointerEnd = (event: React.PointerEvent, cardId: string) => {
+    const state = dragRef.current;
+    dragRef.current = null;
+    setDrag(null);
+    if (!state || state.cardId !== cardId || !state.started) return; // 드래그 미시작 = 탭 — click 핸들러가 처리
+    // 드롭 판정 — 포인터 좌표가 들어간 슬롯에 배치, 슬롯 밖은 원위치/트레이 복귀 (미제출)
+    const { clientX: x, clientY: y } = event;
+    const slotIndex = slotRefs.current.findIndex((el) => {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    });
+    if (slotIndex >= 0) placeCard(cardId, slotIndex);
+    else returnCard(cardId);
   };
 
   /** 장면 카드 — 이미지 전면(라벨은 aria로 유지, 피그마 카드 컴포넌트는 이미지 온리) */
@@ -165,20 +198,27 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
     const card = cardById.get(cardId);
     if (!card) return null;
     const selected = selectedId === cardId;
+    const dragging = drag?.cardId === cardId;
     return (
       <button
         type="button"
-        draggable={!locked}
-        onDragStart={(event) => handleDragStart(event, cardId)}
+        onPointerDown={(event) => handlePointerDown(event, cardId)}
+        onPointerMove={(event) => handlePointerMove(event, cardId)}
+        onPointerUp={(event) => handlePointerEnd(event, cardId)}
+        onPointerCancel={(event) => handlePointerEnd(event, cardId)}
         onClick={(event) => {
           event.stopPropagation(); // 트레이/슬롯 컨테이너 탭 핸들러와 분리 — 이중 동작 방지
+          if (suppressClickRef.current) {
+            suppressClickRef.current = false; // 직전 드래그의 잔여 click — 탭으로 처리하지 않는다
+            return;
+          }
           handleCardTap(cardId);
         }}
         aria-pressed={selected}
         aria-label={`${card.label} 카드${selected ? ' 선택됨' : ''}`}
-        className={`mx-auto aspect-[210/218] w-full max-h-full min-h-0 self-center overflow-hidden rounded-2xl border-[1.5px] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)] transition-transform ${
+        className={`mx-auto aspect-[210/218] w-full max-h-full min-h-0 touch-none self-center overflow-hidden rounded-2xl border-[1.5px] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)] transition-transform ${
           selected ? 'scale-105 border-primary ring-4 ring-primary' : 'border-[#F0E4D3]'
-        } ${locked ? '' : 'cursor-grab active:cursor-grabbing'}`}
+        } ${dragging ? 'opacity-40' : ''} ${locked ? '' : 'cursor-grab active:cursor-grabbing'}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴) */}
         <img src={card.imageUrl} alt="" draggable={false} className="h-full w-full object-cover" />
@@ -186,8 +226,21 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
     );
   };
 
+  const dragCard = drag ? cardById.get(drag.cardId) : null;
+
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-5 px-10 pb-6 pt-6">
+      {/* 드래그 고스트 — 포인터를 따라다니는 카드 사본. pointer-events 차단으로 드롭 판정에 간섭하지 않는다 */}
+      {drag && dragCard && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed z-50 overflow-hidden rounded-2xl border-[1.5px] border-primary bg-white shadow-[0_10px_28px_rgba(58,44,30,0.25)]"
+          style={{ left: drag.x - drag.w / 2, top: drag.y - drag.h / 2, width: drag.w, height: drag.h }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴) */}
+          <img src={dragCard.imageUrl} alt="" draggable={false} className="h-full w-full object-cover" />
+        </div>
+      )}
       {/* 활동 안내 (T067 문구 유지) + 보조 안내 (피그마 instruction-banner) */}
       <div className="shrink-0">
         <p className="font-display text-[32px] leading-snug text-ink">이야기 순서에 맞게 카드를 놓아보세요!</p>
@@ -196,11 +249,6 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
 
       {/* 카드 트레이 — 무작위 제시, 슬롯 외 영역 드롭 = 원위치/트레이 복귀 (미제출) */}
       <div
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          const id = droppedCardId(event);
-          if (id) returnCard(id);
-        }}
         onClick={() => selectedId && slots.includes(selectedId) && returnCard(selectedId)}
         className="grid min-h-0 flex-1 grid-cols-4 gap-4"
         aria-label="카드 보관함"
@@ -217,10 +265,8 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
         {slots.map((cardId, index) => (
           <div
             key={index}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => {
-              const id = droppedCardId(event);
-              if (id) placeCard(id, index);
+            ref={(el) => {
+              slotRefs.current[index] = el;
             }}
             onClick={() => handleSlotTap(index)}
             role="button"

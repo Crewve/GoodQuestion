@@ -68,6 +68,44 @@ describe("runSttGates — 게이트 ①~⑤", () => {
     expect(result.reason).toBe("HALLUCINATION_PHRASE");
     expect(result.signals.matchedPhrase).not.toBeNull();
   });
+
+  it("⑤ 구독·알림 설정 유도 변형도 HALLUCINATION_PHRASE (실측 환각 2026-08-13)", () => {
+    const result = runSttGates(
+      { text: "구독, 좋아요, 알림 설정 부탁드립니다!", segments: goodSegments },
+      config,
+    );
+    expect(result.reason).toBe("HALLUCINATION_PHRASE");
+  });
+});
+
+describe("runSttGates — ⑥ 힌트 echo", () => {
+  // buildSttHint 산출물 형태 재현 — [직전 대사, 캐릭터명들, 주제, 제목] 결합
+  const hint =
+    "친구야, 내 방귀가 너무 크다는 걸 알면 가족들이 나를 이상하게 생각하지 않을까?, 며느리, 시아버지, 이장님, 다름, 자기이해, 방귀 뀌는 며느리";
+
+  it("무의미 발화에서 힌트의 제목을 그대로 받아쓴 전사는 HINT_ECHO", () => {
+    const result = runSttGates({ text: "방귀 뀌는 며느리", segments: goodSegments, hint }, config);
+    expect(result.reason).toBe("HINT_ECHO");
+    expect(result.signals.hintEcho).toBe(true);
+  });
+
+  it("하한(hintEchoMinChars) 미만의 짧은 정상 한 단어 답변은 보호한다", () => {
+    const result = runSttGates({ text: "며느리", segments: goodSegments, hint }, config);
+    expect(result.failed).toBe(false);
+  });
+
+  it("힌트 어휘를 포함해도 전사에 새 내용이 있으면 통과한다", () => {
+    const result = runSttGates(
+      { text: "방귀 뀌는 며느리가 부끄러웠을 것 같아요", segments: goodSegments, hint },
+      config,
+    );
+    expect(result.failed).toBe(false);
+  });
+
+  it("hint 미전달이면 ⑥은 판정 보류한다", () => {
+    const result = runSttGates({ text: "방귀 뀌는 며느리", segments: goodSegments }, config);
+    expect(result.failed).toBe(false);
+  });
 });
 
 describe("runSttGates — 순서·설정 주입", () => {

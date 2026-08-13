@@ -18,7 +18,7 @@ export const models = {
 };
 
 /**
- * STT 실패 게이트 임계값 (R-02 — 판정 순서: ①최소 글자 ②no_speech_prob ③avg_logprob ④n-gram 반복 ⑤자막체 상투구)
+ * STT 실패 게이트 임계값 (R-02 — 판정 순서: ①최소 글자 ②no_speech_prob ③avg_logprob ④n-gram 반복 ⑤자막체 상투구 ⑥힌트 echo)
  * 소비자는 파트1 `src/lib/stt/gates.ts`(순수 함수, config 주입).
  * 실측 튜닝(T022) 완료(2026-08-11): 안드로이드 실녹음 12건(정상 8·소음 2·1~2자 2, scripts/stt-tune.ts) 오분류 0 — 기본값 유지 확정.
  * 정상 발화 분포: no_speech_prob ≤0.109 · avg_logprob ≥-0.67 · n-gram 반복 1회. 소음 입력은 Whisper가 힌트 어휘를
@@ -41,6 +41,11 @@ export const sttGate = {
     '구독과 좋아요',
     '구독 눌러',
     '좋아요와 구독',
+    '구독, 좋아요',
+    '알림 설정',
+    '구독 부탁',
+    '좋아요 부탁',
+    '시청 감사',
     '다음 영상에서 만나요',
     '영상이 도움이 되셨다면',
     '자막 제공',
@@ -49,6 +54,9 @@ export const sttGate = {
     'KBS 뉴스',
     'SBS 뉴스',
   ],
+  /** ⑥ 힌트 echo 판정 최소 글자(공백 제거) — 무의미 발화에서 힌트(제목·대사)를 그대로 받아쓰는 환각 차단.
+   *  전사 전체가 힌트의 부분 문자열이면 실패. 하한 미만의 짧은 정상 한 단어 답변('며느리' 등)은 보호 (2026-08-13 추가) */
+  hintEchoMinChars: envNumber('STT_GATE_HINT_ECHO_MIN_CHARS', 5),
 };
 
 /** Whisper prompt 힌트 최대 토큰 (R-01 — 장면별 힌팅 상한) */

@@ -7,7 +7,7 @@
 // 폴백(contracts 매트릭스): 게이트/STT 실패 = "다시 한번 말해줄래?" + 마이크 재클릭, 턴 실패 = 다시 보내기,
 // audioUrl 없음(TTS 장애) = 텍스트만 표시하고 즉시 다음 단계, 자동재생 차단 = 다시 듣기 탭이 복구 경로.
 // 마크업은 피그마 「개발 배포용」 2.4.2 대화 프레임 대조: 좌 장면 일러스트 / 우 라운드 패널
-// (캐릭터 상단 → 대사 카드+다시 듣기 칩 → 대화 내역 리스트('내가 한 말' 카드) → 상태 카드(대화 영역)
+// (캐릭터 상단 → 대화 내역 리스트(시간순·최신이 맨 아래, 현재 대사 카드에 다시 듣기 칩) → 상태 카드(대화 영역)
 // → 마이크(원형 76px)·보내기). 상태 카드 색: 듣는 중 #F5EDE0 / 녹음 primary / 변환 sunny.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MissionPopup } from '@/components/mission-popup';
@@ -60,6 +60,9 @@ type FixtureSceneLite = { external_id: string; scene_order: number; character_op
 const fixtureScenes = (story as { scenes: FixtureSceneLite[] }).scenes;
 
 const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
+
+/** 클로징 대사 종료 → 장면 전환 사이 여운 — 즉시 전환이 너무 급하다는 피드백 반영 (2026-08-13) */
+const SCENE_END_DELAY_MS = 1500;
 
 /**
  * 아이 격려 고정 문구 — 시안 상태 카드(대화 영역) 하단 공통 표기.
@@ -121,7 +124,7 @@ function MicIcon({ className = 'size-[26px]' }: { className?: string }) {
 export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onSceneEnd }: DialogueSceneProps) {
   const childAvatarSrc =
     childAvatarKey && (['boy-1', 'boy-2', 'girl-1', 'girl-2'] as const).includes(childAvatarKey as AvatarKey)
-      ? avatarUrl(childAvatarKey as AvatarKey)
+      ? avatarUrl(childAvatarKey as AvatarKey, 'select') // 선택 화면과 같은 select/ 세트 (T068 — avatar/ 세트는 화풍이 달라 미사용)
       : null;
   const phase = useTurnStore((s) => s.phase);
   const sttText = useTurnStore((s) => s.sttText);
@@ -140,6 +143,8 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   const playTokenRef = useRef(0);
   /** undefined=장면 계속, string|null=응답 오디오 종료 후 전달할 nextSceneId */
   const pendingSceneEndRef = useRef<string | null | undefined>(undefined);
+  /** 클로징 후 지연 전환 타이머 — 장면 전환·이탈 시 해제 */
+  const sceneEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const historyEndRef = useRef<HTMLDivElement | null>(null);
 
   const historyRef = useRef<Bubble[]>(history);
@@ -208,7 +213,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
     const pending = pendingSceneEndRef.current;
     if (pending !== undefined) {
       pendingSceneEndRef.current = undefined;
-      onSceneEndRef.current(pending);
+      sceneEndTimerRef.current = setTimeout(() => onSceneEndRef.current(pending), SCENE_END_DELAY_MS);
       return;
     }
     beginRecordingPhase();
@@ -360,20 +365,21 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
     return () => {
       audio?.pause();
       hint?.pause();
+      if (sceneEndTimerRef.current !== null) clearTimeout(sceneEndTimerRef.current);
+      sceneEndTimerRef.current = null;
       useTurnStore.getState().reset();
     };
     // 장면 단위로만 초기화 — 콜백 아이덴티티 변경은 재진입 사유가 아니다
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene.id]);
 
+  // REVIEW 미리보기 카드가 리스트 맨 아래 등장할 때도 최하단이 보이도록 phase·sttText 포함
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [history]);
+  }, [history, phase, sttText]);
 
-  const currentLine = [...history].reverse().find((b) => b.speaker === 'character')?.text ?? '';
-  // 이전 대화 목록 (T076, E2E 항목 15) — 캐릭터 대사 카드에 떠 있는 현재 대사는 목록에서 뺀다
+  // 현재(마지막) 캐릭터 대사 — 리스트 맨 아래 카드에만 다시 듣기 칩을 붙인다
   const lastCharacterIndex = history.findLastIndex((b) => b.speaker === 'character');
-  const pastBubbles = history.filter((_, i) => i !== lastCharacterIndex);
   const badgeLabel = PHASE_LABELS[phase];
   // REVIEW에서도 마이크 활성 — 보내기 전 재녹음 허용 (T072, E2E 항목 13)
   const micEnabled = (phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting';
@@ -423,25 +429,10 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
           <p className="min-w-0 truncate font-display text-2xl text-ink lg:text-[28px]">{scene.characterName}</p>
         </div>
 
-        {/* 캐릭터 대사 카드 — 대사 + 다시 듣기 칩 */}
-        <div className="mt-3 shrink-0 border border-[#f0e4d3] bg-white px-5 py-4 shadow-[0_4px_18px_rgba(58,44,30,0.08)]">
-          <p className="font-display text-[22px] leading-normal text-ink">{currentLine}</p>
-          <div className="mt-1.5 flex justify-end">
-            <button
-              type="button"
-              onClick={replayAudio}
-              disabled={!lastAudioUrl}
-              className="flex h-12 items-center gap-1.5 rounded-lg bg-[#fff5d4] px-3 text-lg font-bold text-ink active:bg-sunny disabled:opacity-40"
-            >
-              <SpeakerIcon />
-              다시 듣기
-            </button>
-          </div>
-        </div>
-
-        {/* 대화 내역 리스트 (T076, 기능명세서 2.4.3 필수) — 화면 스크롤 미허용 원칙과의 조화: 내부 스크롤만 허용 */}
-        <div aria-label="이전 대화 내역" className="my-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-          {pastBubbles.map((bubble, i) =>
+        {/* 대화 내역 리스트 (T076, 기능명세서 2.4.3 필수) — 시간순 렌더(최신이 맨 아래).
+            화면 스크롤 미허용 원칙과의 조화: 이 div만 내부 스크롤 (패널·페이지는 overflow-hidden) */}
+        <div aria-label="대화 내역" className="my-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+          {history.map((bubble, i) =>
             bubble.speaker === 'child' ? (
               <div
                 key={i}
@@ -453,10 +444,26 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
             ) : (
               <div
                 key={i}
-                className="rounded-[20px] rounded-tl-none border border-[#f0e4d3] bg-white/80 px-5 py-3.5 shadow-[0_4px_18px_rgba(58,44,30,0.08)]"
+                className={`rounded-[20px] rounded-tl-none border border-[#f0e4d3] px-5 py-3.5 shadow-[0_4px_18px_rgba(58,44,30,0.08)] ${
+                  i === lastCharacterIndex ? 'bg-white' : 'bg-white/80'
+                }`}
               >
                 <p className="text-lg font-bold text-primary">{scene.characterName ?? '캐릭터'}의 말</p>
                 <p className="mt-1 font-display text-[22px] leading-normal text-ink">{bubble.text}</p>
+                {/* 다시 듣기 칩 — 현재 대사(마지막 캐릭터 카드)에만. 자동재생 차단 복구 경로 겸용 */}
+                {i === lastCharacterIndex && (
+                  <div className="mt-1.5 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={replayAudio}
+                      disabled={!lastAudioUrl}
+                      className="flex h-12 items-center gap-1.5 rounded-lg bg-[#fff5d4] px-3 text-lg font-bold text-ink active:bg-sunny disabled:opacity-40"
+                    >
+                      <SpeakerIcon />
+                      다시 듣기
+                    </button>
+                  </div>
+                )}
               </div>
             ),
           )}

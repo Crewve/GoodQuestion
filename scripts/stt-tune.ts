@@ -111,7 +111,7 @@ async function main() {
     } catch (e) {
       // 파일 하나의 API 오류로 배치 전체를 버리지 않는다 — 오류 기록 후 계속
       const message = e instanceof Error ? e.message : String(e);
-      results.push({ file, label, expectedFail, failed: true, reason: null, signals: { trimmedLength: 0, noSpeechProb: null, avgLogprob: null, maxNgramRepeat: 0, matchedPhrase: null }, raw: '', durationSec: null, error: message });
+      results.push({ file, label, expectedFail, failed: true, reason: null, signals: { trimmedLength: 0, noSpeechProb: null, avgLogprob: null, maxNgramRepeat: 0, matchedPhrase: null, hintEcho: false }, raw: '', durationSec: null, error: message });
       console.log(`[${i + 1}/${files.length}] ${file} → 오류: ${message}`);
     }
   }

@@ -3,7 +3,7 @@
 // 사용자 정보 카드(보호자 이미지·"보호자님"·로그인 방식) → 등록된 아이 카드(팔레트 순환, 표시 전용) →
 // 이번 주 활동 요약 3종(배지 카드만 클릭 → 3.6) → 설정 메뉴(공지/고객센터/이용안내/로그아웃) → v1.0.0.
 // 로그아웃은 Supabase signOut 후 1.1 로그인 화면으로 — 실패 시 팝업 유지·재시도 (3.2 삭제 팝업과 동일 관례).
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,11 +29,101 @@ const SUMMARY_ERROR_MESSAGE = '학습 정보를 불러오지 못했습니다';
 const LOGOUT_CONFIRM_MESSAGE = '정말 로그아웃 하시겠습니까?';
 const LOGOUT_ERROR = '로그아웃에 실패했어요. 잠시 후 다시 시도해 주세요.';
 
+/* 활동 요약 카드 아이콘 3종 — 스토리보드 3.1: 잉크 아웃라인 글리프(책·말풍선) + 컬러 메달.
+   이모지(📖💬🎖️)는 플랫폼별 렌더가 달라 SVG로 교체(2026-08-13) — 책은 완료 화면 BookIcon,
+   메달 배색은 배지 화면 MedalIcon(#F7C325/#EDB01B/#CE4444/#FFF3C4)과 동일 계열 재사용 */
+function BookIcon({ className = 'size-7' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5.5C10.5 4.2 8.4 3.6 6 3.6c-1 0-2 .13-3 .4v14.5c1-.27 2-.4 3-.4 2.4 0 4.5.63 6 1.9 1.5-1.27 3.6-1.9 6-1.9 1 0 2 .13 3 .4V4c-1-.27-2-.4-3-.4-2.4 0-4.5.63-6 1.9v14.1" />
+    </svg>
+  );
+}
+
+function ChatBubbleIcon({ className = 'size-7' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3.5c-5 0-9 3.3-9 7.5 0 2.4 1.3 4.5 3.3 5.9l-.7 3.9 4-1.6c.8.2 1.6.3 2.4.3 5 0 9-3.4 9-7.5 0-4.2-4-7.5-9-7.5z" />
+      <circle cx="8.5" cy="11" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="11" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="11" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function HangingMedalIcon({ className = 'size-7' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path d="M8.2 1.5h3l2.3 8.2h-3z" fill="#CE4444" />
+      <path d="M15.8 1.5h-3l-2.3 8.2h3z" fill="#983535" />
+      <circle cx="12" cy="15.5" r="6.2" fill="#F7C325" />
+      <circle cx="12" cy="15.5" r="4.7" fill="#EDB01B" />
+      <path d="M12 12.4l1 2 2.2.3-1.6 1.6.4 2.2-2-1-2 1 .4-2.2-1.6-1.6 2.2-.3z" fill="#FFF3C4" />
+    </svg>
+  );
+}
+
+/* 설정 메뉴 아이콘 — 스토리보드 3.1: 웜그레이(#8A7A68) 아웃라인 글리프 3종 (이모지 대체 2026-08-13).
+   말풍선은 활동 요약 ChatBubbleIcon 재사용, 문서는 GNB NoteIcon 형태 참조한 아웃라인 변형 */
+function MegaphoneIcon({ className = 'size-6' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 4.5 8.5 8.2H5A1.8 1.8 0 0 0 3.2 10v3.4A1.8 1.8 0 0 0 5 15.2h3.5L20 18.9z" />
+      <path d="M9.3 15.5l1 5h2.7l-1-5.1" />
+    </svg>
+  );
+}
+
+function GuideIcon({ className = 'size-6' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="5" y="3" width="14" height="18" rx="1.8" />
+      <path d="M9 8.5h6M9 12.5h6M9 16.5h4" />
+    </svg>
+  );
+}
+
 // 설정 메뉴 — 피그마 3.1 '설정' 카드 아이콘·순서
-const MENU_ITEMS: { label: string; href: string; icon: string }[] = [
-  { label: '공지사항', href: '/my/notices', icon: '📢' },
-  { label: '고객센터', href: '/my/support', icon: '💬' },
-  { label: '이용안내', href: '/my/guide', icon: '📋' },
+const MENU_ITEMS: { label: string; href: string; Icon: ComponentType<{ className?: string }> }[] = [
+  { label: '공지사항', href: '/my/notices', Icon: MegaphoneIcon },
+  { label: '고객센터', href: '/my/support', Icon: ChatBubbleIcon },
+  { label: '이용안내', href: '/my/guide', Icon: GuideIcon },
 ];
 
 type MyScreenProps = {
@@ -121,12 +211,12 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
           ) : (
             <div className="mt-3 grid grid-cols-3 gap-4">
               <div className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5">
-                <span aria-hidden className="text-2xl">📖</span>
+                <BookIcon className="size-7 text-ink" />
                 <span className="text-xl font-bold text-primary">{summary.completedCount}편</span>
                 <span className="text-center text-xs text-[#8A7A68]">완료한 이야기</span>
               </div>
               <div className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5">
-                <span aria-hidden className="text-2xl">💬</span>
+                <ChatBubbleIcon className="size-7 text-ink" />
                 <span className="text-xl font-bold text-sage">{summary.chatCount}회</span>
                 <span className="text-center text-xs text-[#8A7A68]">대화 횟수</span>
               </div>
@@ -134,7 +224,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
                 href="/my/badges"
                 className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5 active:bg-white"
               >
-                <span aria-hidden className="text-2xl">🎖️</span>
+                <HangingMedalIcon className="size-7" />
                 {/* 시안의 Sunny 값 색상은 흰 바탕 대비 미달 — 동일 계열의 진한 색으로 보정 */}
                 <span className="text-xl font-bold text-[#B8860B]">{summary.badgeCount}개</span>
                 <span className="text-center text-xs text-[#8A7A68]">획득한 배지</span>
@@ -145,16 +235,14 @@ export function MyScreen({ loginMethodLabel, profiles, summary }: MyScreenProps)
 
         {/* 설정 — 공지사항·고객센터·이용안내·로그아웃 */}
         <section className="mt-6 overflow-hidden rounded-3xl border border-[#F0E4D3] bg-white shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
-          <h2 className="flex h-[57px] items-center border-b border-[#F0E4D3] px-5 text-base font-bold text-ink">설정</h2>
+          <h2 className="flex h-[57px] items-center border-b border-[#F0E4D3] px-5 text-base font-bold text-ink">서비스 안내</h2>
           {MENU_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className="flex h-[63px] items-center gap-3 border-b border-[#F0E4D3] px-5 text-base text-ink active:bg-background"
             >
-              <span aria-hidden className="text-xl">
-                {item.icon}
-              </span>
+              <item.Icon className="size-6 text-[#8A7A68]" />
               {item.label}
               <span aria-hidden className="ml-auto text-[#8A7A68]">
                 ›

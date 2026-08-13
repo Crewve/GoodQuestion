@@ -3,6 +3,7 @@
 // ⑦TTS(캐시) → ⑧세션 갱신. 분석·생성은 1회 재시도, TTS 실패는 텍스트만 반환(폴백 매트릭스).
 // CLOSING은 LLM·TTS 미호출 — fixed-audio 사전 생성 mp3 URL 반환 (R-04, 장애와 무관하게 성공).
 import { substituteChildName } from '@/lib/child-name';
+import { givenName } from '@/lib/profile-display';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
 import { ANALYSIS_VERSION, analyzeUtterance } from '@/lib/llm/analysis';
 import { generateReply, loadCharacter } from '@/lib/llm/generate';
@@ -58,13 +59,14 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (!session) return errorJson(400, 'BAD_REQUEST', '세션을 찾을 수 없습니다.');
 
-  // 실명 호출 (R-07 확정) — 히스토리 치환·생성 프롬프트 호칭에 사용
+  // 실명 호출 (R-07 확정) — 히스토리 치환·생성 프롬프트 호칭에 사용.
+  // 호칭은 성 제외 이름 기준 (R-07 보완 2026-08-13 — '정진욱아'가 아니라 '진욱아')
   const { data: childRow } = await admin
     .from('children')
     .select('name')
     .eq('id', session.child_id)
     .maybeSingle();
-  const childName = childRow?.name ?? undefined;
+  const childName = childRow?.name ? givenName(childRow.name) : undefined;
 
   const { data: sceneRow } = await admin
     .from('story_scenes')

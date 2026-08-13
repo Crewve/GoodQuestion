@@ -75,7 +75,7 @@ type HomeScreenProps = {
 export function HomeScreen({ childId, childName, childAvatarKey, story, hasSession }: HomeScreenProps) {
   const avatarSrc =
     childAvatarKey && (['boy-1', 'boy-2', 'girl-1', 'girl-2'] as const).includes(childAvatarKey as AvatarKey)
-      ? avatarUrl(childAvatarKey as AvatarKey)
+      ? avatarUrl(childAvatarKey as AvatarKey, 'select') // 선택 화면과 같은 select/ 세트 (T068 — avatar/ 세트는 화풍이 달라 미사용)
       : null;
   const router = useRouter();
   const [resume, setResume] = useState<SessionProgress | null>(null);
