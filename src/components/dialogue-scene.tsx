@@ -6,9 +6,13 @@
 // CLOSING(sceneEnd) 응답은 고정 오디오 재생을 마친 뒤 onSceneEnd 호출 — 장면 전환은 컨테이너(T038) 몫.
 // 폴백(contracts 매트릭스): 게이트/STT 실패 = "다시 한번 말해줄래?" + 마이크 재클릭, 턴 실패 = 다시 보내기,
 // audioUrl 없음(TTS 장애) = 텍스트만 표시하고 즉시 다음 단계, 자동재생 차단 = 다시 듣기 탭이 복구 경로.
+// 마크업은 피그마 「개발 배포용」 2.4.2 대화 프레임 대조: 좌 장면 일러스트 / 우 라운드 패널
+// (캐릭터 상단 → 대사 카드+다시 듣기 칩 → 대화 내역 리스트('내가 한 말' 카드) → 상태 카드(대화 영역)
+// → 마이크(원형 76px)·보내기). 상태 카드 색: 듣는 중 #F5EDE0 / 녹음 primary / 변환 sunny.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MissionPopup } from '@/components/mission-popup';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
+import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { substituteChildName } from '@/lib/child-name';
 import type { SttResult, ThinkingElement } from '@/lib/contracts';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
@@ -32,6 +36,8 @@ type DialogueSceneProps = {
   scene: DialogueScenePayload;
   /** 실명 호출(R-07) — 미전달 시 '친구야' 표기 폴백 (고정 오디오와 일치) */
   childName?: string | null;
+  /** 상태 카드 미니 프로필용 아이 아바타 (피그마 2.4.2) — 미전달 시 캐릭터 프로필 폴백 */
+  childAvatarKey?: string | null;
   /** CLOSING 오디오 종료 후 호출 — nextSceneId=null이면 대화 구간 마지막(후속 활동으로) */
   onSceneEnd: (nextSceneId: string | null) => void;
 };
@@ -54,13 +60,64 @@ const fixtureScenes = (story as { scenes: FixtureSceneLite[] }).scenes;
 
 const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
 
-const PHASE_ICONS: Record<string, string> = {
-  CHAR_SPEAKING: '👂',
-  RECORDING: '🎤',
-  TRANSCRIBING: '✍️',
-};
+/** 아이 격려 고정 문구 — 시안 상태 카드(대화 영역) 하단 공통 표기 */
+const ENCOURAGEMENT = '질문이 많은 친구는 새로운 생각을 찾을 수 있어요.';
 
-export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: DialogueSceneProps) {
+function SpeakerIcon({ className = 'size-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
+      <path d="M4 9v6h4l5 4.5v-15L8 9H4z" />
+      <path d="M15.8 8.6a4.6 4.6 0 0 1 0 6.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M18 6.2a8 8 0 0 1 0 11.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** 녹음 중 웨이브 아이콘 — 시안 WaveIcon (6개 세로 바) */
+function WaveBarsIcon({ className = 'h-[26px] w-8' }: { className?: string }) {
+  const bars = [8, 20, 26, 14, 22, 10];
+  return (
+    <svg viewBox="0 0 34 26" className={className} aria-hidden>
+      {bars.map((h, i) => (
+        <rect key={i} x={i * 6} y={(26 - h) / 2} width="4" height={h} rx="2" fill="currentColor" />
+      ))}
+    </svg>
+  );
+}
+
+/** 변환 중 스피너 — 시안 SpinIcon (원호 스트로크) */
+function SpinnerIcon({ className = 'size-[26px]' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`animate-spin ${className}`} aria-hidden fill="none">
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="2.7"
+        strokeLinecap="round"
+        strokeDasharray="46"
+        strokeDashoffset="18"
+      />
+    </svg>
+  );
+}
+
+function MicIcon({ className = 'size-[26px]' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
+      <rect x="9" y="1.5" width="6" height="12.5" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 18v4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onSceneEnd }: DialogueSceneProps) {
+  const childAvatarSrc =
+    childAvatarKey && (['boy-1', 'boy-2', 'girl-1', 'girl-2'] as const).includes(childAvatarKey as AvatarKey)
+      ? avatarUrl(childAvatarKey as AvatarKey)
+      : null;
   const phase = useTurnStore((s) => s.phase);
   const sttText = useTurnStore((s) => s.sttText);
 
@@ -317,9 +374,17 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
   const micEnabled = (phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting';
   const sendEnabled = phase === 'REVIEW' && !!sttText?.trim();
 
+  // 상태 카드(대화 영역) 톤 — 시안: 듣는 중 #F5EDE0/#8A7A68, 녹음 primary/white, 변환 sunny/ink
+  const statusTone =
+    phase === 'RECORDING'
+      ? 'bg-primary text-white'
+      : phase === 'TRANSCRIBING'
+        ? 'bg-sunny text-ink'
+        : 'bg-[#f5ede0] text-[#8a7a68]';
+
   return (
-    // 태블릿 가로·PC(lg+)는 좌=현재 턴 / 우=이전 대화 목록 2단, 좁은 화면은 세로 스택 (T076)
-    <section className="flex min-h-0 flex-1 flex-col items-center gap-3 px-6 pb-6 lg:flex-row lg:items-stretch lg:justify-center lg:gap-6">
+    // 시안 StoryDialogueScreen: 좌 장면 일러스트 / 우 라운드 대화 패널 (좁은 화면은 세로 스택, 내부 스크롤만 허용)
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] bg-[#ffe8c9] lg:flex-row lg:gap-1.5">
       <audio ref={audioRef} hidden />
       <audio ref={hintAudioRef} hidden />
 
@@ -333,119 +398,150 @@ export function DialogueScene({ sessionId, scene, childName, onSceneEnd }: Dialo
         />
       )}
 
-      {/* 왼쪽 — 현재 턴 (E2E 항목 15: 최신 대사 출력은 현행 유지) */}
-      <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 lg:max-w-2xl">
-      {scene.imageUrl && (
-        <img src={scene.imageUrl} alt="" className="max-h-[28vh] w-full max-w-2xl rounded-3xl object-contain" />
-      )}
-
-      {/* 캐릭터 대사 카드 — 이름·이미지·대사·다시 듣기 */}
-      <div className="flex w-full max-w-2xl items-start gap-4 rounded-3xl bg-white p-4 shadow">
-        {scene.characterImageUrl && (
-          <img src={scene.characterImageUrl} alt="" className="size-16 shrink-0 rounded-full object-cover" />
+      {/* 좌 — 장면 일러스트 (시안 640/1194 전면 배치) */}
+      <div className="h-[24%] w-full shrink-0 lg:h-auto lg:min-h-0 lg:w-[53%] lg:flex-none">
+        {scene.imageUrl ? (
+          <img src={scene.imageUrl} alt="" className="h-full w-full object-contain object-top" />
+        ) : (
+          <div className="h-full w-full bg-[#ffe8c9]" aria-hidden />
         )}
-        <div className="min-w-0 flex-1">
-          <p className="font-display text-lg text-primary">{scene.characterName}</p>
-          <p className="text-xl leading-relaxed text-ink">{currentLine}</p>
-        </div>
-        <button
-          type="button"
-          onClick={replayAudio}
-          disabled={!lastAudioUrl}
-          aria-label="다시 듣기"
-          className="flex size-14 shrink-0 items-center justify-center rounded-full bg-sunny text-2xl active:bg-ink disabled:opacity-40"
-        >
-          🔊
-        </button>
       </div>
 
-      {/* 상태 배지 3종 / 처리 중 로딩(라벨 없음) / 안내 문구 */}
-      <div className="flex min-h-12 items-center gap-3">
-        {badgeLabel ? (
-          <span className="flex h-12 items-center gap-2 rounded-full bg-sunny px-5 text-lg font-semibold text-ink">
-            <span aria-hidden>{PHASE_ICONS[phase]}</span>
-            {badgeLabel}
-          </span>
-        ) : phase === 'SUBMITTED' && !turnRetry ? (
-          <span className="animate-pulse text-2xl text-ink" role="status" aria-label="캐릭터가 생각하는 중">
-            ● ● ●
-          </span>
-        ) : null}
-        {statusMessage && <span className="text-lg font-semibold text-primary">{statusMessage}</span>}
-        {recorder.error && !statusMessage && (
-          <span className="text-lg font-semibold text-primary">{recorder.error}</span>
-        )}
-        {turnRetry && (
-          <>
-            <span className="text-lg text-ink">생각을 정리하는 중이에요...</span>
+      {/* 우 — 대화 패널 (라운드 50·primary 보더) */}
+      <div className="mx-2 mb-2 flex min-h-0 min-w-0 flex-1 flex-col rounded-[32px] border border-primary bg-background p-4 shadow-[0_4px_15px_rgba(255,122,61,0.22)] lg:mx-0 lg:mb-[9px] lg:rounded-[50px] lg:p-5">
+        {/* 캐릭터 상단 — 프로필·이름 */}
+        <div className="flex shrink-0 items-center gap-3">
+          {scene.characterImageUrl && (
+            <img src={scene.characterImageUrl} alt="" className="size-14 shrink-0 rounded-full object-cover lg:size-[84px]" />
+          )}
+          <p className="min-w-0 truncate font-display text-2xl text-ink lg:text-[28px]">{scene.characterName}</p>
+        </div>
+
+        {/* 캐릭터 대사 카드 — 대사 + 다시 듣기 칩 */}
+        <div className="mt-3 shrink-0 border border-[#f0e4d3] bg-white px-5 py-4 shadow-[0_4px_18px_rgba(58,44,30,0.08)]">
+          <p className="font-display text-[22px] leading-8 text-ink">{currentLine}</p>
+          <div className="mt-1.5 flex justify-end">
             <button
               type="button"
-              onClick={() => void requestTurn(turnRetry.text, turnRetry.sttRawText)}
-              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-white active:bg-ink"
+              onClick={replayAudio}
+              disabled={!lastAudioUrl}
+              className="flex h-12 items-center gap-1.5 rounded-lg bg-[#fff5d4] px-3 text-lg font-bold text-ink active:bg-sunny disabled:opacity-40"
             >
-              다시 보내기
+              <SpeakerIcon />
+              다시 듣기
             </button>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
 
-      {/* STT 미리보기 — 수정 불가, 표시 완료 시 보내기 활성 */}
-      {phase === 'REVIEW' && sttText && (
-        <p className="w-full max-w-2xl rounded-2xl border-2 border-primary bg-white px-4 py-3 text-center text-xl text-ink">
-          “{sttText}”
-        </p>
-      )}
+        {/* 대화 내역 리스트 (T076, 기능명세서 2.4.3 필수) — 화면 스크롤 미허용 원칙과의 조화: 내부 스크롤만 허용 */}
+        <div aria-label="이전 대화 내역" className="my-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+          {pastBubbles.map((bubble, i) =>
+            bubble.speaker === 'child' ? (
+              <div
+                key={i}
+                className="rounded-[20px] rounded-tr-none border border-sky/25 bg-[#ddf0fb]/80 px-5 py-3.5 shadow-[0_4px_18px_rgba(58,44,30,0.08)]"
+              >
+                <p className="text-lg font-bold text-sky">내가 한 말</p>
+                <p className="mt-1 font-display text-[22px] leading-8 text-ink">{bubble.text}</p>
+              </div>
+            ) : (
+              <div
+                key={i}
+                className="rounded-[20px] rounded-tl-none border border-[#f0e4d3] bg-white/80 px-5 py-3.5 shadow-[0_4px_18px_rgba(58,44,30,0.08)]"
+              >
+                <p className="text-lg font-bold text-primary">{scene.characterName ?? '캐릭터'}의 말</p>
+                <p className="mt-1 font-display text-[22px] leading-8 text-ink">{bubble.text}</p>
+              </div>
+            ),
+          )}
 
-      <div className="min-h-0 flex-1" aria-hidden /> {/* 버튼을 하단으로 밀착 — 내역이 왼쪽 열을 밀지 않게 */}
+          {/* STT 미리보기 — 수정 불가, '내가 한 말' 카드 표기 (시안 대화 내역 리스트), 표시 완료 시 보내기 활성 */}
+          {phase === 'REVIEW' && sttText && (
+            <div className="rounded-[20px] rounded-tr-none border-2 border-sky bg-[#ddf0fb] px-5 py-3.5">
+              <p className="text-lg font-bold text-sky">내가 한 말</p>
+              <p className="mt-1 font-display text-[22px] leading-8 text-ink">“{sttText}”</p>
+            </div>
+          )}
+          <div ref={historyEndRef} />
+        </div>
 
-      {/* 마이크·보내기 — 터치 48px+, 색+아이콘+텍스트 병행 */}
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={handleMicClick}
-          disabled={!micEnabled}
-          style={recorder.isRecording ? { transform: `scale(${1 + Math.min(recorder.level * 2, 0.15)})` } : undefined}
-          className={`flex h-16 items-center gap-2 rounded-full px-8 text-xl font-bold transition-transform ${
-            recorder.isRecording ? 'bg-primary text-white' : 'bg-white text-ink shadow'
-          } disabled:opacity-40`}
-        >
-          🎤 {recorder.isRecording ? '말 끝났어요!' : phase === 'REVIEW' ? '다시 말하기' : '눌러서 말하기'}
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!sendEnabled}
-          className="h-16 rounded-full bg-primary px-8 text-xl font-bold text-white active:bg-ink disabled:opacity-40"
-        >
-          보내기
-        </button>
-      </div>
-      </div>
+        {/* 상태 카드(대화 영역) — 미니 프로필(피그마: 아이 아바타, 폴백 캐릭터) + 상태 3종/처리 중/안내·재시도 */}
+        <div className="relative mt-1 shrink-0 pl-[70px] lg:pl-[90px]">
+          {(childAvatarSrc || scene.characterImageUrl) && (
+            <img
+              src={childAvatarSrc ?? scene.characterImageUrl}
+              alt=""
+              className="absolute top-1/2 left-0 size-20 -translate-y-1/2 rounded-full border border-primary bg-[#ffede3] object-cover shadow-[0_4px_15px_rgba(255,122,61,0.33)] lg:size-[96px]"
+            />
+          )}
+          <div className={`flex min-h-[76px] flex-col justify-center rounded-2xl px-4 py-2.5 ${statusTone}`}>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              {badgeLabel ? (
+                <>
+                  <span aria-hidden>
+                    {phase === 'RECORDING' ? (
+                      <WaveBarsIcon />
+                    ) : phase === 'TRANSCRIBING' ? (
+                      <SpinnerIcon />
+                    ) : (
+                      <SpeakerIcon className="size-6" />
+                    )}
+                  </span>
+                  <p className="font-display text-lg">{badgeLabel}</p>
+                </>
+              ) : phase === 'SUBMITTED' && !turnRetry ? (
+                <span className="animate-pulse font-display text-lg" role="status" aria-label="캐릭터가 생각하는 중">
+                  ● ● ●
+                </span>
+              ) : null}
+              {statusMessage && <span className="text-lg font-bold">{statusMessage}</span>}
+              {recorder.error && !statusMessage && <span className="text-lg font-bold">{recorder.error}</span>}
+              {turnRetry && (
+                <>
+                  <span className="text-lg">생각을 정리하는 중이에요...</span>
+                  <button
+                    type="button"
+                    onClick={() => void requestTurn(turnRetry.text, turnRetry.sttRawText)}
+                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-white active:bg-ink"
+                  >
+                    다시 보내기
+                  </button>
+                </>
+              )}
+            </div>
+            {!turnRetry && !statusMessage && !recorder.error && (
+              <p className="mt-0.5 font-display text-lg opacity-75">{ENCOURAGEMENT}</p>
+            )}
+          </div>
+        </div>
 
-      {/* 오른쪽 — 이전 대화 목록 (T076, 기능명세서 2.4.3 대화 내역 리스트 필수).
-          화면 스크롤 미허용 원칙과의 조화: 목록 영역 내부 스크롤만 허용 */}
-      <aside
-        aria-label="이전 대화 내역"
-        className="flex max-h-40 w-full max-w-2xl min-h-0 flex-col gap-2 overflow-y-auto rounded-3xl bg-white/50 p-3 lg:max-h-none lg:w-80 lg:flex-none"
-      >
-        <p className="font-display text-lg text-ink">지금까지 나눈 이야기</p>
-        {pastBubbles.length === 0 && (
-          <p className="text-base text-ink/50">대화를 시작하면 여기에 쌓여요</p>
-        )}
-        {pastBubbles.map((bubble, i) => (
-          <p
-            key={i}
-            className={
-              bubble.speaker === 'child'
-                ? 'ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-lg text-white'
-                : 'mr-auto max-w-[85%] rounded-2xl rounded-bl-sm bg-white px-4 py-2 text-lg text-ink shadow-sm'
-            }
+        {/* 마이크(원형 76px)·보내기 — 터치 48px+, 상태는 색+아이콘+상태 카드 텍스트 병행 */}
+        <div className="flex min-h-[76px] shrink-0 items-center justify-center gap-6 pt-3">
+          <button
+            type="button"
+            onClick={handleMicClick}
+            disabled={!micEnabled}
+            aria-label={recorder.isRecording ? '말 끝났어요 — 녹음 끝내기' : phase === 'REVIEW' ? '다시 말하기' : '눌러서 말하기'}
+            style={recorder.isRecording ? { transform: `scale(${1 + Math.min(recorder.level * 2, 0.15)})` } : undefined}
+            className={`flex size-[76px] shrink-0 items-center justify-center rounded-full text-white transition-transform ${
+              phase === 'TRANSCRIBING' ? 'bg-sunny shadow-[0_8px_28px_rgba(255,201,60,0.33)]' : 'bg-primary shadow-[0_8px_28px_rgba(255,122,61,0.33)]'
+            } disabled:opacity-40`}
           >
-            {bubble.text}
-          </p>
-        ))}
-        <div ref={historyEndRef} />
-      </aside>
+            {recorder.isRecording ? <WaveBarsIcon /> : phase === 'TRANSCRIBING' ? <SpinnerIcon /> : <MicIcon />}
+          </button>
+          {/* 시안: 녹음·변환 중에는 마이크 단독 센터 — 그 외에는 보내기 병행 */}
+          {phase !== 'RECORDING' && phase !== 'TRANSCRIBING' && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!sendEnabled}
+              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-white active:bg-ink disabled:opacity-40"
+            >
+              보내기 →
+            </button>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

@@ -88,7 +88,7 @@ export async function POST(request: Request) {
   // 아이가 로그인한 보호자 소속인지 확인
   const { data: child } = await admin
     .from('children')
-    .select('id, parent_id, name')
+    .select('id, parent_id, name, avatar_key')
     .eq('id', childId)
     .maybeSingle();
   if (!child || child.parent_id !== user.id) {
@@ -205,6 +205,7 @@ export async function POST(request: Request) {
   return Response.json({
     sessionId: session.id,
     childName: child.name ?? null,
+    childAvatarKey: (child.avatar_key as string | null) ?? null,
     resumeSceneId: resumeScene?.id ?? null,
     resumeSceneOrder: Math.min(resumeSceneOrder, lastOrder + 1),
     scenes: scenesPayload,

@@ -8,6 +8,8 @@
 //   "원위치 복귀 후 재시도" — 구성요소·예외 처리·T053 태스크 확정대로 '유지'로 구현(tasks.md에 기록, 팀 공유).
 // 슬롯 외 영역 드롭은 원위치 복귀(미제출·attempt_count 미증가). X 나가기·재진입 라우팅은 컨테이너 책임.
 // 카드 콘텐츠는 T051 post_activity_config가 SoT라 props로 받는다(fixtures 직접 로드 없음).
+// 스타일: 피그마 「개발 배포용」 2.4.4 Case A/B — 이미지 전면 카드·흰 슬롯(#F0E4D3 테두리)·하단 판정 필.
+// 판정 표시는 색+아이콘+텍스트 병행(기존 구현 유지). 필 텍스트는 대비 하한(4.5:1) 우선으로 ink 사용.
 import { useCallback, useRef, useState } from 'react';
 
 /** post_activity_config.cards 항목 (R-09 스키마) — 이미지 URL은 컨테이너가 T011 헬퍼로 조합해 내려준다 */
@@ -158,6 +160,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
     return id && cardById.has(id) ? id : null;
   };
 
+  /** 장면 카드 — 이미지 전면(라벨은 aria로 유지, 피그마 카드 컴포넌트는 이미지 온리) */
   const renderCard = (cardId: string) => {
     const card = cardById.get(cardId);
     if (!card) return null;
@@ -173,63 +176,22 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
         }}
         aria-pressed={selected}
         aria-label={`${card.label} 카드${selected ? ' 선택됨' : ''}`}
-        className={`flex w-full flex-col items-center gap-1 rounded-2xl border-4 bg-white p-2 transition-transform ${
-          selected ? 'border-primary scale-105' : 'border-white'
+        className={`mx-auto aspect-[210/218] w-full max-h-full min-h-0 self-center overflow-hidden rounded-2xl border-[1.5px] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)] transition-transform ${
+          selected ? 'scale-105 border-primary ring-4 ring-primary' : 'border-[#F0E4D3]'
         } ${locked ? '' : 'cursor-grab active:cursor-grabbing'}`}
       >
-        <img
-          src={card.imageUrl}
-          alt=""
-          draggable={false}
-          className="aspect-square w-full rounded-xl object-cover"
-        />
-        <span className="text-center text-lg leading-tight text-ink">{card.label}</span>
+        {/* eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴) */}
+        <img src={card.imageUrl} alt="" draggable={false} className="h-full w-full object-cover" />
       </button>
     );
   };
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col items-center gap-5 overflow-y-auto px-6 pb-8">
-      {/* 안내 + 판정 결과 — 색+아이콘+텍스트 병행 (FR-020) */}
-      <p className="text-center font-display text-2xl text-ink">
-        이야기 순서에 맞게 카드를 놓아보세요!
-      </p>
-      <div className="flex min-h-14 items-center gap-3">
-        {submitting && (
-          <span className="animate-pulse text-2xl text-ink" role="status" aria-label="순서를 확인하는 중">
-            ● ● ●
-          </span>
-        )}
-        {verdict === 'correct' && (
-          <button
-            type="button"
-            onClick={onProceed}
-            className="flex h-14 items-center gap-2 rounded-full bg-sage px-8 text-xl font-bold text-white active:bg-ink"
-          >
-            🎉 {MESSAGE_CORRECT}
-          </button>
-        )}
-        {verdict === 'wrong' && (
-          // 표시 전용 버튼(클릭 동작 없음 — 2.4.4 구성요소) — 카드 재드래그로만 복구
-          <span
-            role="status"
-            className="flex h-14 items-center gap-2 rounded-full bg-berry px-8 text-xl font-bold text-white"
-          >
-            🔄 {MESSAGE_WRONG}
-          </span>
-        )}
-        {submitError && (
-          <>
-            <span className="text-lg font-semibold text-primary">{MESSAGE_SUBMIT_ERROR}</span>
-            <button
-              type="button"
-              onClick={() => slots.every((id) => id !== null) && void submitOrder(slots as string[])}
-              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-white active:bg-ink"
-            >
-              다시 보내기
-            </button>
-          </>
-        )}
+    <section className="flex min-h-0 flex-1 flex-col gap-5 px-10 pb-6 pt-6">
+      {/* 활동 안내 (T067 문구 유지) + 보조 안내 (피그마 instruction-banner) */}
+      <div className="shrink-0">
+        <p className="font-display text-[32px] leading-snug text-ink">이야기 순서에 맞게 카드를 놓아보세요!</p>
+        <p className="mt-1 font-display text-[22px] text-[#6F6152]">아래 카드들을 알맞은 빈칸에 올려놓으세요.</p>
       </div>
 
       {/* 카드 트레이 — 무작위 제시, 슬롯 외 영역 드롭 = 원위치/트레이 복귀 (미제출) */}
@@ -240,16 +202,18 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
           if (id) returnCard(id);
         }}
         onClick={() => selectedId && slots.includes(selectedId) && returnCard(selectedId)}
-        className="grid min-h-36 w-full max-w-3xl grid-cols-4 items-start gap-3 rounded-3xl bg-white/50 p-3"
+        className="grid min-h-0 flex-1 grid-cols-4 gap-4"
         aria-label="카드 보관함"
       >
         {trayIds.map((cardId) => (
-          <div key={cardId}>{renderCard(cardId)}</div>
+          <div key={cardId} className="flex min-h-0 justify-center">
+            {renderCard(cardId)}
+          </div>
         ))}
       </div>
 
-      {/* 순서 슬롯 1~4 — 드롭·탭 배치, 점유 슬롯은 자리 교환 */}
-      <div className="grid w-full max-w-3xl grid-cols-4 gap-3">
+      {/* 순서 슬롯 1~4 — 드롭·탭 배치, 점유 슬롯은 자리 교환 (피그마 card_slot: 흰 배경 #F0E4D3 2px) */}
+      <div className="grid min-h-0 flex-1 grid-cols-4 gap-4">
         {slots.map((cardId, index) => (
           <div
             key={index}
@@ -261,16 +225,63 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
             onClick={() => handleSlotTap(index)}
             role="button"
             aria-label={`${index + 1}번 슬롯${cardId ? ` — ${cardById.get(cardId)?.label ?? ''}` : ' (비어 있음)'}`}
-            className={`flex min-h-36 flex-col items-center gap-1 rounded-2xl border-4 border-dashed p-2 ${
-              cardId ? 'border-transparent bg-white/70' : 'border-ink/25 bg-white/30'
-            } ${selectedId && !locked ? 'border-primary/60' : ''}`}
+            className={`mx-auto flex aspect-[210/218] w-full max-h-full min-h-0 self-center flex-col rounded-2xl border-2 bg-white p-2 ${
+              selectedId && !locked ? 'border-primary/60' : 'border-[#F0E4D3]'
+            }`}
           >
-            <span className="text-lg font-bold text-primary" aria-hidden>
-              {index + 1}
-            </span>
-            {cardId && renderCard(cardId)}
+            {cardId ? (
+              renderCard(cardId)
+            ) : (
+              <span className="flex h-full flex-col items-center justify-center gap-1 text-[#6F6152]">
+                <span className="font-display text-[32px] leading-none" aria-hidden>
+                  {index + 1}
+                </span>
+                <span className="font-display text-lg" aria-hidden>
+                  여기에 놓으세요
+                </span>
+              </span>
+            )}
           </div>
         ))}
+      </div>
+
+      {/* 판정 결과 — 하단 중앙 필, 색+아이콘+텍스트 병행 (FR-020) */}
+      <div className="flex min-h-14 shrink-0 items-center justify-center gap-3">
+        {submitting && (
+          <span className="animate-pulse text-2xl text-ink" role="status" aria-label="순서를 확인하는 중">
+            ● ● ●
+          </span>
+        )}
+        {verdict === 'correct' && (
+          <button
+            type="button"
+            onClick={onProceed}
+            className="flex h-14 items-center gap-3 rounded-full bg-sage px-10 font-display text-[22px] text-ink shadow-[0_6px_20px_rgba(61,190,139,0.33)] active:bg-ink active:text-white"
+          >
+            <span aria-hidden>✓</span> {MESSAGE_CORRECT}
+          </button>
+        )}
+        {verdict === 'wrong' && (
+          // 표시 전용 버튼(클릭 동작 없음 — 2.4.4 구성요소) — 카드 재드래그로만 복구
+          <span
+            role="status"
+            className="flex h-14 items-center gap-3 rounded-full bg-primary px-10 font-display text-[22px] text-ink shadow-[0_6px_20px_rgba(255,122,61,0.33)]"
+          >
+            <span aria-hidden>✕</span> {MESSAGE_WRONG}
+          </span>
+        )}
+        {submitError && (
+          <>
+            <span className="text-lg font-semibold text-[#B84A12]">{MESSAGE_SUBMIT_ERROR}</span>
+            <button
+              type="button"
+              onClick={() => slots.every((id) => id !== null) && void submitOrder(slots as string[])}
+              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-ink active:bg-ink active:text-white"
+            >
+              다시 보내기
+            </button>
+          </>
+        )}
       </div>
     </section>
   );

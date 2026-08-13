@@ -1,6 +1,8 @@
 'use client';
 // 아이 프로필 추가 폼 (T047, 기능명세서 2.1.1) — 캐릭터 4종·이름·생년월일 8자리·아동 동의 1회.
-// 2.1.1(1명씩 재진입)과 1.2.2(회원가입 탭 다중 등록, 동의는 화면 1회)가 필드 구성을 공유하므로
+// 피그마 「개발 배포용」 2.1.1 대조 리뉴얼 — 아바타 원형 칩(파스텔 배경 + 선택 시 캐릭터색 테두리·글로우),
+// r14 입력 필드, 민감정보 수집 동의 박스(옐로), 하단 취소/완료 버튼(비활성 #C8BFAE).
+// 2.1.1(1명씩 재진입)과 3.2(프로필 관리 수정)가 필드 구성을 공유하므로
 // 화면 정책(동의 노출·버튼 라벨)은 props로 흡수한다 — T045(파트2)가 회원가입에서 재사용하는 합류 지점.
 // 완료하기는 필수 필드+동의 채움 시 활성(구성요소 표), 클릭 시 전체 검증(검증 시점 규칙) — 날짜 유효성은
 // 클릭 시에만 판정한다. 생년월일은 숫자 외 입력 즉시 필터링(별도 에러 없음 — 2.1.1 예외 처리).
@@ -9,7 +11,13 @@ import Image from 'next/image';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { isValidBirthDate } from '@/lib/profile-display';
 
-const AVATAR_KEYS: AvatarKey[] = ['boy-1', 'boy-2', 'girl-1', 'girl-2'];
+// 시안 원형 칩 — 선택 상태가 시안에 있는 아바타1=primary·아바타2=sky 기준, 3·4는 배경 톤에 맞춰 sage·berry로 확장
+const AVATARS: { key: AvatarKey; display: string; bg: string; selected: string }[] = [
+  { key: 'boy-1', display: '아바타1', bg: 'bg-[#FFEDE3]', selected: 'border-primary shadow-[0_4px_15px_rgba(255,122,61,0.33)]' },
+  { key: 'boy-2', display: '아바타2', bg: 'bg-[#DDF0FB]', selected: 'border-sky shadow-[0_4px_15px_rgba(79,169,232,0.33)]' },
+  { key: 'girl-1', display: '아바타3', bg: 'bg-[#DDF5EC]', selected: 'border-sage shadow-[0_4px_15px_rgba(61,190,139,0.33)]' },
+  { key: 'girl-2', display: '아바타4', bg: 'bg-[#FDDCEF]', selected: 'border-berry shadow-[0_4px_15px_rgba(242,98,160,0.33)]' },
+];
 
 // 기능명세서 2.1.1 예외 처리 문구 원문
 const ERROR_NO_AVATAR = '캐릭터를 선택해주세요';
@@ -17,6 +25,10 @@ const ERROR_NO_NAME = '아이 이름을 입력해주세요';
 const ERROR_BIRTH_LENGTH = '생년월일 8자리를 입력해주세요 (예: 20190101)';
 const ERROR_BIRTH_INVALID = '올바른 생년월일을 입력해주세요';
 const ERROR_NO_CONSENT = '필수 약관에 동의해주세요';
+
+// 시안 입력 필드: h50 · r14 · bg Base(#FFF8EE) · border #F0E4D3, 포커스 시 primary
+const inputClass =
+  'h-[50px] w-full rounded-[14px] border border-[#F0E4D3] bg-[#FFF8EE] px-4 text-base font-normal text-ink outline-none placeholder:text-ink/40 focus:border-primary';
 
 export type ChildProfileFormValue = {
   name: string;
@@ -83,92 +95,121 @@ export function ChildProfileForm({
 
   return (
     <form
-      className="flex w-full max-w-md flex-col gap-5"
+      className="mt-5 flex w-full max-w-md flex-col gap-5"
       onSubmit={(event) => {
         event.preventDefault();
         void handleSubmit();
       }}
     >
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-base font-semibold text-ink">캐릭터 선택</legend>
-        <div className="grid grid-cols-4 gap-3">
-          {AVATAR_KEYS.map((key) => (
+        <legend className="mb-2 text-sm font-bold text-ink">캐릭터 선택</legend>
+        <div className="grid grid-cols-4 gap-2.5">
+          {AVATARS.map(({ key, display, bg, selected }) => (
             <button
               key={key}
               type="button"
               aria-pressed={avatarKey === key}
               onClick={() => setAvatarKey(key)} // 단일 선택 — 기존 선택 해제 후 신규 적용
-              className={`overflow-hidden rounded-2xl border-4 bg-white p-1 transition-colors ${
-                avatarKey === key ? 'border-primary' : 'border-white'
-              }`}
+              className="flex flex-col items-center gap-1.5"
             >
-              <Image
-                src={avatarUrl(key, 'select')}
-                alt={`캐릭터 ${key}`}
-                width={1052}
-                height={1008}
-                sizes="150px"
-                loading="eager"
-                className="aspect-square w-full object-contain"
-              />
+              <span className="text-xs text-[#8A7A68]">{display}</span>
+              <span
+                className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-full border transition-colors ${bg} ${
+                  avatarKey === key ? selected : 'border-transparent'
+                }`}
+              >
+                <Image
+                  src={avatarUrl(key, 'select')}
+                  alt={`캐릭터 ${key}`}
+                  width={1052}
+                  height={1008}
+                  sizes="150px"
+                  loading="eager"
+                  className="size-[78%] object-contain"
+                />
+              </span>
             </button>
           ))}
         </div>
       </fieldset>
 
-      <label className="flex flex-col gap-1 text-base font-semibold text-ink">
+      <label className="flex flex-col gap-1.5 text-sm font-bold text-ink">
         아이 이름
         <input
           type="text"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="h-12 w-full rounded-2xl border-2 border-white bg-white px-4 text-base font-normal text-ink outline-none focus:border-primary"
+          placeholder="아이 이름을 입력해주세요 (예: 홍길동)"
+          className={inputClass}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-base font-semibold text-ink">
+      <label className="flex flex-col gap-1.5 text-sm font-bold text-ink">
         생년월일
         <input
           type="text"
           inputMode="numeric"
-          placeholder="20190101"
+          placeholder="생년월일을 입력해주세요 (예: 20190101)"
           value={birthDigits}
           maxLength={8}
           onChange={(event) => setBirthDigits(event.target.value.replace(/\D/g, ''))} // 숫자 외 즉시 필터링
-          className="h-12 w-full rounded-2xl border-2 border-white bg-white px-4 text-base font-normal text-ink outline-none focus:border-primary"
+          className={inputClass}
         />
       </label>
 
       {showConsent && (
-        <label className="flex items-center gap-3 text-base text-ink">
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(event) => setConsent(event.target.checked)}
-            className="size-6 accent-primary"
-          />
-          [필수] 아동 개인정보 수집·이용 동의
-        </label>
+        <>
+          <hr className="border-[#F0E4D3]" />
+
+          {/* 시안 민감정보 수집 동의 박스 (옐로) */}
+          <div className="rounded-2xl border border-[#FFE580] bg-[#FFF5D4] p-4">
+            <p className="flex items-center gap-1.5 text-xs font-bold text-[#B8763F]">
+              <span aria-hidden>🔒</span>
+              민감정보 수집 동의
+            </p>
+            <label className="mt-2.5 flex cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(event) => setConsent(event.target.checked)}
+                className="mt-0.5 size-4.5 shrink-0 accent-primary"
+              />
+              <span className="flex flex-col gap-1.5">
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <span className="rounded-md bg-[#FFE580] px-1.5 py-0.5 text-xs font-bold text-[#B8763F]">
+                    필수
+                  </span>
+                  <span className="text-sm text-ink">아동 개인정보 수집·이용 동의</span>
+                </span>
+                <span className="text-[13px] leading-relaxed text-[#8A7A68]">
+                  이 서비스는 만 14세 미만 아동의 개인정보를 수집합니다. 보호자가 아동을 대신하여 이
+                  동의를 진행합니다. 수집 항목: 아이 이름(또는 닉네임), 출생연도, 학습 발화 기록
+                </span>
+              </span>
+            </label>
+          </div>
+        </>
       )}
 
       {error && (
-        <p className="text-base font-semibold text-primary" role="alert">
+        <p className="text-sm font-semibold text-berry" role="alert">
           {error}
         </p>
       )}
 
-      <div className="flex gap-3">
+      {/* 하단 버튼 바 — 시안: 취소(아웃라인) / 완료(비활성 #C8BFAE) */}
+      <div className="flex gap-3 border-t border-[#F0E4D3] pt-4">
         <button
           type="button"
           onClick={onCancel}
-          className="h-12 flex-1 rounded-full bg-white text-base font-bold text-ink active:bg-ink active:text-white"
+          className="h-13 flex-1 rounded-full border border-[#F0E4D3] bg-white text-[15px] font-bold text-ink/70 active:bg-[#F7F6F3]"
         >
           취소하기
         </button>
         <button
           type="submit"
           disabled={!filled || submitting}
-          className="h-12 flex-1 rounded-full bg-primary text-base font-bold text-white active:bg-ink disabled:opacity-40"
+          className="h-13 flex-1 rounded-full bg-primary text-base font-bold text-white active:bg-ink disabled:bg-[#C8BFAE]"
         >
           {submitting ? '등록 중…' : submitLabel}
         </button>

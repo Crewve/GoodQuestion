@@ -1,8 +1,9 @@
-// 고객센터 (T058, 기능명세서 3.4) — FAQ 항목 클릭 시 답변 표시(아코디언) + 1:1 문의 기능 표시.
-// MVP 정적 콘텐츠 — FAQ가 비면 3.4 예외 원문 "등록된 FAQ가 없습니다" 노출, 1:1 문의는 준비 중 안내.
-import Link from 'next/link';
+// 고객센터 (T058, 기능명세서 3.4 / UI 리뉴얼 E — 피그마 「개발 배포용」 3.4 FAQ·1:1 문의).
+// 상단 탭(FAQ 활성 · 1:1 문의는 하단 문의 영역으로 앵커 이동) + FAQ 분리형 카드 아코디언 +
+// 하단 1:1 문의 카드(클릭 시 같은 화면에서 기능 표시 — MVP는 준비 중 안내, 아코디언 동작 유지).
+// FAQ가 비면 3.4 예외 원문 "등록된 FAQ가 없습니다" 노출.
 import { BottomNav } from '@/components/bottom-nav';
-import { AccordionItem, AccordionList } from '../accordion';
+import { AccordionItem, AccordionList, MyPageHeader } from '../accordion';
 
 const EMPTY_MESSAGE = '등록된 FAQ가 없습니다'; // 기능명세서 3.4 원문
 
@@ -28,31 +29,53 @@ const FAQS: { question: string; answer: string }[] = [
 export default function SupportPage() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-5 py-6">
-        <Link href="/my" className="flex h-12 items-center gap-1 self-start font-semibold text-ink active:opacity-70">
-          <span aria-hidden>‹</span> 내정보
-        </Link>
-        <h1 className="font-display text-3xl text-ink">고객센터</h1>
+      <MyPageHeader backHref="/my" />
+      <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
+        <h2 className="text-2xl font-bold text-[#1E1A14]">고객센터</h2>
 
-        <h2 className="text-xl font-bold text-ink">자주 묻는 질문</h2>
+        {/* 상단 탭 — FAQ 활성 고정, 1:1 문의 내역은 하단 문의 영역 앵커 (MVP: 별도 내역 화면 없음) */}
+        <div className="mt-10 flex overflow-hidden border border-[#E8E2DA] bg-white">
+          <span
+            aria-current="true"
+            className="flex h-[52px] flex-1 items-center justify-center border-b-2 border-[#1E1A14] text-[15px] font-bold text-[#1E1A14]"
+          >
+            자주 묻는 질문(FAQ)
+          </span>
+          <a
+            href="#inquiry"
+            className="flex h-[52px] flex-1 items-center justify-center text-[15px] text-[#7A7268] active:bg-background"
+          >
+            1:1 문의 내역
+          </a>
+        </div>
+
+        <h3 className="sr-only">자주 묻는 질문</h3>
         {FAQS.length === 0 ? (
-          <p className="text-lg text-ink/70">{EMPTY_MESSAGE}</p>
+          <p className="mt-10 text-base text-[#7A7268]">{EMPTY_MESSAGE}</p>
         ) : (
-          <AccordionList>
-            {FAQS.map((faq) => (
-              <AccordionItem key={faq.question} title={faq.question}>
-                {faq.answer}
-              </AccordionItem>
-            ))}
-          </AccordionList>
+          <div className="mt-10">
+            <AccordionList separated>
+              {FAQS.map((faq) => (
+                <AccordionItem key={faq.question} title={`Q. ${faq.question}`} separated>
+                  {`A. ${faq.answer}`}
+                </AccordionItem>
+              ))}
+            </AccordionList>
+          </div>
         )}
 
         {/* 1:1 문의 — 클릭 시 같은 화면에서 기능 표시 (3.4), MVP는 준비 중 안내 */}
-        <AccordionList>
-          <AccordionItem title="1:1 문의">
+        <details id="inquiry" className="group mt-8 scroll-mt-28 rounded-[14px] bg-[#FFEDE3]">
+          <summary className="flex min-h-[118px] cursor-pointer list-none flex-col items-center justify-center gap-3 px-5 py-5 [&::-webkit-details-marker]:hidden">
+            <span className="text-sm text-ink">원하는 답변을 찾지 못하셨나요?</span>
+            <span className="flex h-12 items-center rounded-full bg-primary px-6 text-sm font-bold text-white group-open:opacity-80">
+              1:1 문의하기
+            </span>
+          </summary>
+          <p className="whitespace-pre-line px-5 pb-6 text-center text-sm leading-relaxed text-[#7A7268]">
             1:1 문의는 준비 중입니다.{'\n'}서비스 준비가 완료되면 이곳에서 바로 문의를 남길 수 있어요.
-          </AccordionItem>
-        </AccordionList>
+          </p>
+        </details>
       </main>
       <BottomNav active="my" childId={null} />
     </div>

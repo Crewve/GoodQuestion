@@ -1,8 +1,8 @@
-// 공지사항 (T058, 기능명세서 3.3) — 등록된 공지 목록·항목 클릭 시 같은 화면에서 내용 표시(아코디언).
+// 공지사항 (T058, 기능명세서 3.3 / UI 리뉴얼 E — 피그마 「개발 배포용」 3.3 공지사항 목록·상세).
+// 목록은 한 카드에 행 구분선(제목·날짜·화살표), 항목 클릭 시 같은 화면에서 내용 표시(아코디언).
 // MVP 정적 콘텐츠 — 목록이 비면 3.3 예외 원문 "등록된 공지사항이 없습니다" 노출 (데이터 연동 시 교체 지점).
-import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
-import { AccordionItem, AccordionList } from '../accordion';
+import { AccordionItem, AccordionList, MyPageHeader } from '../accordion';
 
 const EMPTY_MESSAGE = '등록된 공지사항이 없습니다'; // 기능명세서 3.3 원문
 
@@ -22,22 +22,22 @@ const NOTICES: { title: string; date: string; body: string }[] = [
 export default function NoticesPage() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-5 py-6">
-        <Link href="/my" className="flex h-12 items-center gap-1 self-start font-semibold text-ink active:opacity-70">
-          <span aria-hidden>‹</span> 내정보
-        </Link>
-        <h1 className="font-display text-3xl text-ink">공지사항</h1>
+      <MyPageHeader backHref="/my" />
+      <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
+        <h2 className="text-2xl font-bold text-[#1E1A14]">공지사항</h2>
 
         {NOTICES.length === 0 ? (
-          <p className="text-lg text-ink/70">{EMPTY_MESSAGE}</p>
+          <p className="mt-10 text-base text-[#7A7268]">{EMPTY_MESSAGE}</p>
         ) : (
-          <AccordionList>
-            {NOTICES.map((notice) => (
-              <AccordionItem key={notice.title} title={notice.title} meta={notice.date}>
-                {notice.body}
-              </AccordionItem>
-            ))}
-          </AccordionList>
+          <div className="mt-10">
+            <AccordionList>
+              {NOTICES.map((notice) => (
+                <AccordionItem key={notice.title} title={notice.title} meta={notice.date} tone="body">
+                  {notice.body}
+                </AccordionItem>
+              ))}
+            </AccordionList>
+          </div>
         )}
       </main>
       <BottomNav active="my" childId={null} />

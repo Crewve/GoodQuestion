@@ -1,11 +1,13 @@
 'use client';
-// 로그인 화면 본체 (T044, 기능명세서 1.1.1 이메일 / 1.1.2 소셜) — 탭 자유 전환, 입력값은 전환해도 유지.
+// 로그인 화면 본체 (T044, 기능명세서 1.1.1 이메일 / 1.1.2 소셜) — 피그마 「개발 배포용」 1.1 로그인 대조 리뉴얼.
+// 시안: 이메일 폼 + 구분선("또는") + 소셜 버튼이 한 카드에 동시 노출 → 기존 탭 전환(표시 전용)을 제거.
 // 이메일: Supabase Auth signInWithPassword(브라우저 클라이언트 T010 재사용) → 성공 시 2.1 프로필 선택 이동.
 // 에러 문구 3종(1.1.1 원문): 형식 오류는 클라이언트 검사, 미가입/비밀번호 오류는 Supabase가 같은
-// invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오+구글(T078 — R-10 대체 플랜 실행),
-// PKCE 콜백(/auth/callback)에서 세션 교환 후 복귀. 보호자 화면 — Pretendard·16px·터치 48px+(핸드오프 §3.3·§4).
+// invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오+구글(T078 — R-10 대체 플랜 실행,
+// 시안의 네이버는 미구현이라 미배치), PKCE 콜백(/auth/callback)에서 세션 교환 후 복귀. 보호자 화면 — 스크롤 허용.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
@@ -17,19 +19,12 @@ const ERROR_WRONG_PASSWORD = '비밀번호를 다시 확인해주세요';
 const ERROR_EMAIL_FORMAT = '올바른 이메일 형식을 입력해주세요';
 const ERROR_SOCIAL = '소셜 로그인에 실패했습니다';
 
-type Tab = 'email' | 'social';
-
-const tabClass = (active: boolean) =>
-  `h-12 flex-1 rounded-full text-base font-semibold transition-colors ${
-    active ? 'bg-primary text-white' : 'bg-white text-ink'
-  }`;
-
+// 시안 입력 필드: h50 · r14 · bg Base · border #F0E4D3, 포커스 시 primary
 const inputClass =
-  'h-12 w-full rounded-2xl border-2 border-white bg-white px-4 text-base text-ink outline-none focus:border-primary';
+  'h-[50px] w-full rounded-[14px] border border-[#F0E4D3] bg-background px-4 text-base text-ink outline-none placeholder:text-ink/50 focus:border-primary';
 
 export function LoginScreen({ initialSocialError }: { initialSocialError: boolean }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -84,112 +79,113 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
   };
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6 py-10">
-      <h1 className="font-display text-4xl text-primary">굿퀘스천</h1>
+    <main className="flex min-h-dvh flex-col items-center bg-[#F2EFE8] px-6 py-9">
+      {/* 상단 로고 + 태그라인 (시안: 192×80 로고, 14px 태그라인) */}
+      <h1 className="flex flex-col items-center gap-1">
+        <Image
+          src="/goodquestion-logo.png"
+          alt="굿퀘스천"
+          width={192}
+          height={80}
+          priority
+          className="h-20 w-auto object-contain"
+        />
+        <span className="text-sm font-bold text-[#8A7A68]">대화로 키우는 말하기와 사고력</span>
+      </h1>
 
-      <section className="flex w-full max-w-md flex-col gap-5">
-        {/* 탭 전환 — 이메일(1.1.1) ↔ 소셜(1.1.2) 자유 전환 */}
-        <div className="flex gap-2 rounded-full bg-white/60 p-1" role="tablist" aria-label="로그인 방법">
+      {/* 로그인 카드 — 480px · r24 · bg Base · 소프트 섀도 */}
+      <section className="mt-7 w-full max-w-[480px] rounded-3xl bg-background p-8 shadow-[0_4px_32px_rgba(58,44,30,0.10)]">
+        <h2 className="text-xl font-bold text-ink">로그인</h2>
+
+        <form
+          className="mt-6 flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleEmailLogin();
+          }}
+        >
+          <label className="flex flex-col gap-1.5 text-sm font-bold text-ink">
+            이메일
+            <input
+              type="email"
+              autoComplete="email"
+              placeholder="이메일을 입력해주세요"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className={`${inputClass} font-normal`}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-bold text-ink">
+            비밀번호
+            <input
+              type="password"
+              autoComplete="current-password"
+              placeholder="비밀번호를 입력해주세요"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className={`${inputClass} font-normal`}
+            />
+          </label>
+
+          {emailError && (
+            <p className="text-sm font-semibold text-berry" role="alert">
+              {emailError}
+            </p>
+          )}
+
           <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'email'}
-            onClick={() => setTab('email')}
-            className={tabClass(tab === 'email')}
+            type="submit"
+            disabled={submitting || !email.trim() || password.length < 1}
+            className="mt-2 h-13 rounded-full bg-primary text-base font-bold text-white shadow-[0_6px_20px_rgba(255,122,61,0.33)] active:bg-ink disabled:opacity-40 disabled:shadow-none"
           >
-            이메일 로그인
+            {submitting ? '로그인 중…' : '로그인하기'}
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'social'}
-            onClick={() => setTab('social')}
-            className={tabClass(tab === 'social')}
-          >
-            소셜 로그인
-          </button>
+        </form>
+
+        {/* 구분선 — 시안 "또는" */}
+        <div className="my-5 flex items-center gap-3" aria-hidden>
+          <span className="h-px flex-1 bg-[#F0E4D3]" />
+          <span className="text-[13px] font-bold text-[#8A7A68]">또는</span>
+          <span className="h-px flex-1 bg-[#F0E4D3]" />
         </div>
 
-        {tab === 'email' ? (
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void handleEmailLogin();
-            }}
-          >
-            <label className="flex flex-col gap-1 text-base text-ink">
-              이메일
-              <input
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className={inputClass}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-base text-ink">
-              비밀번호
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className={inputClass}
-              />
-            </label>
-
-            {emailError && (
-              <p className="text-base font-semibold text-primary" role="alert">
-                {emailError}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting || !email.trim() || password.length < 1}
-              className="h-12 rounded-full bg-primary text-base font-bold text-white active:bg-ink disabled:opacity-40"
-            >
-              {submitting ? '로그인 중…' : '로그인'}
-            </button>
-
-            <p className="mt-2 flex items-center justify-center gap-2 text-base text-ink">
-              아직 계정이 없으신가요?
-              <Link href="/signup" className="font-bold text-primary underline">
-                회원가입
-              </Link>
-            </p>
-          </form>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {socialError && (
-              <p className="text-base font-semibold text-primary" role="alert">
-                {ERROR_SOCIAL}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => void handleSocialLogin('kakao')}
-              className="h-12 rounded-full bg-[#fee500] text-base font-bold text-[#191919] active:opacity-80"
-            >
-              카카오로 시작하기
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleSocialLogin('google')}
-              className="flex h-12 items-center justify-center gap-2 rounded-full border-2 border-[#747775] bg-white text-base font-bold text-[#1f1f1f] active:opacity-80"
-            >
-              {/* 구글 공식 G 로고 — fill 명시라 강제 다크 반전에도 식별 유지 */}
-              <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-              </svg>
-              구글로 시작하기
-            </button>
-          </div>
+        {/* 소셜 로그인 — 카카오·구글 (1.1.2, T078 — 시안 배치·버튼 스타일 유지) */}
+        {socialError && (
+          <p className="mb-3 text-sm font-semibold text-berry" role="alert">
+            {ERROR_SOCIAL}
+          </p>
         )}
+        <button
+          type="button"
+          onClick={() => void handleSocialLogin('kakao')}
+          className="flex h-13 w-full items-center justify-center gap-2 rounded-[14px] bg-[#fee500] text-[15px] font-bold text-[#191919] active:opacity-80"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden>
+            <path d="M9 1C4.58 1 1 3.83 1 7.32c0 2.24 1.47 4.2 3.69 5.32l-.94 3.5c-.08.31.27.56.54.38l4.13-2.76c.19.01.38.02.58.02 4.42 0 8-2.83 8-6.32S13.42 1 9 1Z" />
+          </svg>
+          카카오 로그인
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleSocialLogin('google')}
+          className="mt-3 flex h-13 w-full items-center justify-center gap-2 rounded-[14px] border border-[#747775] bg-white text-[15px] font-bold text-[#1f1f1f] active:opacity-80"
+        >
+          {/* 구글 공식 G 로고 — fill 명시라 강제 다크 반전에도 식별 유지 */}
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+          </svg>
+          구글 로그인
+        </button>
+
+        <p className="mt-6 flex items-center justify-center gap-1.5 text-sm font-bold text-[#8A7A68]">
+          아직 계정이 없으신가요?
+          <Link href="/signup" className="font-bold text-primary">
+            회원가입
+          </Link>
+        </p>
       </section>
     </main>
   );

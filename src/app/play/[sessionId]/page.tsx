@@ -29,6 +29,8 @@ type SessionPayload = {
   sessionId: string;
   /** 실명 호출(R-07) — 대화 화면 텍스트 치환 폴백용 */
   childName: string | null;
+  /** 상태 카드 미니 프로필 (피그마 2.4.2 — 아이 아바타) */
+  childAvatarKey: string | null;
   resumeSceneId: string | null;
   resumeSceneOrder: number;
   scenes: ScenePayload[];
@@ -112,12 +114,12 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
 
   if (error) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg text-ink">{error}</p>
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-background px-6 text-center">
+        <p className="font-display text-xl text-ink">{error}</p>
         <button
           type="button"
           onClick={exitToDetail}
-          className="h-12 rounded-full bg-primary px-6 text-lg font-bold text-white"
+          className="h-14 rounded-full bg-primary px-8 font-display text-xl text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:bg-ink"
         >
           돌아가기
         </button>
@@ -127,24 +129,24 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
 
   if (!data || currentOrder === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center">
-        <p className="text-lg text-ink">이야기를 준비하고 있어요…</p>
+      <main className="flex min-h-dvh items-center justify-center bg-background">
+        <p className="font-display text-xl text-ink">이야기를 준비하고 있어요…</p>
       </main>
     );
   }
 
   if (finished) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="font-display text-2xl text-ink">이야기를 끝까지 들었어요! 🎉</p>
-        <p className="text-lg text-ink">학습완료 활동으로 이동하고 있어요…</p>
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+        <p className="font-display text-3xl text-ink">이야기를 끝까지 들었어요! 🎉</p>
+        <p className="font-display text-xl text-ink">학습완료 활동으로 이동하고 있어요…</p>
       </main>
     );
   }
 
   return (
     // h-dvh 고정 — min-h면 대화 내역이 쌓일 때 페이지가 자라 화면 스크롤 발생 (T071, 핸드오프 §2.2 아이 화면 스크롤 미허용)
-    <main className="flex h-dvh flex-col overflow-hidden">
+    <main className="flex h-dvh flex-col overflow-hidden bg-background">
       <ProgressHeader title={STORY_TITLE} n={currentPair} N={totalPairs} onExit={exitToDetail} />
       {currentScene && currentScene.type !== '대화' ? (
         <NarrationScene
@@ -161,6 +163,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
           sessionId={data.sessionId}
           scene={currentScene}
           childName={data.childName}
+          childAvatarKey={data.childAvatarKey}
           onSceneEnd={proceed} // 다음 장면 또는(마지막 대화) 학습완료 지점으로 — 선형 진행이라 order+1과 동치
         />
       ) : null}

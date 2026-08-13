@@ -26,7 +26,7 @@ export default async function HomePage(props: PageProps<'/home'>) {
   const admin = getSupabaseAdmin();
   const { data: childRow } = await admin
     .from('children')
-    .select('id, parent_id, name')
+    .select('id, parent_id, name, avatar_key')
     .eq('id', childId)
     .maybeSingle();
   if (!childRow || childRow.parent_id !== user.id) redirect('/profiles'); // 소속 검증 (/api/sessions와 동일)
@@ -53,6 +53,7 @@ export default async function HomePage(props: PageProps<'/home'>) {
     <HomeScreen
       childId={childId}
       childName={childRow.name as string}
+      childAvatarKey={(childRow.avatar_key as string | null) ?? null}
       story={story}
       hasSession={!!session}
     />
