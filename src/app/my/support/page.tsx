@@ -1,7 +1,8 @@
-// 고객센터 (T058, 기능명세서 3.4 / UI 리뉴얼 E — 피그마 「개발 배포용」 3.4 FAQ·1:1 문의).
-// 상단 탭(FAQ 활성 · 1:1 문의는 하단 문의 영역으로 앵커 이동) + FAQ 분리형 카드 아코디언 +
-// 하단 1:1 문의 카드(클릭 시 같은 화면에서 기능 표시 — MVP는 준비 중 안내, 아코디언 동작 유지).
-// FAQ가 비면 3.4 예외 원문 "등록된 FAQ가 없습니다" 노출.
+// 고객센터 (T058, 기능명세서 3.4 / 피그마 「개발 배포용」 3.4 FAQ·1:1 문의).
+// 스토리보드 확인(2026-08-13)에 따라 1:1 문의 내역을 별도 화면(/my/support/inquiries)으로 분리 —
+// 상단 탭(FAQ 활성 · 1:1 문의 내역은 링크 이동) + FAQ 분리형 카드 아코디언 +
+// 하단 1:1 문의 카드(스토리보드: 문의하기 → 문의 내역 화면 이동). FAQ가 비면 3.4 예외 원문 노출.
+import Link from 'next/link';
 import { BottomNav, withChild } from '@/components/bottom-nav';
 import { AccordionItem, AccordionList, MyPageHeader } from '../accordion';
 
@@ -37,7 +38,7 @@ export default async function SupportPage(props: PageProps<'/my/support'>) {
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">고객센터</h2>
 
-        {/* 상단 탭 — FAQ 활성 고정, 1:1 문의 내역은 하단 문의 영역 앵커 (MVP: 별도 내역 화면 없음) */}
+        {/* 상단 탭 — FAQ 활성, 1:1 문의 내역은 별도 화면 이동 (스토리보드 3.4) */}
         <div className="mt-10 flex overflow-hidden border border-[#E8E2DA] bg-white">
           <span
             aria-current="true"
@@ -45,12 +46,12 @@ export default async function SupportPage(props: PageProps<'/my/support'>) {
           >
             자주 묻는 질문(FAQ)
           </span>
-          <a
-            href="#inquiry"
+          <Link
+            href={withChild('/my/support/inquiries', childId)}
             className="flex h-[52px] flex-1 items-center justify-center text-[15px] text-[#7A7268] active:bg-background"
           >
             1:1 문의 내역
-          </a>
+          </Link>
         </div>
 
         <h3 className="sr-only">자주 묻는 질문</h3>
@@ -68,18 +69,16 @@ export default async function SupportPage(props: PageProps<'/my/support'>) {
           </div>
         )}
 
-        {/* 1:1 문의 — 클릭 시 같은 화면에서 기능 표시 (3.4), MVP는 준비 중 안내 */}
-        <details id="inquiry" className="group mt-8 scroll-mt-28 rounded-[14px] bg-[#FFEDE3]">
-          <summary className="flex min-h-[118px] cursor-pointer list-none flex-col items-center justify-center gap-3 px-5 py-5 [&::-webkit-details-marker]:hidden">
-            <span className="text-sm text-ink">원하는 답변을 찾지 못하셨나요?</span>
-            <span className="flex h-12 items-center rounded-full bg-primary px-6 text-sm font-bold text-white group-open:opacity-80">
-              1:1 문의하기
-            </span>
-          </summary>
-          <p className="whitespace-pre-line px-5 pb-6 text-center text-sm leading-relaxed text-[#7A7268]">
-            1:1 문의는 준비 중입니다.{'\n'}서비스 준비가 완료되면 이곳에서 바로 문의를 남길 수 있어요.
-          </p>
-        </details>
+        {/* 1:1 문의 — 스토리보드 3.4: 문의하기 클릭 시 문의 내역 화면으로 이동 */}
+        <div className="mt-8 flex min-h-[118px] flex-col items-center justify-center gap-3 rounded-[14px] bg-[#FFEDE3] px-5 py-5">
+          <span className="text-sm text-ink">원하는 답변을 찾지 못하셨나요?</span>
+          <Link
+            href={withChild('/my/support/inquiries', childId)}
+            className="flex h-12 items-center rounded-full bg-primary px-6 text-sm font-bold text-white active:opacity-80"
+          >
+            1:1 문의하기
+          </Link>
+        </div>
       </main>
       <BottomNav active="my" childId={childId} />
     </div>
