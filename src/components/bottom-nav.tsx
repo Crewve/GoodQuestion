@@ -8,6 +8,11 @@ import type { ComponentType } from 'react';
 
 type Tab = 'home' | 'stories' | 'wordbook' | 'my';
 
+/** 아이 컨텍스트(child 쿼리) 보존 링크 — GNB와 my 계열 내부 링크가 공통 사용해 왕복 내내 유지한다 (A3) */
+export function withChild(href: string, childId: string | null): string {
+  return childId ? `${href}?child=${encodeURIComponent(childId)}` : href;
+}
+
 type IconProps = { className?: string };
 
 function HomeIcon({ className = 'size-6' }: IconProps) {
@@ -48,10 +53,10 @@ function PersonIcon({ className = 'size-6' }: IconProps) {
 }
 
 const TABS: { key: Tab; label: string; Icon: ComponentType<IconProps>; href: (child: string | null) => string | null }[] = [
-  { key: 'home', label: '홈', Icon: HomeIcon, href: (c) => (c ? `/home?child=${c}` : '/home') },
-  { key: 'stories', label: '이야기', Icon: BookIcon, href: (c) => (c ? `/stories?child=${c}` : '/stories') },
+  { key: 'home', label: '홈', Icon: HomeIcon, href: (c) => withChild('/home', c) },
+  { key: 'stories', label: '이야기', Icon: BookIcon, href: (c) => withChild('/stories', c) },
   { key: 'wordbook', label: '단어장', Icon: NoteIcon, href: () => null }, // 이동 없음 (MVP)
-  { key: 'my', label: '마이페이지', Icon: PersonIcon, href: () => '/my' },
+  { key: 'my', label: '마이페이지', Icon: PersonIcon, href: (c) => withChild('/my', c) },
 ];
 
 export function BottomNav({ active, childId }: { active: Tab; childId: string | null }) {

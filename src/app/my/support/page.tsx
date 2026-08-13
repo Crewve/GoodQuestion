@@ -2,7 +2,7 @@
 // 상단 탭(FAQ 활성 · 1:1 문의는 하단 문의 영역으로 앵커 이동) + FAQ 분리형 카드 아코디언 +
 // 하단 1:1 문의 카드(클릭 시 같은 화면에서 기능 표시 — MVP는 준비 중 안내, 아코디언 동작 유지).
 // FAQ가 비면 3.4 예외 원문 "등록된 FAQ가 없습니다" 노출.
-import { BottomNav } from '@/components/bottom-nav';
+import { BottomNav, withChild } from '@/components/bottom-nav';
 import { AccordionItem, AccordionList, MyPageHeader } from '../accordion';
 
 const EMPTY_MESSAGE = '등록된 FAQ가 없습니다'; // 기능명세서 3.4 원문
@@ -26,10 +26,14 @@ const FAQS: { question: string; answer: string }[] = [
   },
 ];
 
-export default function SupportPage() {
+export default async function SupportPage(props: PageProps<'/my/support'>) {
+  // 아이 컨텍스트(?child=)는 GNB·뒤로가기로 그대로 전파만 한다 (A3 — 홈 복귀 시 유지)
+  const { child } = await props.searchParams;
+  const childId = typeof child === 'string' ? child : null;
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <MyPageHeader backHref="/my" />
+      <MyPageHeader backHref={withChild('/my', childId)} />
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">고객센터</h2>
 
@@ -77,7 +81,7 @@ export default function SupportPage() {
           </p>
         </details>
       </main>
-      <BottomNav active="my" childId={null} />
+      <BottomNav active="my" childId={childId} />
     </div>
   );
 }

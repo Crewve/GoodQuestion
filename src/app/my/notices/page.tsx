@@ -3,16 +3,20 @@
 // 한 카드에 행 구분선(제목·날짜·화살표), 행 클릭 시 /my/notices/[id] 상세로 이동.
 // 목록이 비면 3.3 예외 원문 "등록된 공지사항이 없습니다" 노출 (데이터 연동 시 교체 지점).
 import Link from 'next/link';
-import { BottomNav } from '@/components/bottom-nav';
+import { BottomNav, withChild } from '@/components/bottom-nav';
 import { MyPageHeader } from '../accordion';
 import { NOTICES } from './notices-data';
 
 const EMPTY_MESSAGE = '등록된 공지사항이 없습니다'; // 기능명세서 3.3 원문
 
-export default function NoticesPage() {
+export default async function NoticesPage(props: PageProps<'/my/notices'>) {
+  // 아이 컨텍스트(?child=)는 GNB·뒤로가기·상세 링크로 그대로 전파만 한다 (A3 — 홈 복귀 시 유지)
+  const { child } = await props.searchParams;
+  const childId = typeof child === 'string' ? child : null;
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <MyPageHeader backHref="/my" />
+      <MyPageHeader backHref={withChild('/my', childId)} />
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">공지사항</h2>
 
@@ -23,7 +27,7 @@ export default function NoticesPage() {
             {NOTICES.map((notice) => (
               <Link
                 key={notice.id}
-                href={`/my/notices/${notice.id}`}
+                href={withChild(`/my/notices/${notice.id}`, childId)}
                 className="flex min-h-14 items-center gap-4 border-b border-[#E8E2DA] px-5 py-[18px] last:border-b-0 active:bg-background"
               >
                 <span className="min-w-0 flex-1">
@@ -38,7 +42,7 @@ export default function NoticesPage() {
           </section>
         )}
       </main>
-      <BottomNav active="my" childId={null} />
+      <BottomNav active="my" childId={childId} />
     </div>
   );
 }

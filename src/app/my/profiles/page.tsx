@@ -8,7 +8,11 @@ import { ManageProfilesScreen } from './manage-screen';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ManageProfilesPage() {
+export default async function ManageProfilesPage(props: PageProps<'/my/profiles'>) {
+  // 아이 컨텍스트(?child=)는 GNB·뒤로가기로 그대로 전파만 한다 (A3 — 홈 복귀 시 유지)
+  const { child } = await props.searchParams;
+  const childId = typeof child === 'string' ? child : null;
+
   const user = await getAuthedUser();
   if (!user) redirect('/login'); // proxy가 1차 차단 — 직접 렌더 경로 이중 방어
 
@@ -27,5 +31,5 @@ export default async function ManageProfilesPage() {
     avatarKey: (row.avatar_key as string | null) ?? null,
   }));
 
-  return <ManageProfilesScreen profiles={profiles} />;
+  return <ManageProfilesScreen profiles={profiles} childId={childId} />;
 }

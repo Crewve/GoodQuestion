@@ -65,7 +65,11 @@ async function loadWeeklySummary(
   return { completedCount, chatCount, badgeCount: completedCount };
 }
 
-export default async function MyPage() {
+export default async function MyPage(props: PageProps<'/my'>) {
+  // 아이 컨텍스트(?child=)는 표시에 쓰지 않고 GNB·내부 링크로 그대로 전파만 한다 (A3 — 홈 복귀 시 유지).
+  const { child } = await props.searchParams;
+  const childId = typeof child === 'string' ? child : null;
+
   const user = await getAuthedUser();
   if (!user) redirect('/login'); // proxy가 1차 차단 — 직접 렌더 경로 이중 방어
 
@@ -93,6 +97,7 @@ export default async function MyPage() {
       loginMethodLabel={LOGIN_METHOD_LABEL[provider] ?? LOGIN_METHOD_LABEL.email}
       profiles={profiles}
       summary={summary}
+      childId={childId}
     />
   );
 }

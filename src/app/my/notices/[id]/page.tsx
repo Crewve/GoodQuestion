@@ -2,18 +2,21 @@
 // 정적 콘텐츠(notices-data) 기준, 없는 id는 404. 하단 '목록으로 돌아가기'와 헤더 뒤로가기 모두 목록 복귀.
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { BottomNav } from '@/components/bottom-nav';
+import { BottomNav, withChild } from '@/components/bottom-nav';
 import { MyPageHeader } from '../../accordion';
 import { NOTICES } from '../notices-data';
 
-export default async function NoticeDetailPage(props: { params: Promise<{ id: string }> }) {
+export default async function NoticeDetailPage(props: PageProps<'/my/notices/[id]'>) {
   const { id } = await props.params;
+  // 아이 컨텍스트(?child=)는 GNB·목록 복귀 링크로 그대로 전파만 한다 (A3 — 홈 복귀 시 유지)
+  const { child } = await props.searchParams;
+  const childId = typeof child === 'string' ? child : null;
   const notice = NOTICES.find((n) => n.id === id);
   if (!notice) notFound();
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <MyPageHeader backHref="/my/notices" />
+      <MyPageHeader backHref={withChild('/my/notices', childId)} />
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">공지사항</h2>
 
@@ -26,13 +29,13 @@ export default async function NoticeDetailPage(props: { params: Promise<{ id: st
         </article>
 
         <Link
-          href="/my/notices"
+          href={withChild('/my/notices', childId)}
           className="mt-8 flex h-12 items-center justify-center gap-2 self-center rounded-full bg-primary px-6 text-[15px] font-bold text-white active:bg-ink"
         >
           <span aria-hidden>←</span> 목록으로 돌아가기
         </Link>
       </main>
-      <BottomNav active="my" childId={null} />
+      <BottomNav active="my" childId={childId} />
     </div>
   );
 }

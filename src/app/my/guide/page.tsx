@@ -2,7 +2,7 @@
 // 상단 탭은 같은 화면 내 두 영역(가이드·약관)으로 앵커 이동, 항목은 아이콘 타일 카드 아코디언 —
 // 클릭 시 같은 화면에서 안내 내용 표시(아코디언 동작 유지).
 // MVP 정적 콘텐츠 — 이용 방법은 실제 서비스 흐름 기준, 약관·정책 전문은 정식 오픈 시 게시 안내.
-import { BottomNav } from '@/components/bottom-nav';
+import { BottomNav, withChild } from '@/components/bottom-nav';
 import { AccordionItem, AccordionList, MyPageHeader } from '../accordion';
 
 // 서비스 이용 가이드 영역 (3.5 가이드 카드 — 아이콘 타일 + 제목)
@@ -33,10 +33,14 @@ const TERMS: { title: string; icon: string; body: string }[] = [
   },
 ];
 
-export default function GuidePage() {
+export default async function GuidePage(props: PageProps<'/my/guide'>) {
+  // 아이 컨텍스트(?child=)는 GNB·뒤로가기로 그대로 전파만 한다 (A3 — 홈 복귀 시 유지)
+  const { child } = await props.searchParams;
+  const childId = typeof child === 'string' ? child : null;
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <MyPageHeader backHref="/my" />
+      <MyPageHeader backHref={withChild('/my', childId)} />
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">이용안내</h2>
 
@@ -79,7 +83,7 @@ export default function GuidePage() {
           </AccordionList>
         </section>
       </main>
-      <BottomNav active="my" childId={null} />
+      <BottomNav active="my" childId={childId} />
     </div>
   );
 }

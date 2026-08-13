@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
 import { saveChildProfile } from '@/app/profiles/save-profile';
-import { BottomNav } from '@/components/bottom-nav';
+import { BottomNav, withChild } from '@/components/bottom-nav';
 import { ChildProfileForm, type ChildProfileFormValue } from '@/components/child-profile-form';
 import type { AvatarKey } from '@/lib/assets';
 import { ChildProfileCard, MyPageHeader } from '../accordion';
@@ -43,7 +43,14 @@ async function requestJson(url: string, init: RequestInit, fallbackMessage: stri
   }
 }
 
-export function ManageProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
+export function ManageProfilesScreen({
+  profiles,
+  childId,
+}: {
+  profiles: ChildProfile[];
+  /** 아이 컨텍스트(?child=) — GNB·뒤로가기로 전파만 한다 (A3, 홈 복귀 시 유지) */
+  childId: string | null;
+}) {
   const router = useRouter();
   const [view, setView] = useState<View>({ mode: 'list' });
   const [manageMode, setManageMode] = useState(false);
@@ -55,7 +62,7 @@ export function ManageProfilesScreen({ profiles }: { profiles: ChildProfile[] })
     const editing = view.mode === 'edit' ? view.child : null;
     return (
       <main className="flex min-h-dvh flex-col items-center gap-6 px-6 py-10">
-        <h1 className="font-display text-3xl text-ink">{editing ? '아이 프로필 수정' : '아이 프로필 추가'}</h1>
+        <h1 className="text-3xl font-bold text-ink">{editing ? '아이 프로필 수정' : '아이 프로필 추가'}</h1>
         <ChildProfileForm
           initialValue={editing ? toFormValue(editing) : undefined}
           showConsent={!editing} // 동의는 등록 시 1회 기록 유지 — 수정에서는 재요구하지 않음
@@ -86,7 +93,7 @@ export function ManageProfilesScreen({ profiles }: { profiles: ChildProfile[] })
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <MyPageHeader backHref="/my" />
+      <MyPageHeader backHref={withChild('/my', childId)} />
       <main className="mx-auto flex w-full max-w-[848px] flex-1 flex-col px-6 pb-10 pt-5">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-[#1E1A14]">아이 프로필 관리</h2>
@@ -199,7 +206,7 @@ export function ManageProfilesScreen({ profiles }: { profiles: ChildProfile[] })
           </div>
         </div>
       )}
-      <BottomNav active="my" childId={null} />
+      <BottomNav active="my" childId={childId} />
     </div>
   );
 }
