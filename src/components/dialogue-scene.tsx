@@ -375,12 +375,13 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   const sendEnabled = phase === 'REVIEW' && !!sttText?.trim();
 
   // 상태 카드(대화 영역) 톤 — 시안: 듣는 중 #F5EDE0/#8A7A68, 녹음 primary/white, 변환 sunny/ink
+  // (듣는 중 #8A7A68은 대비 3.6:1 — 아동 하한 4.5:1 충족 위해 ink/70로 상향)
   const statusTone =
     phase === 'RECORDING'
       ? 'bg-primary text-white'
       : phase === 'TRANSCRIBING'
         ? 'bg-sunny text-ink'
-        : 'bg-[#f5ede0] text-[#8a7a68]';
+        : 'bg-[#f5ede0] text-ink/70';
 
   return (
     // 시안 StoryDialogueScreen: 좌 장면 일러스트 / 우 라운드 대화 패널 (좁은 화면은 세로 스택, 내부 스크롤만 허용)
@@ -419,7 +420,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
 
         {/* 캐릭터 대사 카드 — 대사 + 다시 듣기 칩 */}
         <div className="mt-3 shrink-0 border border-[#f0e4d3] bg-white px-5 py-4 shadow-[0_4px_18px_rgba(58,44,30,0.08)]">
-          <p className="font-display text-[22px] leading-8 text-ink">{currentLine}</p>
+          <p className="font-display text-[22px] leading-normal text-ink">{currentLine}</p>
           <div className="mt-1.5 flex justify-end">
             <button
               type="button"
@@ -442,7 +443,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                 className="rounded-[20px] rounded-tr-none border border-sky/25 bg-[#ddf0fb]/80 px-5 py-3.5 shadow-[0_4px_18px_rgba(58,44,30,0.08)]"
               >
                 <p className="text-lg font-bold text-sky">내가 한 말</p>
-                <p className="mt-1 font-display text-[22px] leading-8 text-ink">{bubble.text}</p>
+                <p className="mt-1 font-display text-[22px] leading-normal text-ink">{bubble.text}</p>
               </div>
             ) : (
               <div
@@ -450,7 +451,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                 className="rounded-[20px] rounded-tl-none border border-[#f0e4d3] bg-white/80 px-5 py-3.5 shadow-[0_4px_18px_rgba(58,44,30,0.08)]"
               >
                 <p className="text-lg font-bold text-primary">{scene.characterName ?? '캐릭터'}의 말</p>
-                <p className="mt-1 font-display text-[22px] leading-8 text-ink">{bubble.text}</p>
+                <p className="mt-1 font-display text-[22px] leading-normal text-ink">{bubble.text}</p>
               </div>
             ),
           )}
@@ -459,7 +460,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
           {phase === 'REVIEW' && sttText && (
             <div className="rounded-[20px] rounded-tr-none border-2 border-sky bg-[#ddf0fb] px-5 py-3.5">
               <p className="text-lg font-bold text-sky">내가 한 말</p>
-              <p className="mt-1 font-display text-[22px] leading-8 text-ink">“{sttText}”</p>
+              <p className="mt-1 font-display text-[22px] leading-normal text-ink">“{sttText}”</p>
             </div>
           )}
           <div ref={historyEndRef} />

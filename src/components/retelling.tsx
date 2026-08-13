@@ -169,7 +169,7 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
       {/* 내가 한 말 — 상시 노출 카드, 인식 실패 시 비워둔 채 유지 (2.4.5) */}
       <div className="w-full shrink-0 rounded-[20px] border border-sky/25 bg-[#DDF0FB]/80 px-5 py-4">
         <p className="text-lg font-bold text-[#1D6FAE]">내가 한 말</p>
-        <p className={`mt-2 min-h-14 font-display text-[22px] leading-tight ${stt ? 'text-ink' : 'text-ink/70'}`}>
+        <p className={`mt-2 min-h-14 font-display text-[22px] leading-normal ${stt ? 'text-ink' : 'text-ink/70'}`}>
           {stt ? stt.text : '마이크를 눌러 이야기를 들려주세요'}
         </p>
       </div>

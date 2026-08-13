@@ -35,7 +35,8 @@ export function ProgressHeader({ title, n, N, onExit }: ProgressHeaderProps) {
       {/* 시안(2.4.1·2.4.2 헤더)에는 이야기 제목 미노출 — 접근성용으로만 유지 */}
       <h1 className="sr-only">{title}</h1>
       <div className="flex shrink-0 items-center gap-4">
-        <span className="font-display text-[22px] text-[#8a7a68]" aria-label={`진행률 ${n}/${N}`}>
+        {/* 시안 #8A7A68은 Base 배경 대비 3.9:1 — 아동 하한 4.5:1 충족 위해 ink/70로 상향 */}
+        <span className="font-display text-[22px] text-ink/70" aria-label={`진행률 ${n}/${N}`}>
           {n}/{N}
         </span>
         <div
