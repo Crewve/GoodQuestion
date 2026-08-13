@@ -1,5 +1,7 @@
 // STT 실패 게이트 (T012) — Whisper 무음 환각·저신뢰 출력 차단. 순수 함수(설정 주입)라 API 없이 단위 테스트 가능 (R-02).
-// 판정 순서 고정: ①공백 제거 후 최소 글자 ②no_speech_prob ③avg_logprob ④n-gram 반복 ⑤자막체 상투구.
+// 판정 순서 고정: ①공백 제거 후 최소 글자 ②no_speech_prob ③avg_logprob ④n-gram 반복 ⑤자막체 상투구 ⑥힌트 echo.
+// ⑥은 무의미 발화에서 Whisper가 prompt 힌트(제목·대사)를 그대로 받아쓰는 환각 차단 — 전사 전체가
+// 힌트의 부분 문자열이면 실패 (짧은 정상 한 단어 답변 보호를 위해 최소 글자 하한 적용).
 // 임계값 기본값은 src/lib/config.ts의 sttGate (env로 재배포 없이 튜닝 — T022에서 실측 조정).
 // 클라이언트 사전 게이트(RMS·최소 길이)는 useRecorder 몫 — 여기는 서버 측 최종 게이트.
 
@@ -15,6 +17,8 @@ export type SttGateConfig = {
   ngramMaxRepeats: number;
   /** ⑤ 포함 시 실패하는 상투구 목록 (공백 무시 비교) */
   hallucinationPhrases: string[];
+  /** ⑥ 힌트 echo 판정 최소 글자(공백 제거) — 이 값 이상이면서 전사 전체가 힌트에 포함되면 실패 */
+  hintEchoMinChars: number;
 };
 
 /** Whisper verbose_json의 segment 중 게이트가 쓰는 필드만 */
@@ -29,6 +33,8 @@ export type WhisperSegment = {
 export type SttGateInput = {
   text: string;
   segments?: WhisperSegment[];
+  /** Whisper prompt로 준 힌트 원문 — ⑥ echo 환각 판정용 (미전달 시 ⑥ 통과) */
+  hint?: string;
 };
 
 export type SttGateReason =
@@ -36,7 +42,8 @@ export type SttGateReason =
   | "NO_SPEECH"
   | "LOW_CONFIDENCE"
   | "NGRAM_REPEAT"
-  | "HALLUCINATION_PHRASE";
+  | "HALLUCINATION_PHRASE"
+  | "HINT_ECHO";
 
 export type SttGateSignals = {
   trimmedLength: number;
@@ -45,6 +52,8 @@ export type SttGateSignals = {
   avgLogprob: number | null;
   maxNgramRepeat: number;
   matchedPhrase: string | null;
+  /** 전사 전체(공백 제거, 최소 글자 이상)가 힌트의 부분 문자열인지 — ⑥ */
+  hintEcho: boolean;
 };
 
 export type SttGateResult = {
@@ -90,12 +99,18 @@ export function collectSignals(input: SttGateInput, config: SttGateConfig): SttG
   const normalized = stripSpaces(input.text);
   const matchedPhrase =
     config.hallucinationPhrases.find((p) => normalized.includes(stripSpaces(p))) ?? null;
+  const normalizedHint = input.hint ? stripSpaces(input.hint) : "";
+  const hintEcho =
+    normalizedHint.length > 0 &&
+    normalized.length >= config.hintEchoMinChars &&
+    normalizedHint.includes(normalized);
   return {
     trimmedLength: normalized.length,
     noSpeechProb: weightedMean(segments, (s) => s.no_speech_prob),
     avgLogprob: weightedMean(segments, (s) => s.avg_logprob),
     maxNgramRepeat: maxNgramRepeat(input.text, config.ngramSize),
     matchedPhrase,
+    hintEcho,
   };
 }
 
@@ -114,6 +129,8 @@ export function runSttGates(input: SttGateInput, config: SttGateConfig): SttGate
     reason = "NGRAM_REPEAT";
   } else if (signals.matchedPhrase !== null) {
     reason = "HALLUCINATION_PHRASE";
+  } else if (signals.hintEcho) {
+    reason = "HINT_ECHO";
   }
 
   return { failed: reason !== null, reason, signals };

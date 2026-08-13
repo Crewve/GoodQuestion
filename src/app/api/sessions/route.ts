@@ -4,6 +4,7 @@
 // 장면 유형(도입/전개/대화)은 DB 컬럼이 아니라 fixtures 매핑에서 파생한다 (Notion 설계서 SoT — 스키마 무변경).
 import { characterImageUrl, sceneImageUrl } from '@/lib/assets';
 import { substituteChildName } from '@/lib/child-name';
+import { givenName } from '@/lib/profile-display';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
 import { loadCharacter } from '@/lib/llm/generate';
 import { fixtureSceneByUuid, sceneTypeOf } from '@/lib/story';
@@ -165,8 +166,10 @@ export async function POST(request: Request) {
   const resumeScene = resumeSceneOrder > lastOrder ? null : scenes.find((s) => s.scene_order === resumeSceneOrder) ?? null;
 
   // 실명 치환 오프닝 URL (R-07 확정) — 준비 실패 장면은 아래에서 '친구야' 고정본 폴백
-  const personalizedUrls = child.name
-    ? await personalizedOpeningUrls(scenes, child.name, admin)
+  // 호칭은 성 제외 이름 기준 (R-07 보완 2026-08-13 — '정진욱아'가 아니라 '진욱아')
+  const callName = child.name ? givenName(child.name) : null;
+  const personalizedUrls = callName
+    ? await personalizedOpeningUrls(scenes, callName, admin)
     : new Map<string, string>();
 
   // scenes 페이로드 — 유형·이미지·고정 오디오 URL은 fixtures 매핑(external_id) 기준
@@ -186,7 +189,7 @@ export async function POST(request: Request) {
       openingText: isDialogue
         ? substituteChildName(
             fixture?.character_opening ?? '',
-            personalizedUrls.has(scene.id) ? child.name : undefined,
+            personalizedUrls.has(scene.id) ? callName : undefined,
           ) || undefined
         : undefined,
       // 도입/전개는 내레이션 사전 생성본, 대화는 오프닝 대사 — 실명본 우선, 없으면 고정본 (R-06·R-07)
@@ -204,7 +207,7 @@ export async function POST(request: Request) {
 
   return Response.json({
     sessionId: session.id,
-    childName: child.name ?? null,
+    childName: callName, // 성 제외 이름 — 클라이언트 치환 폴백도 동일 표기 (R-07 보완)
     childAvatarKey: (child.avatar_key as string | null) ?? null,
     resumeSceneId: resumeScene?.id ?? null,
     resumeSceneOrder: Math.min(resumeSceneOrder, lastOrder + 1),

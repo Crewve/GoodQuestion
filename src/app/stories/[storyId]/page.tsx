@@ -3,7 +3,6 @@
 // 시작하기(T050)는 클라이언트 버튼이 /api/sessions 호출 후 /play/[sessionId]로 라우팅.
 // UI 리뉴얼: 피그마 「개발 배포용」 2.3 대조 — 뒤로가기 알약 버튼(흰 배경 r32)·풀블리드 히어로(344/834)·
 // 파스텔 칩·'이런 것을 배워요' 하늘색 박스(#DDF0FB r16)·주황 CTA r48. h-dvh 한 화면 수납(세로 스크롤 금지).
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StoryStartButton } from '@/components/story-start-button';
@@ -18,6 +17,7 @@ import {
 import { BANGGUI_STORY_ID } from '@/lib/story';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthedUser } from '@/lib/supabase-server';
+import { StoryHero } from './story-hero';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,15 +80,8 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
       </div>
 
       {story.id === BANGGUI_STORY_ID ? (
-        <Image
-          src={storyThumbnailUrl(false)}
-          alt=""
-          width={1448}
-          height={1086}
-          sizes="100vw"
-          preload
-          className="h-[41dvh] w-full shrink-0 bg-[#FFE8C9] object-contain"
-        />
+        // 로드 실패 폴백은 클라이언트 컴포넌트(story-hero)가 담당 (A5, 2.3 예외)
+        <StoryHero src={storyThumbnailUrl(false)} />
       ) : (
         <div className="h-[41dvh] w-full shrink-0 bg-sunny/15" aria-hidden />
       )}

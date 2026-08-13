@@ -75,7 +75,7 @@ type HomeScreenProps = {
 export function HomeScreen({ childId, childName, childAvatarKey, story, hasSession }: HomeScreenProps) {
   const avatarSrc =
     childAvatarKey && (['boy-1', 'boy-2', 'girl-1', 'girl-2'] as const).includes(childAvatarKey as AvatarKey)
-      ? avatarUrl(childAvatarKey as AvatarKey)
+      ? avatarUrl(childAvatarKey as AvatarKey, 'select') // 선택 화면과 같은 select/ 세트 (T068 — avatar/ 세트는 화풍이 달라 미사용)
       : null;
   const router = useRouter();
   const [resume, setResume] = useState<SessionProgress | null>(null);
@@ -197,7 +197,8 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   resume &&
                   router.push(`/play/${resume.sessionId}?child=${childId}&story=${story.id}`)
                 }
-                className="mt-5 h-[55px] w-full shrink-0 rounded-full bg-primary font-display text-xl font-bold text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
+                // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
+                className="mt-5 h-[55px] w-full shrink-0 rounded-full bg-primary font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
               >
                 이야기 계속하기
               </button>

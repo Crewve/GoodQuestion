@@ -45,7 +45,8 @@ export async function speechToText(
 
   const sttRawText = transcription.text.trim();
   const gate = runSttGates(
-    { text: sttRawText, segments: transcription.segments as WhisperSegment[] | undefined },
+    // hint 동봉 — 무의미 발화에서 힌트(제목·대사)를 그대로 받아쓰는 환각을 ⑥ echo 게이트가 차단
+    { text: sttRawText, segments: transcription.segments as WhisperSegment[] | undefined, hint: opts.hint },
     sttGate,
   );
   const durationSec = transcription.duration ?? null;
