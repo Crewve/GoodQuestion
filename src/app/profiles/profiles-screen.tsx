@@ -160,7 +160,8 @@ export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
             >
               <span
                 aria-hidden
-                className="flex size-16 items-center justify-center rounded-2xl bg-primary text-4xl font-bold text-white"
+                // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
+                className="flex size-16 items-center justify-center rounded-2xl bg-primary text-4xl font-bold text-ink"
               >
                 ＋
               </span>

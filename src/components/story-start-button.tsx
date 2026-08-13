@@ -50,7 +50,8 @@ export function StoryStartButton({ storyId, childId }: { storyId: string; childI
         type="button"
         onClick={start}
         disabled={loading}
-        className="h-[55px] w-full rounded-full bg-primary font-display text-xl font-bold text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-60"
+        // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
+        className="h-[55px] w-full rounded-full bg-primary font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-60"
       >
         {loading ? '이야기를 준비하고 있어요…' : '이야기 하러가기'}
       </button>

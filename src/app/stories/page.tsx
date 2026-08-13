@@ -129,7 +129,8 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
             <Link
               href={withParams('/stories', { child })}
               replace
-              className="flex h-[55px] items-center rounded-full bg-primary px-8 font-display text-xl font-bold text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90"
+              // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
+              className="flex h-[55px] items-center rounded-full bg-primary px-8 font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90"
             >
               필터 초기화
             </Link>
