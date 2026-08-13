@@ -16,6 +16,7 @@ import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { substituteChildName } from '@/lib/child-name';
 import type { SttResult, ThinkingElement } from '@/lib/contracts';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
+import type { MissionId } from '@/lib/missions';
 import { PHASE_LABELS, useTurnStore } from '@/store/turn';
 import story from '../../fixtures/story.banggui.json';
 
@@ -48,8 +49,8 @@ type TurnResponse = {
   mode: 'NORMAL' | 'GUIDED' | 'CLOSING';
   characterReplyText: string;
   audioUrl: string | null;
-  /** 미션 분기 (T041) — 노출은 이 필드로만 전달, 판정은 서버 전용 */
-  exposeMission?: string;
+  /** 미션 분기 (T041) — 노출은 이 필드로만 전달, 판정은 서버 전용 (/api/turn이 mission.id를 내려줌) */
+  exposeMission?: MissionId;
   missionPhase?: 'progress' | 'success';
   sceneEnd?: { reason: 'GOAL_MET' | 'MAX_TURNS'; nextSceneId: string | null };
   progress: { accumulated: ThinkingElement[]; missing: ThinkingElement[]; turn: number; maxTurns: number };
@@ -60,7 +61,11 @@ const fixtureScenes = (story as { scenes: FixtureSceneLite[] }).scenes;
 
 const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
 
-/** 아이 격려 고정 문구 — 시안 상태 카드(대화 영역) 하단 공통 표기 */
+/**
+ * 아이 격려 고정 문구 — 시안 상태 카드(대화 영역) 하단 공통 표기.
+ * fixture mission_2.examples와 같은 문장이지만 미션 예시 유출 버그가 아니라 확정된 최종 카피(2026-08-13 기획 확인).
+ * 미션 팝업 쪽 동일 문구는 A1 버그였고 미션별 fixture 콘텐츠로 교체됨 — 이 상수는 수정 대상 아님.
+ */
 const ENCOURAGEMENT = '질문이 많은 친구는 새로운 생각을 찾을 수 있어요.';
 
 function SpeakerIcon({ className = 'size-5' }: { className?: string }) {
@@ -126,7 +131,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   const [lastAudioUrl, setLastAudioUrl] = useState<string | null>(null);
   const [turnRetry, setTurnRetry] = useState<{ text: string; sttRawText: string } | null>(null);
   /** 열린 미션 팝업 (T042 배선) — 서버 exposeMission으로만 열린다 */
-  const [activeMission, setActiveMission] = useState<string | null>(null);
+  const [activeMission, setActiveMission] = useState<MissionId | null>(null);
   /** 미션 응답의 캐릭터 대사 — 팝업 [성공 완료]가 닫힐 때 재생 (기능명세서 ⓕ→⑦) */
   const heldReplyRef = useRef<Pick<TurnResponse, 'characterReplyText' | 'audioUrl' | 'sceneEnd'> | null>(null);
 
@@ -375,12 +380,13 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   const sendEnabled = phase === 'REVIEW' && !!sttText?.trim();
 
   // 상태 카드(대화 영역) 톤 — 시안: 듣는 중 #F5EDE0/#8A7A68, 녹음 primary/white, 변환 sunny/ink
+  // (듣는 중 #8A7A68은 대비 3.6:1 — 아동 하한 4.5:1 충족 위해 ink/70로 상향)
   const statusTone =
     phase === 'RECORDING'
       ? 'bg-primary text-white'
       : phase === 'TRANSCRIBING'
         ? 'bg-sunny text-ink'
-        : 'bg-[#f5ede0] text-[#8a7a68]';
+        : 'bg-[#f5ede0] text-ink/70';
 
   return (
     // 시안 StoryDialogueScreen: 좌 장면 일러스트 / 우 라운드 대화 패널 (좁은 화면은 세로 스택, 내부 스크롤만 허용)
@@ -419,7 +425,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
 
         {/* 캐릭터 대사 카드 — 대사 + 다시 듣기 칩 */}
         <div className="mt-3 shrink-0 border border-[#f0e4d3] bg-white px-5 py-4 shadow-[0_4px_18px_rgba(58,44,30,0.08)]">
-          <p className="font-display text-[22px] leading-8 text-ink">{currentLine}</p>
+          <p className="font-display text-[22px] leading-normal text-ink">{currentLine}</p>
           <div className="mt-1.5 flex justify-end">
             <button
               type="button"
@@ -442,7 +448,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                 className="rounded-[20px] rounded-tr-none border border-sky/25 bg-[#ddf0fb]/80 px-5 py-3.5 shadow-[0_4px_18px_rgba(58,44,30,0.08)]"
               >
                 <p className="text-lg font-bold text-sky">내가 한 말</p>
-                <p className="mt-1 font-display text-[22px] leading-8 text-ink">{bubble.text}</p>
+                <p className="mt-1 font-display text-[22px] leading-normal text-ink">{bubble.text}</p>
               </div>
             ) : (
               <div
@@ -450,7 +456,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                 className="rounded-[20px] rounded-tl-none border border-[#f0e4d3] bg-white/80 px-5 py-3.5 shadow-[0_4px_18px_rgba(58,44,30,0.08)]"
               >
                 <p className="text-lg font-bold text-primary">{scene.characterName ?? '캐릭터'}의 말</p>
-                <p className="mt-1 font-display text-[22px] leading-8 text-ink">{bubble.text}</p>
+                <p className="mt-1 font-display text-[22px] leading-normal text-ink">{bubble.text}</p>
               </div>
             ),
           )}
@@ -459,7 +465,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
           {phase === 'REVIEW' && sttText && (
             <div className="rounded-[20px] rounded-tr-none border-2 border-sky bg-[#ddf0fb] px-5 py-3.5">
               <p className="text-lg font-bold text-sky">내가 한 말</p>
-              <p className="mt-1 font-display text-[22px] leading-8 text-ink">“{sttText}”</p>
+              <p className="mt-1 font-display text-[22px] leading-normal text-ink">“{sttText}”</p>
             </div>
           )}
           <div ref={historyEndRef} />
@@ -502,15 +508,16 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                   <button
                     type="button"
                     onClick={() => void requestTurn(turnRetry.text, turnRetry.sttRawText)}
-                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-white active:bg-ink"
+                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-ink active:bg-ink active:text-white"
                   >
                     다시 보내기
                   </button>
                 </>
               )}
             </div>
+            {/* opacity를 얹으면 카드 톤(ink/70)과 곱해져 대비 하한 미달 — 톤 상속 그대로 표시 */}
             {!turnRetry && !statusMessage && !recorder.error && (
-              <p className="mt-0.5 font-display text-lg opacity-75">{ENCOURAGEMENT}</p>
+              <p className="mt-0.5 font-display text-lg">{ENCOURAGEMENT}</p>
             )}
           </div>
         </div>
@@ -535,7 +542,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
               type="button"
               onClick={handleSubmit}
               disabled={!sendEnabled}
-              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-white active:bg-ink disabled:opacity-40"
+              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-ink active:bg-ink active:text-white disabled:opacity-40"
             >
               보내기 →
             </button>

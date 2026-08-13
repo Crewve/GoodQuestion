@@ -14,29 +14,13 @@ import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import { missionImageUrl } from '@/lib/assets';
 import type { SttResult } from '@/lib/contracts';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
-import story from '../../fixtures/story.banggui.json';
-
-type MissionFixture = {
-  title: string;
-  scene: string;
-  goal: string;
-  /** 미션1 — 답에 담을 안내 포인트 목록 */
-  guide_points?: string[];
-  /** 미션2 — 목적 문장·예시 발화 */
-  purpose?: string;
-  examples?: string[];
-};
-
-const missions = (story as unknown as { missions: Record<string, MissionFixture> }).missions;
+import { loadMission, type MissionId } from '@/lib/missions';
 
 /** 시안 헤더 안내 문구 — 미션 오버레이 상단 고정 카피 (개발 배포용) */
 const MISSION_HEADLINES: Record<string, string> = {
   mission_1: '며느리의 방귀로 안전하게 배를 떨어뜨릴 방법을 찾아보아요!',
   mission_2: '친구들의 좋은 점을 찾아보아요!',
 };
-
-/** 아이 격려 고정 문구 — 시안 하단 스트립 공통 표기 */
-const ENCOURAGEMENT = '질문이 많은 친구는 새로운 생각을 찾을 수 있어요.';
 
 /** [미션 성공 완료] 콘텐츠 — 시안 미션1/미션2 성공화면 고정 카피 */
 const SUCCESS_CONTENT: Record<
@@ -116,7 +100,7 @@ export type MissionPopupProps = {
   /** dev UI 리허설(/dev/ui) 전용 — 초기 화면 상태 강제(성공 화면 미리보기). 실제 플로우에서는 전달하지 않는다. */
   devInitialPhase?: MissionPhase;
   /** fixtures `missions` 키 — 'mission_1'(대화3)·'mission_2'(대화4) */
-  missionId: string;
+  missionId: MissionId;
   /** STT 장면 어휘 힌트용 external_id (sc_banggui_07 등) — /api/turn 응답의 노출 장면과 일치시킬 것 */
   sceneId: string;
   /**
@@ -129,8 +113,11 @@ export type MissionPopupProps = {
 };
 
 export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, onContinue }: MissionPopupProps) {
-  const mission = missions[missionId];
-  if (!mission) throw new Error(`fixtures missions에 없는 키: ${missionId}`); // 배선 오탈자 조기 발견 (assets.ts 관례)
+  const mission = loadMission(missionId);
+  // 하단 스트립 안내는 공통 고정 문구가 아니라 미션별 fixture 콘텐츠 — 미션2 examples·미션1 guide_points.
+  // 고정 문구를 쓰면 미션1 팝업에 미션2 예시 문장이 노출된다 (수정사항 A1). 둘 다 비면 goal로 폴백.
+  const missionItems = [...mission.examples, ...mission.guidePoints];
+  const guideItems = missionItems.length > 0 ? missionItems : [mission.goal];
 
   const [phase, setPhase] = useState<MissionPhase>(devInitialPhase ?? 'IDLE');
   const [stt, setStt] = useState<{ text: string; sttRawText: string } | null>(null);
@@ -255,7 +242,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
                 <button
                   type="button"
                   onClick={() => void requestSubmit(stt.text, stt.sttRawText)}
-                  className="h-12 rounded-full bg-primary px-5 font-display text-lg text-white active:bg-ink"
+                  className="h-12 rounded-full bg-primary px-5 font-display text-lg text-ink active:bg-ink active:text-white"
                 >
                   다시 보내기
                 </button>
@@ -282,9 +269,16 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
                 )}
               </>
             ) : (
-              <span className="flex items-center gap-2.5 font-display text-lg text-[#8a7a68]">
-                <SpeakerIcon />
-                {ENCOURAGEMENT}
+              /* 시안 #8A7A68은 대비 3.6:1 — 아동 하한 4.5:1 충족 위해 ink/70로 상향 (수정사항 B2) */
+              <span className="flex min-w-0 items-center gap-2.5 font-display text-lg text-ink/70">
+                <SpeakerIcon className="size-6 shrink-0" />
+                <span className="min-w-0">
+                  {guideItems.map((item, i) => (
+                    <span key={i} className="block leading-normal">
+                      {item}
+                    </span>
+                  ))}
+                </span>
               </span>
             )}
             {statusMessage && <span className="text-lg font-bold text-primary">{statusMessage}</span>}
@@ -313,7 +307,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
               type="button"
               onClick={handleSubmit}
               disabled={!sendEnabled}
-              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-white active:bg-ink disabled:opacity-40"
+              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-ink active:bg-ink active:text-white disabled:opacity-40"
             >
               보내기 →
             </button>
