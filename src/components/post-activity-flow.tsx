@@ -7,6 +7,7 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CardOrdering, type PostActivityCard } from '@/components/card-ordering';
+import { CloseIcon } from '@/components/icons';
 import { Retelling } from '@/components/retelling';
 
 export type PostActivityStep = 'card-order' | 'retelling';
@@ -15,9 +16,9 @@ type PostActivityFlowProps = {
   sessionId: string;
   storyId: string;
   storyTitle: string;
-  /** 정답 순서로 정렬된 카드 4장 — 무작위 제시는 CardOrdering 내부 몫 */
+  /** 정답 순서로 정렬된 카드 N장(config.cards) — 무작위 제시는 CardOrdering 내부 몫 */
   cards: PostActivityCard[];
-  /** cards와 인덱스 쌍 핵심 단어 4개 (2.4.5 4세트) */
+  /** cards와 인덱스 쌍 핵심 단어 (2.4.5 세트, 개수는 cards와 동일) */
   keywords: string[];
   /** 재진입 라우팅 결과 — is_order_correct=true면 2.4.5부터 (서버 판정) */
   initialStep: PostActivityStep;
@@ -80,9 +81,7 @@ export function PostActivityFlow({
           onClick={exitToDetail}
           className="flex h-14 items-center gap-2.5 rounded-full bg-white px-5 shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-ink active:text-white"
         >
-          <span aria-hidden className="text-2xl leading-none text-current">
-            ✕
-          </span>
+          <CloseIcon className="size-6 text-current" />
           <span className="font-display text-2xl text-current">나가기</span>
         </button>
         <span

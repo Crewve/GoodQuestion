@@ -183,7 +183,9 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
 
         <p className="mt-6 flex items-center justify-center gap-1.5 text-sm font-bold text-[#8A7A68]">
           아직 계정이 없으신가요?
-          <Link href="/signup" className="font-bold text-primary">
+          {/* 히트 영역을 글자 박스 전체(48px)로 — 여백 클릭이 먹지 않던 문제 (수정사항 C7 / QA 34).
+              음수 마진으로 시각 위치는 그대로 두고 탭 영역만 넓힌다 */}
+          <Link href="/signup" className="-my-3 flex min-h-12 items-center px-1 font-bold text-primary active:opacity-70">
             회원가입
           </Link>
         </p>

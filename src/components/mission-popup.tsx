@@ -8,8 +8,11 @@
 // 상태도 전역 turn 스토어(T033)와 무관한 팝업 로컬 상태만 쓴다(뒤의 대화 턴 사이클을 건드리지 않음).
 // 마크업은 피그마 「개발 배포용」 .4.2 대화_미션1/미션2/Mission2Overlay·미션n_성공화면 대조:
 // [진행 중] 그라데이션 헤더(미션 칩+안내) → 미션 일러스트(안내 포인트 포함 이미지) → 안내/미리보기 스트립 → 마이크·보내기.
-// [성공 완료] 아치형 헤더(🏆·미션 n단계 칩) → 잘했어요! → 성과 문구 → 별 3종 → 배지 카드 → 이야기 계속하기.
+// [성공 완료] 아치형 헤더(메달·미션 n단계 칩) → 잘했어요! → 성과 문구 → 별 3종 → 배지 카드 → 이야기 계속하기.
+// 성공 화면 아이콘은 시안이 이모지(🏆✨⭐🎖️)로 그려져 있으나 기기별 컬러 폰트 차이로 시안과 다르게 렌더돼
+// 공용 SVG 세트로 교체(수정사항 C1 / QA 4·10) — 메달은 배지 화면·내정보와 같은 MedalIcon으로 통일.
 import { useCallback, useRef, useState } from 'react';
+import { MedalIcon, SparkleIcon, StarIcon } from '@/components/icons';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import { missionImageUrl } from '@/lib/assets';
 import type { SttResult } from '@/lib/contracts';
@@ -41,6 +44,17 @@ const SUCCESS_CONTENT: Record<
     badgeTitle: '친구 탐정 배지를 받았어요',
     badgeDesc: '친구들의 좋은 점을 찾는 특별한 능력이 생겼어요.',
   },
+};
+
+/**
+ * 안내 스트립 앞머리 (수정사항 C2 / QA 9 "미션 1 도움말 변경").
+ * 미션2 fixture는 그대로 읽히는 완성 예시 문장("목소리가 큰 친구는 …")이지만,
+ * 미션1 fixture는 답에 담을 요소를 나열한 조각글("무엇을 사용할 것인지")이라 그대로 늘어놓으면
+ * 도움말이 아니라 채점표처럼 읽힌다. 원문(SoT: fixtures story.banggui.json)은 건드리지 않고
+ * 앞에 안내 한 줄만 붙여 말로 이어지게 한다.
+ */
+const MISSION_GUIDE_LEAD: Record<string, string> = {
+  mission_1: '이런 것들을 말해줄래요?',
 };
 
 const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
@@ -118,6 +132,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
   // 고정 문구를 쓰면 미션1 팝업에 미션2 예시 문장이 노출된다 (수정사항 A1). 둘 다 비면 goal로 폴백.
   const missionItems = [...mission.examples, ...mission.guidePoints];
   const guideItems = missionItems.length > 0 ? missionItems : [mission.goal];
+  const guideLead = MISSION_GUIDE_LEAD[missionId];
 
   const [phase, setPhase] = useState<MissionPhase>(devInitialPhase ?? 'IDLE');
   const [stt, setStt] = useState<{ text: string; sttRawText: string } | null>(null);
@@ -269,12 +284,14 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
                 )}
               </>
             ) : (
-              /* 시안 #8A7A68은 대비 3.6:1 — 아동 하한 4.5:1 충족 위해 ink/70로 상향 (수정사항 B2) */
-              <span className="flex min-w-0 items-center gap-2.5 font-display text-lg text-ink/70">
+              /* 스토리보드 안내 스트립 실측 #8A7A68 (대비 3.6:1 — QA 13 "색상 기준은 스토리보드 기준으로"로 B2 보정 철회) */
+              <span className="flex min-w-0 items-center gap-2.5 font-display text-lg text-[#8A7A68]">
                 <SpeakerIcon className="size-6 shrink-0" />
-                <span className="min-w-0">
+                <span className="min-w-0 leading-normal">
+                  {guideLead && <span className="mr-1.5 font-bold text-ink">{guideLead}</span>}
                   {guideItems.map((item, i) => (
-                    <span key={i} className="block leading-normal">
+                    <span key={i}>
+                      {i > 0 && <span aria-hidden className="mx-1.5 text-ink/40">·</span>}
                       {item}
                     </span>
                   ))}
@@ -317,15 +334,9 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
         /* [미션 성공 완료] — 같은 팝업 안에서 전환, 이야기 계속하기로만 복귀 */
         <section className="flex max-h-full w-full max-w-[700px] flex-col overflow-y-auto rounded-[32px] bg-white px-5 pb-5 shadow-[0_4px_16px_rgba(58,44,30,0.10),0_24px_64px_rgba(58,44,30,0.18)]">
           <div className="relative shrink-0 rounded-b-[50%] bg-gradient-to-b from-[#fff5d4] to-[#ffede3] pt-2.5 pb-8 text-center">
-            <p aria-hidden className="text-[56px] leading-none">
-              🏆
-            </p>
-            <p aria-hidden className="absolute top-4 left-[38%] text-[22px] leading-none">
-              ✨
-            </p>
-            <p aria-hidden className="absolute top-9 right-[38%] text-[22px] leading-none">
-              ⭐
-            </p>
+            <MedalIcon className="mx-auto h-14 w-[52px] drop-shadow-[0_8px_16px_rgba(255,201,60,0.45)]" />
+            <SparkleIcon className="absolute top-4 left-[38%] size-[22px] text-sunny" />
+            <StarIcon className="absolute top-9 right-[38%] size-[22px]" />
             <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full bg-primary px-4 py-1.5 font-display text-lg whitespace-nowrap text-white shadow-[0_3px_10px_rgba(255,122,61,0.35)]">
               미션 {missionNumber}단계
             </span>
@@ -341,18 +352,14 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
           <div className="mt-4 flex items-start justify-center gap-6">
             {success.stars.map((label) => (
               <span key={label} className="flex flex-col items-center gap-1">
-                <span aria-hidden className="text-[28px] leading-none drop-shadow-[0_3px_6px_rgba(255,201,60,0.5)]">
-                  ⭐
-                </span>
+                <StarIcon className="size-7 drop-shadow-[0_3px_6px_rgba(255,201,60,0.5)]" />
                 <span className="text-lg text-ink">{label}</span>
               </span>
             ))}
           </div>
 
           <div className="mt-5 flex shrink-0 items-center gap-3.5 rounded-3xl border border-[#ede5d8] bg-gradient-to-b from-[#ddf5ec] to-[#ddf0fb] px-4 py-3">
-            <span aria-hidden className="text-4xl leading-none">
-              🎖️
-            </span>
+            <MedalIcon className="h-9 w-[33px] shrink-0" />
             <span className="min-w-0">
               <p className="font-display text-lg text-ink">{success.badgeTitle}</p>
               <p className="mt-0.5 text-lg text-ink">{success.badgeDesc}</p>

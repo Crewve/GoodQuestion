@@ -4,56 +4,18 @@
 // 스타일: 피그마 「개발 배포용」 2.5 — 흰 콘텐츠 카드(주황 테두리) + 히어로 일러스트 + 요약 카드 2종 + 버튼 2종.
 // 초원 배경·하이파이브 히어로·하트 메달 배지는 피그마 내장 원본에서 추출(public/complete-*.png) — 시안 동일 에셋.
 // 배지 명칭은 시안 "마음 나누기"가 데이터에 없어 기존 완주 배지 1종 표기 유지(실획득분만 표시 — 2.5 유효성).
+// 아이콘은 공용 세트(components/icons.tsx)로 통일하고 시계 이모지(🕐)는 스토리보드 clock 벡터로 교체 (C1 / QA 4).
+// 글자색은 스토리보드 실측값 복귀 — 라벨 #8A7A68·오늘의 이야기 Sage·오늘 모은 배지/버튼 Primary (C5 / QA 13).
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { ArrowRightIcon, BookIcon, ClockIcon, TrophyIcon } from '@/components/icons';
 import { storyThumbnailUrl } from '@/lib/assets';
 import { BANGGUI_STORY_ID } from '@/lib/story';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthedUser } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
-
-/** 아웃라인 트로피 글리프 — 스토리보드 '모은 배지 확인하기' 아이콘 (주황 라인 스타일, currentColor 상속) */
-function TrophyIcon({ className = 'size-7' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-      <path d="M4 22h16" />
-      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-      <path d="M14 14.66V17c0 .55.47.98.97 1.21c1.18.54 2.03 2.03 2.03 3.79" />
-      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-    </svg>
-  );
-}
-
-/** 흰 아웃라인 펼친 책 글리프 — 스토리보드 '다른 이야기 보기' 아이콘 (이모지 📖는 플랫폼별 파란 표지로 렌더돼 시안과 다름) */
-function BookIcon({ className = 'size-7' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 5.5C10.5 4.2 8.4 3.6 6 3.6c-1 0-2 .13-3 .4v14.5c1-.27 2-.4 3-.4 2.4 0 4.5.63 6 1.9 1.5-1.27 3.6-1.9 6-1.9 1 0 2 .13 3 .4V4c-1-.27-2-.4-3-.4-2.4 0-4.5.63-6 1.9v14.1" />
-    </svg>
-  );
-}
 
 /** 학습 시간 — 세션 시작→완료를 분 단위 올림(최소 1분). 완료 화면 표시 전용 */
 function learningMinutes(startedAt: string | null, completedAt: string | null): number | null {
@@ -123,7 +85,7 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
         {/* 완료 안내 */}
         <div className="shrink-0 text-center">
           <h1 className="font-display text-4xl text-ink">오늘의 이야기를 다 만났어요!</h1>
-          <p className="mt-2 font-display text-xl font-normal text-[#6F6152]">
+          <p className="mt-2 font-display text-xl font-normal text-[#8A7A68]">
             이야기 장면을 보고, 내 생각을 말해보았어요.
           </p>
         </div>
@@ -143,11 +105,11 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
               <div className="size-[88px] shrink-0 rounded-2xl bg-sunny/30" aria-hidden />
             )}
             <div className="min-w-0">
-              <h2 className="font-display text-lg text-[#177A4F]">오늘의 이야기</h2>
+              <h2 className="font-display text-lg text-sage">오늘의 이야기</h2>
               <p className="mt-1 truncate font-display text-[22px] text-ink">{story.title}</p>
               {minutes !== null && (
-                <p className="mt-1 font-display text-lg text-[#6F6152]">
-                  <span aria-hidden>🕐</span> 이야기 시간 · 약 {minutes}분
+                <p className="mt-1 font-display text-lg text-[#8A7A68]">
+                  <ClockIcon className="mr-1 inline-block size-[18px] align-[-3px]" /> 이야기 시간 · 약 {minutes}분
                 </p>
               )}
             </div>
@@ -161,26 +123,26 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
               className="size-[88px] shrink-0 rounded-2xl object-cover"
             />
             <div className="min-w-0">
-              <h2 className="font-display text-lg text-[#B84A12]">오늘 모은 배지</h2>
+              <h2 className="font-display text-lg text-primary">오늘 모은 배지</h2>
               <p className="mt-1 truncate font-display text-[22px] text-ink">이야기 완주 배지</p>
-              <p className="mt-1 font-display text-lg text-[#6F6152]">새 배지를 받았어요</p>
+              <p className="mt-1 font-display text-lg text-[#8A7A68]">새 배지를 받았어요</p>
             </div>
           </section>
         </div>
 
-        {/* 이동 버튼 2종 — 링크 대상 유지. 스토리보드 실측(2026-08-13): 높이 60px·테두리 2px,
-            글자 색은 #B84A12·ink 그대로 시안과 일치(아동 대비 하한 준수값) */}
+        {/* 이동 버튼 2종 — 링크 대상 유지. 스토리보드 실측: 높이 60px·테두리 2px,
+            글자 색은 시안 그대로 Primary / 흰색 (primary 위 흰 글자 2.6:1 미달 인지 — QA 13) */}
         <Link
           href="/my/badges"
-          className="flex h-[60px] shrink-0 items-center justify-center gap-3 rounded-[22px] border-2 border-primary bg-[#FFFDE7] font-display text-2xl text-[#B84A12] shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-primary active:text-ink"
+          className="flex h-[60px] shrink-0 items-center justify-center gap-3 rounded-[22px] border-2 border-primary bg-[#FFFDE7] font-display text-2xl text-primary shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-primary active:text-ink"
         >
-          <TrophyIcon /> 모은 배지 확인하기 <span aria-hidden>→</span>
+          <TrophyIcon /> 모은 배지 확인하기 <ArrowRightIcon className="size-6" />
         </Link>
         <Link
           href={storiesHref}
-          className="flex h-[60px] shrink-0 items-center justify-center gap-3 rounded-[22px] bg-primary font-display text-2xl text-ink shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-ink active:text-white"
+          className="flex h-[60px] shrink-0 items-center justify-center gap-3 rounded-[22px] bg-primary font-display text-2xl text-white shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-ink"
         >
-          <BookIcon className="size-7 text-white" /> 다른 이야기 보기 <span aria-hidden>→</span>
+          <BookIcon className="size-7 text-white" /> 다른 이야기 보기 <ArrowRightIcon className="size-6" />
         </Link>
       </section>
     </main>
