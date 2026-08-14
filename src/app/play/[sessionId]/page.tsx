@@ -6,6 +6,7 @@
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Attribution } from '@/components/attribution';
+import { withChild } from '@/components/bottom-nav';
 import { DialogueScene } from '@/components/dialogue-scene';
 import { ConfettiIcon } from '@/components/icons';
 import { NarrationScene } from '@/components/narration-scene';
@@ -98,10 +99,12 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
   }, [currentScene, scenes]);
 
   const exitToDetail = useCallback(() => {
-    // X 나가기 — 이야기 상세 복귀 (진행 상태는 서버 세션에 이미 반영된 만큼만 유지)
-    if (storyId) router.push(`/stories/${storyId}`);
+    // X 나가기 — 이야기 상세 복귀 (진행 상태는 서버 세션에 이미 반영된 만큼만 유지).
+    // 아이 컨텍스트(?child=)를 반드시 실어 보낸다 — 빠뜨리면 상세→목록→홈 복귀 시 /home이
+    // 컨텍스트 없음으로 판정해 2.1 아이 선택으로 튕긴다 (QA 17).
+    if (storyId) router.push(withChild(`/stories/${storyId}`, childId));
     else router.back();
-  }, [router, storyId]);
+  }, [childId, router, storyId]);
 
   const proceed = useCallback(() => {
     setCurrentOrder((order) => (order === null ? order : order + 1));
@@ -132,11 +135,15 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
         : splitNarrationSentences(next.description ?? '').map((_, i) =>
             narrationSentenceAudioUrl(audioBase, i),
           );
+    // HTTP 캐시만 데우면 되는 목적이라 fetch로 받는다. 이전에는 장면마다 new Audio()를 만들고
+    // 정리하지 않아 이야기 후반에는 십수 개가 미디어 리소스를 잡은 채 남았고, Safari의 동시 미디어
+    // 한도에 걸리면 정작 실제 재생용 <audio>가 로드·재생에 실패한다 — 후반 내레이션이 안 나오는
+    // 경로 (QA 30·33). fetch는 디코더를 점유하지 않고 장면 이탈 시 abort로 확실히 정리된다.
+    const controller = new AbortController();
     for (const url of urls) {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audio.src = url;
+      void fetch(url, { cache: 'force-cache', signal: controller.signal }).catch(() => undefined);
     }
+    return () => controller.abort();
   }, [scenes, currentOrder]);
 
   if (error) {

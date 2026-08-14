@@ -11,7 +11,7 @@
 // 스토리보드 기준으로")에 따라 시안 원색으로 되돌렸다. 일부 조합은 대비 4.5:1 미달임을 인지하고 채택.
 import Link from 'next/link';
 import { withChild } from '@/components/bottom-nav';
-import { ArrowRightIcon, BookIcon, ChevronLeftIcon, MedalIcon } from '@/components/icons';
+import { ArrowRightIcon, BookIcon, MedalIcon } from '@/components/icons';
 import { recommendedThumbnailUrls, storyThumbnailUrl } from '@/lib/assets';
 
 type ReadState = '읽기 완료' | '읽는 중' | '읽기 전';
@@ -44,14 +44,9 @@ export default async function BadgesPage(props: PageProps<'/my/badges'>) {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      {/* 헤더 — 중앙 제목 (시안), 뒤로가기는 내비게이션 유지용. 세로 스크롤 화면이라 상단 고정 (핸드오프 §2.1) */}
+      {/* 헤더 — 중앙 제목만 (시안). '‹ 내정보' 네비게이터는 삭제 (QA 16) —
+          이탈 경로는 하단 '다른 이야기 보기'와 브라우저 뒤로가기. 세로 스크롤 화면이라 상단 고정 (핸드오프 §2.1) */}
       <header className="sticky top-0 z-40 flex h-[70px] shrink-0 items-center justify-center bg-background">
-        <Link
-          href={withChild('/my', childId)}
-          className="absolute left-2 flex h-12 items-center gap-1 px-3 font-semibold text-ink active:opacity-70"
-        >
-          <ChevronLeftIcon className="size-4" /> 내정보
-        </Link>
         <h1 className="font-display text-[32px] text-ink">전래동화 이야기 여행</h1>
       </header>
 

@@ -183,7 +183,9 @@ export async function POST(request: Request) {
       order: scene.scene_order,
       type: sceneType,
       description: isDialogue ? undefined : scene.scene_description,
-      characterName: isDialogue && scene.character_name ? loadCharacter(scene.character_name).name : undefined,
+      // 화면 표기는 display_name (QA 11 — '며느리' → '방귀쟁이 며느리'). name은 LLM 프롬프트 전용
+      characterName:
+        isDialogue && scene.character_name ? loadCharacter(scene.character_name).display_name : undefined,
       characterImageUrl: isDialogue && scene.character_name ? characterImageUrl(scene.character_name) : undefined,
       // 오프닝 표시 텍스트 — 아래에서 반환하는 오디오와 항상 일치(실명본이면 실명, 폴백이면 '친구' 표기)
       openingText: isDialogue

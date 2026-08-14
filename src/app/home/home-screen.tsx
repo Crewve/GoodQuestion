@@ -2,12 +2,12 @@
 // 홈 화면 본체 (T048, 기능명세서 2.0) — 인사말(성 제외 이름)·이어하기 카드·추천 3×2·GNB.
 // 이어하기: 진행 중 세션이 있을 때만 섹션 노출(서버 판정), 진행률 n/N·%는 T031 /api/sessions 응답 재사용
 // (멱등 재개라 세션이 있을 때만 호출 — 없는데 호출하면 세션이 생성되므로 금지).
-// 추천 6개: 진행 중 이야기가 없을 때만 1번 카드 '방귀 뀌는 며느리' 고정·유일 클릭 가능(→ 이야기 상세),
-// 있으면 더미 6종으로 채운다(2.0 예외 처리 — 더미 썸네일이 6종인 이유). 더미는 클릭 이벤트 미부여.
+// 추천 3개(QA 22): 진행 중 이야기가 없을 때만 1번 카드 '방귀 뀌는 며느리' 고정·유일 클릭 가능(→ 이야기 상세),
+// 있으면 더미 3종으로 채운다(2.0 예외 처리). 더미는 클릭 이벤트 미부여·흐린 '준비 중' 표시.
 // Header·GNB는 상하단 고정(핸드오프 §2.1), GNB는 파트2 T049의 BottomNav 공용(단어장 이동 없음,
 // 아이 컨텍스트 child 쿼리 전파) — 팀원 브랜치 파일을 동일 내용으로 선반영해 합류 시 충돌 없음.
 // UI 리뉴얼: 피그마 「개발 배포용」 2.0 Case A/B 대조 — h-dvh 한 화면 수납(세로 스크롤 금지, T071·T077 유지).
-// Case A는 이어하기 카드+추천 1행만 보이는 시안 그대로, 초과 행은 overflow-hidden으로 클립(더미 6종 DOM 유지).
+// 추천은 1행 3개 고정이라 Case A(이어하기 카드 포함)에서도 클립 없이 들어간다.
 import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -123,8 +123,9 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
   }, [childId, hasSession, story.id]);
 
   const dummies = recommendedThumbnailUrls().map((url, i) => ({ url, ...DUMMY_STORIES[i] }));
-  // 진행 중인 이야기가 없을 때만 1번 카드 '방귀 뀌는 며느리' 고정 — 있으면 더미 6개 (2.0 예외 처리)
-  const dummySlots = hasSession ? dummies : dummies.slice(0, 5);
+  // 추천은 3개만 노출 (QA 22 — 기존 3×2 6개에서 축소).
+  // 진행 중인 이야기가 없을 때만 1번 카드 '방귀 뀌는 며느리' 고정 + 더미 2개, 있으면 더미 3개 (2.0 예외 처리)
+  const dummySlots = hasSession ? dummies.slice(0, 3) : dummies.slice(0, 2);
   const percent = resume ? Math.min(100, Math.max(0, Math.round(resume.progress.percent))) : 0;
   const storyDifficulty = difficultyChip(story.difficulty);
 
@@ -225,7 +226,7 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
           </section>
         )}
 
-        {/* 추천 이야기 3×2 고정 6개 (2.0) — Case A는 1행만 노출(초과분 클립), Case B는 2행 전체 */}
+        {/* 추천 이야기 3개 1행 (QA 22 — 기존 3×2 6개에서 축소) */}
         <section
           aria-label="추천 이야기"
           className={`flex min-h-0 flex-1 flex-col overflow-hidden ${hasSession ? 'mt-4' : 'mt-2'}`}
@@ -282,11 +283,12 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
             {dummySlots.map((dummy) => {
               const dummyDifficulty = difficultyChip(dummy.difficulty);
               return (
-                // 미공개 이야기 — 클릭 이벤트 미부여(커서 default·무반응), 별도 에러 없음 (2.0 예외 처리)
+                // 미공개 이야기 — 클릭 이벤트 미부여(커서 default·무반응), 별도 에러 없음 (2.0 예외 처리).
+                // 비활성임이 보이도록 흐리게 + '준비 중' 칩 (QA 3 — 이야기 목록 카드와 동일 처리)
                 <div
                   key={dummy.title}
                   aria-disabled
-                  className="flex flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
+                  className="flex flex-col overflow-hidden rounded-[20px] bg-white opacity-50 shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
                 >
                   <Image
                     src={dummy.url}
@@ -310,6 +312,9 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                       </Chip>
                       <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#8A7A68]">
                         {dummy.minutes}분
+                      </Chip>
+                      <Chip rounded="rounded-lg" tint="bg-[#EFE7DA] text-[#75664F]">
+                        준비 중
                       </Chip>
                     </div>
                   </div>

@@ -60,38 +60,43 @@ const TABS: { key: Tab; label: string; Icon: ComponentType<IconProps>; href: (ch
 ];
 
 export function BottomNav({ active, childId }: { active: Tab; childId: string | null }) {
-  // 피그마 BottomGNB: 흰 배경·상단 보더 #F0E4D3·활성 #FF7A3D/비활성 #C4B49F·아이콘+라벨 수직
+  // 피그마 BottomGNB: 흰 배경·상단 보더 #F0E4D3·활성 #FF7A3D/비활성 #C4B49F·아이콘+라벨 수직.
+  // 화면 하단 고정 (QA 21) — sticky bottom-0은 컨테이너 마지막 자식이라 붙을 여백이 없어
+  // 세로 스크롤 화면(마이페이지 계열)에서 끝까지 내려야만 보였다. fixed로 바꾸고
+  // 흐름에는 같은 높이(h-14)의 스페이서를 남겨 기존 레이아웃 계산(h-dvh 화면의 잔여 높이)을 유지한다.
   return (
-    <nav
-      aria-label="주요 메뉴"
-      className="sticky bottom-0 mt-auto flex border-t border-[#F0E4D3] bg-white shadow-[0_-4px_20px_rgba(58,44,30,0.08)]"
-    >
-      {TABS.map((tab) => {
-        const href = tab.href(childId);
-        const isActive = tab.key === active;
-        const className = `flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-lg leading-tight font-semibold ${
-          isActive ? 'text-primary' : 'text-[#C4B49F]'
-        } active:bg-background`;
-        const body = (
-          <>
-            <tab.Icon />
-            {tab.label}
-          </>
-        );
-        // 현재 탭·단어장은 이동 없음 — 버튼으로 렌더
-        if (isActive || !href) {
-          return (
-            <button key={tab.key} type="button" aria-current={isActive ? 'page' : undefined} className={className}>
-              {body}
-            </button>
+    <div className="mt-auto h-14 shrink-0">
+      <nav
+        aria-label="주요 메뉴"
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-[#F0E4D3] bg-white shadow-[0_-4px_20px_rgba(58,44,30,0.08)]"
+      >
+        {TABS.map((tab) => {
+          const href = tab.href(childId);
+          const isActive = tab.key === active;
+          const className = `flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-lg leading-tight font-semibold ${
+            isActive ? 'text-primary' : 'text-[#C4B49F]'
+          } active:bg-background`;
+          const body = (
+            <>
+              <tab.Icon />
+              {tab.label}
+            </>
           );
-        }
-        return (
-          <Link key={tab.key} href={href} className={className}>
-            {body}
-          </Link>
-        );
-      })}
-    </nav>
+          // 현재 탭·단어장은 이동 없음 — 버튼으로 렌더
+          if (isActive || !href) {
+            return (
+              <button key={tab.key} type="button" aria-current={isActive ? 'page' : undefined} className={className}>
+                {body}
+              </button>
+            );
+          }
+          return (
+            <Link key={tab.key} href={href} className={className}>
+              {body}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }

@@ -245,7 +245,9 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
                   setLoggingOut(true);
                   setLogoutError(null);
                   try {
-                    const { error } = await getSupabaseBrowser().auth.signOut();
+                    // scope: 'global' — 이 계정의 모든 기기 세션(리프레시 토큰) 폐기 (QA 32).
+                    // supabase-js 기본값과 같지만 의도를 코드에 남긴다.
+                    const { error } = await getSupabaseBrowser().auth.signOut({ scope: 'global' });
                     if (error) throw new Error(error.message);
                     router.replace('/login');
                   } catch {

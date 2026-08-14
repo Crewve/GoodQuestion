@@ -43,9 +43,10 @@ export default async function InquiriesPage(props: PageProps<'/my/support/inquir
           </span>
         </div>
 
-        {/* 새 문의하기 — 작성 화면은 스토리보드 미정의라 준비 중 안내 (MVP). 피그마: r=12·h44·ink */}
+        {/* 새 문의하기 — 작성 화면은 스토리보드 미정의라 준비 중 안내 (MVP). 피그마: r=12·h44·ink.
+            summary는 w-fit — details 폭이 안내문에 맞춰 늘어나면 블록 요소인 버튼도 같이 늘어났다 (QA 23) */}
         <details className="group mt-10 self-end">
-          <summary className="flex h-11 cursor-pointer list-none items-center gap-1.5 rounded-xl bg-ink px-5 text-sm font-bold text-white active:opacity-80 [&::-webkit-details-marker]:hidden">
+          <summary className="ml-auto flex h-11 w-fit cursor-pointer list-none items-center gap-1.5 rounded-xl bg-ink px-5 text-sm font-bold text-white active:opacity-80 [&::-webkit-details-marker]:hidden">
             <span aria-hidden className="text-lg leading-none">
               ＋
             </span>

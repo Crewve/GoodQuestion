@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { ChildProfileForm } from '@/components/child-profile-form';
 import { PlusCircleIcon, UserIcon } from '@/components/icons';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
-import { koreanAge } from '@/lib/profile-display';
+import { koreanAge, mergeAddedProfiles } from '@/lib/profile-display';
 import { saveChildProfile } from './save-profile';
 
 export type ChildProfile = {
@@ -36,10 +36,13 @@ const CARD_STYLES = [
 const SAVE_NOT_READY = '프로필 저장 기능을 준비하고 있어요. 조금만 기다려 주세요!';
 const SAVE_ERROR = '등록에 실패했어요. 잠시 후 다시 시도해 주세요.';
 
-export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
+export function ProfilesScreen({ profiles: serverProfiles }: { profiles: ChildProfile[] }) {
   const router = useRouter();
   const [view, setView] = useState<'list' | 'add'>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** 이번 화면에서 방금 등록한 아이 — router.refresh()가 도착하기 전까지의 표시분 (QA 2) */
+  const [addedProfiles, setAddedProfiles] = useState<ChildProfile[]>([]);
+  const profiles = mergeAddedProfiles(serverProfiles, addedProfiles);
 
   const selectChild = (id: string) => {
     setSelectedId(id); // 선택 테두리 표시 (2.1 구성요소)
@@ -65,8 +68,11 @@ export function ProfilesScreen({ profiles }: { profiles: ChildProfile[] }) {
                 if (!result.ok) {
                   throw new Error(result.reason === 'NOT_READY' ? SAVE_NOT_READY : (result.message ?? SAVE_ERROR));
                 }
+                // 저장 확정본을 먼저 붙여 복귀 즉시 카드가 보이게 한다 — router.refresh()는 await할 수 없어
+                // 이것 없이는 이전 서버 props가 렌더돼 신규 카드가 뒤늦게 나타난다 (QA 2)
+                setAddedProfiles((added) => [...added, result.profile]);
                 setView('list'); // 완료 → 갱신된 목록으로 복귀 (2.1.1 화면 이동)
-                router.refresh();
+                router.refresh(); // 서버 목록 재검증 — 도착하면 위 추가분은 id 중복으로 자연 흡수
               }}
             />
           </div>

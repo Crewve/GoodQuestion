@@ -1,12 +1,12 @@
 'use client';
 // 도입/전개 내레이션 화면 (T036, 기능명세서 2.4.1·2.4.2) — scene_description 온점 분리 문장을
-// 한 문장씩 노출·자동 재생. 문장 종료 시 자동 전환 없음(화살표·진행하기로만 진행), 문장 오디오 종료 전에는
-// 화살표·진행하기 비활성(개발 환경 제외 — 수정사항 A2), 첫 문장은 이전 화살표 미노출.
-// 진행하기는 다시 듣기와 상시 병행 노출(스토리보드) — 전개 중에는 다음 화살표와 동일 동작,
-// 마지막 문장(다음 화살표 미노출)에서는 장면 진행. 오디오는 문장별 사전 생성본(pregenerate-audio `_s{i}` 파일).
+// 한 문장씩 노출·자동 재생. 문장 종료 시 자동 전환 없음(화살표로만 진행), 문장 오디오 종료 전에는
+// 화살표 비활성(개발 환경 제외 — 수정사항 A2), 첫 문장은 이전 화살표 미노출.
+// 진행은 다음 화살표 하나로 통일 (QA 7 — '진행하기' 버튼 삭제): 전개 중에는 다음 문장,
+// 마지막 문장에서는 장면 진행. 오디오는 문장별 사전 생성본(pregenerate-audio `_s{i}` 파일).
 // 재생 실패 시 별도 에러 없이 텍스트만 노출하고 '다시 듣기'가 재시도를 겸한다 (TTS 폴백 매트릭스).
 // 마크업은 피그마 「개발 배포용」 2.4.1 도입/전개 프레임 대조: 장면 일러스트(라운드 20)
-// → 자막 카드(웨이브 배지+문장, 좌 흰 화살표/우 잉크 화살표) → 하단 다시 듣기(sage)·진행하기(primary).
+// → 자막 카드(웨이브 배지+문장, 좌 흰 화살표/우 잉크 화살표) → 하단 다시 듣기(sage).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { narrationSentenceAudioUrl, splitNarrationSentences } from '@/lib/narration';
 
@@ -15,8 +15,6 @@ type NarrationSceneProps = {
   imageUrl?: string;
   /** /api/sessions scenes[].openingAudioUrl (장면 전체 내레이션 mp3) — 문장별 URL 파생 기준 */
   narrationAudioUrl?: string;
-  /** 마지막 문장 버튼 라벨 (기본 '진행하기') */
-  proceedLabel?: string;
   onProceed: () => void;
 };
 
@@ -67,15 +65,16 @@ export function NarrationScene({
   description,
   imageUrl,
   narrationAudioUrl,
-  proceedLabel = '진행하기',
   onProceed,
 }: NarrationSceneProps) {
   const sentences = useMemo(() => splitNarrationSentences(description), [description]);
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  /** 자동재생 차단 안내 — 대화 화면과 동일하게 '다시 듣기'가 복구 제스처임을 알린다 (QA 30·33) */
+  const [blocked, setBlocked] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isLast = index === sentences.length - 1;
-  // 문장 오디오 종료 전에는 화살표·진행하기 잠금 — 개발 환경은 확인 편의상 즉시 넘김 허용
+  // 문장 오디오 종료 전에는 화살표 잠금 — 개발 환경은 확인 편의상 즉시 넘김 허용
   const locked = isPlaying && process.env.NODE_ENV !== 'development';
 
   const playCurrent = useCallback(() => {
@@ -84,10 +83,15 @@ export function NarrationScene({
     audio.src = narrationSentenceAudioUrl(narrationAudioUrl, index);
     audio.currentTime = 0;
     setIsPlaying(true);
-    // 실패(자동재생 차단·파일 부재)는 조용히 무시 — 텍스트는 이미 노출, '다시 듣기'가 재시도 경로.
+    setBlocked(false);
     // 잠금 해제는 재생 미시작으로 남은 때만 — 연타로 이전 play()가 중단된 rejection이 새 재생의 잠금을 풀지 않게
-    void audio.play().catch(() => {
-      if (audio.paused) setIsPlaying(false);
+    void audio.play().catch((error: unknown) => {
+      if (!audio.paused) return; // 새 재생이 이미 시작됨 — 이전 play()의 중단 rejection
+      setIsPlaying(false);
+      // 자동재생 차단(이어하기·새로고침 직후 등)은 텍스트만 남아 "소리가 안 난다"로 보인다.
+      // 대화 화면(dialogue-scene)과 달리 안내가 없어 복구 경로를 몰랐던 문제 — 안내를 노출한다 (QA 30·33).
+      // 파일 부재·디코드 실패는 error 이벤트로 따로 처리되므로 여기서는 차단만 구분한다.
+      if ((error as DOMException)?.name === 'NotAllowedError') setBlocked(true);
     });
   }, [index, narrationAudioUrl]);
 
@@ -103,16 +107,19 @@ export function NarrationScene({
     const audio = audioRef.current;
     if (!audio) return;
     const unlock = () => setIsPlaying(false);
+    const clearBlocked = () => setBlocked(false); // 재생이 실제로 시작되면 안내 회수
     audio.addEventListener('ended', unlock);
     audio.addEventListener('error', unlock);
+    audio.addEventListener('playing', clearBlocked);
     return () => {
       audio.removeEventListener('ended', unlock);
       audio.removeEventListener('error', unlock);
+      audio.removeEventListener('playing', clearBlocked);
     };
   }, []);
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col">
+    <section className="relative flex min-h-0 flex-1 flex-col">
       <audio ref={audioRef} hidden />
 
       {/* 장면 일러스트 — 시안 1154×592, 좌우 20px 여백·라운드 20 */}
@@ -150,40 +157,38 @@ export function NarrationScene({
           </p>
         </div>
 
-        {/* 마지막 문장은 다음 화살표 대신 하단 '진행하기'로 진행 — 자리는 유지해 레이아웃 고정 */}
-        {!isLast ? (
-          <button
-            type="button"
-            aria-label="다음 문장"
-            disabled={locked}
-            onClick={() => setIndex(index + 1)}
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink text-white shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-primary disabled:opacity-40"
-          >
-            <ChevronIcon direction="right" />
-          </button>
-        ) : (
-          <span className="size-12 shrink-0" aria-hidden />
-        )}
+        {/* 다음 화살표가 진행을 전담 (QA 7) — 전개 중에는 다음 문장, 마지막 문장에서는 장면 진행 */}
+        <button
+          type="button"
+          aria-label={isLast ? '다음 장면' : '다음 문장'}
+          disabled={locked}
+          onClick={() => (isLast ? onProceed() : setIndex(index + 1))}
+          className="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink text-white shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-primary disabled:opacity-40"
+        >
+          <ChevronIcon direction="right" />
+        </button>
       </div>
 
-      {/* 하단 버튼 — 다시 듣기(sage)·진행하기(primary) 상시 병행 (스토리보드 대조 2026-08-13).
-          진행하기는 전개 중에는 다음 화살표와 동일하게 다음 문장, 마지막 문장에서는 장면 진행 */}
-      <div className="flex h-[88px] shrink-0 items-center justify-center gap-[30px] px-5 pb-4">
+      {/* 하단 버튼 — 다시 듣기(sage) 단독. '진행하기'는 삭제하고 진행은 화살표로 일원화 (QA 7) */}
+      <div className="flex h-[88px] shrink-0 items-center justify-center px-5 pb-4">
+        {/* 자동재생 차단 안내 — 버튼 줄 위에 겹쳐 띄워 레이아웃(88px 고정)을 흔들지 않는다 */}
+        {blocked && (
+          <p
+            role="status"
+            className="pointer-events-none absolute inset-x-0 bottom-[92px] text-center font-display text-xl text-ink"
+          >
+            🔊 다시 듣기를 눌러 소리를 들어 보자!
+          </p>
+        )}
         <button
           type="button"
           onClick={playCurrent}
-          className="flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white"
+          className={`flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white ${
+            blocked ? 'ring-4 ring-primary' : '' // 차단 시 복구 버튼을 눈에 띄게
+          }`}
         >
           <RepeatIcon />
           다시 듣기
-        </button>
-        <button
-          type="button"
-          disabled={locked}
-          onClick={() => (isLast ? onProceed() : setIndex(index + 1))}
-          className="flex h-14 items-center rounded-full border border-background bg-primary px-8 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white disabled:opacity-40"
-        >
-          {proceedLabel}
         </button>
       </div>
     </section>

@@ -13,8 +13,17 @@ export type SaveChildProfileInput = {
   consent: true;
 };
 
+/** 응답으로 받은 저장 결과 — 목록 화면이 refresh를 기다리지 않고 바로 카드를 그리는 원천 (QA 2) */
+export type SavedChildProfile = {
+  id: string;
+  name: string;
+  /** children.birth_date DATE 조회값 'YYYY-MM-DD' — 만 나이 배지 계산 원천 */
+  birthDate: string | null;
+  avatarKey: string | null;
+};
+
 export type SaveChildProfileResult =
-  | { ok: true; childId: string }
+  | { ok: true; childId: string; profile: SavedChildProfile }
   | { ok: false; reason: 'NOT_READY' | 'ERROR'; message?: string };
 
 export async function saveChildProfile(input: SaveChildProfileInput): Promise<SaveChildProfileResult> {
@@ -37,8 +46,20 @@ export async function saveChildProfile(input: SaveChildProfileInput): Promise<Sa
     const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
     return { ok: false, reason: 'ERROR', message: body?.error?.message };
   }
-  const body = (await res.json()) as { children: { id: string }[] };
-  const childId = body.children?.[0]?.id;
-  if (!childId) return { ok: false, reason: 'ERROR' };
-  return { ok: true, childId };
+  const body = (await res.json()) as {
+    children: { id: string; name: string; avatar_key: string | null; birth_date: string | null }[];
+  };
+  const created = body.children?.[0];
+  if (!created?.id) return { ok: false, reason: 'ERROR' };
+  return {
+    ok: true,
+    childId: created.id,
+    // 201 응답이 저장 확정본을 그대로 돌려주므로 목록 카드를 즉시 그릴 수 있다 (router.refresh 대기 불필요)
+    profile: {
+      id: created.id,
+      name: created.name ?? input.name,
+      birthDate: created.birth_date ?? null,
+      avatarKey: created.avatar_key ?? null,
+    },
+  };
 }

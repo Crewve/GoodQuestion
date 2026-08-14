@@ -37,7 +37,9 @@ export function StoryStartButton({ storyId, childId }: { storyId: string; childI
     }
   };
 
-  // UI 리뉴얼 (피그마 2.3): 주황 알약 CTA(r48·h55·주황 그림자), 라벨 '이야기 하러가기'.
+  // UI 리뉴얼 (피그마 2.3): 알약 CTA(r48·h55·주황 그림자), 라벨 '이야기 하러가기'.
+  // 바탕은 흰색 + 주황 테두리 (QA 5 — 주황 채움에서 변경). 글자는 ink 유지:
+  // primary 글자는 흰 바탕 대비 2.9:1로 큰 글자 하한(3:1)에도 미달한다.
   // 에러 문구는 18px 하한·대비 4.5:1 하한 준수(#9F1239 — 시안 berry 원색은 2.8:1 미달).
   return (
     <div className="mt-auto flex shrink-0 flex-col gap-2 pt-4 pb-4">
@@ -50,8 +52,7 @@ export function StoryStartButton({ storyId, childId }: { storyId: string; childI
         type="button"
         onClick={start}
         disabled={loading}
-        // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
-        className="h-[55px] w-full rounded-full bg-primary font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-60"
+        className="h-[55px] w-full rounded-full border-2 border-primary bg-white font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:bg-primary/10 disabled:opacity-60"
       >
         {loading ? '이야기를 준비하고 있어요…' : '이야기 하러가기'}
       </button>
