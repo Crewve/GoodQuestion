@@ -7,6 +7,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { withChild } from '@/components/bottom-nav';
 import { storyThumbnailUrl } from '@/lib/assets';
 import { BANGGUI_STORY_ID } from '@/lib/story';
 import { getSupabaseAdmin } from '@/lib/supabase';
@@ -100,7 +101,10 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
   if (!story) notFound();
 
   const minutes = learningMinutes(session.started_at, session.completed_at ?? result.completed_at);
-  const storiesHref = `/stories?child=${session.child_id}`; // 아이 컨텍스트 유지 (T047~T050 전파 규칙)
+  // 아이 컨텍스트 유지 (T047~T050 전파 규칙) — 배지 화면도 GNB로 홈에 복귀하므로 같이 실어 보낸다 (QA 17)
+  const childId = (session.child_id as string | null) ?? null;
+  const storiesHref = withChild('/stories', childId);
+  const badgesHref = withChild('/my/badges', childId);
   const isBanggui = story.id === BANGGUI_STORY_ID;
 
   return (
@@ -171,7 +175,7 @@ export default async function CompletePage(props: PageProps<'/complete/[sessionI
         {/* 이동 버튼 2종 — 링크 대상 유지. 스토리보드 실측(2026-08-13): 높이 60px·테두리 2px,
             글자 색은 #B84A12·ink 그대로 시안과 일치(아동 대비 하한 준수값) */}
         <Link
-          href="/my/badges"
+          href={badgesHref}
           className="flex h-[60px] shrink-0 items-center justify-center gap-3 rounded-[22px] border-2 border-primary bg-[#FFFDE7] font-display text-2xl text-[#B84A12] shadow-[0_5px_15px_rgba(255,122,61,0.25)] active:bg-primary active:text-ink"
         >
           <TrophyIcon /> 모은 배지 확인하기 <span aria-hidden>→</span>
