@@ -11,7 +11,8 @@
 // 슬롯 외 영역 드롭은 원위치 복귀(미제출·attempt_count 미증가). X 나가기·재진입 라우팅은 컨테이너 책임.
 // 카드 콘텐츠는 T051 post_activity_config가 SoT라 props로 받는다(fixtures 직접 로드 없음).
 // 스타일: 피그마 「개발 배포용」 2.4.4 Case A/B — 이미지 전면 카드·흰 슬롯(#F0E4D3 테두리)·하단 판정 필.
-// 판정 표시는 색+아이콘+텍스트 병행(기존 구현 유지). 필 텍스트는 대비 하한(4.5:1) 우선으로 ink 사용.
+// 판정 표시는 색+아이콘+텍스트 병행. 필 텍스트는 시안 원색 흰색 채택(2026-08-14 "피그마와 동일하게" 지시,
+// sage/primary 배경 대비 하한 미달 인지).
 import { useCallback, useRef, useState } from 'react';
 
 /** post_activity_config.cards 항목 (R-09 스키마) — 이미지 URL은 컨테이너가 T011 헬퍼로 조합해 내려준다 */
@@ -216,7 +217,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
         }}
         aria-pressed={selected}
         aria-label={`${card.label} 카드${selected ? ' 선택됨' : ''}`}
-        className={`mx-auto aspect-[210/218] w-full max-h-full min-h-0 touch-none self-center overflow-hidden rounded-2xl border-[1.5px] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)] transition-transform ${
+        className={`mx-auto aspect-[275/218] w-full max-h-full min-h-0 touch-none self-center overflow-hidden rounded-2xl border-[1.5px] bg-white shadow-[0_6px_18px_rgba(58,44,30,0.08)] transition-transform ${
           selected ? 'scale-105 border-primary ring-4 ring-primary' : 'border-[#F0E4D3]'
         } ${dragging ? 'opacity-40' : ''} ${locked ? '' : 'cursor-grab active:cursor-grabbing'}`}
       >
@@ -229,7 +230,8 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
   const dragCard = drag ? cardById.get(drag.cardId) : null;
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col gap-5 px-10 pb-6 pt-6">
+    // 피그마 workspace 실측(2026-08-14): pad 상40·하24·좌우40, 행 간격 30 — 행들은 flex로 줄어들며 무스크롤 유지
+    <section className="flex min-h-0 flex-1 flex-col gap-[30px] px-10 pb-6 pt-10">
       {/* 드래그 고스트 — 포인터를 따라다니는 카드 사본. pointer-events 차단으로 드롭 판정에 간섭하지 않는다 */}
       {drag && dragCard && (
         <div
@@ -241,10 +243,10 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
           <img src={dragCard.imageUrl} alt="" draggable={false} className="h-full w-full object-cover" />
         </div>
       )}
-      {/* 활동 안내 (T067 문구 유지) + 보조 안내 (피그마 instruction-banner) */}
+      {/* 활동 안내 (T067 문구 유지) + 보조 안내 — 실측(2026-08-14): 보조 22 #8A7A68 · 간격 8 */}
       <div className="shrink-0">
         <p className="font-display text-[32px] leading-snug text-ink">이야기 순서에 맞게 카드를 놓아보세요!</p>
-        <p className="mt-1 font-display text-[22px] text-[#6F6152]">아래 카드들을 알맞은 빈칸에 올려놓으세요.</p>
+        <p className="mt-2 font-display text-[22px] text-[#8A7A68]">아래 카드들을 알맞은 빈칸에 올려놓으세요.</p>
       </div>
 
       {/* 카드 트레이 — 무작위 제시, 슬롯 외 영역 드롭 = 원위치/트레이 복귀 (미제출) */}
@@ -271,18 +273,19 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
             onClick={() => handleSlotTap(index)}
             role="button"
             aria-label={`${index + 1}번 슬롯${cardId ? ` — ${cardById.get(cardId)?.label ?? ''}` : ' (비어 있음)'}`}
-            className={`mx-auto flex aspect-[210/218] w-full max-h-full min-h-0 self-center flex-col rounded-2xl border-2 bg-white p-2 ${
+            className={`mx-auto flex aspect-[275/218] w-full max-h-full min-h-0 self-center flex-col rounded-2xl border-2 bg-white p-4 ${
               selectedId && !locked ? 'border-primary/60' : 'border-[#F0E4D3]'
             }`}
           >
             {cardId ? (
               renderCard(cardId)
             ) : (
-              <span className="flex h-full flex-col items-center justify-center gap-1 text-[#6F6152]">
+              // 슬롯 플레이스홀더 — card_slot 심볼 실측: 숫자 32 · 안내 16 · #8A7A68
+              <span className="flex h-full flex-col items-center justify-center gap-1 text-[#8A7A68]">
                 <span className="font-display text-[32px] leading-none" aria-hidden>
                   {index + 1}
                 </span>
-                <span className="font-display text-lg" aria-hidden>
+                <span className="font-display text-base" aria-hidden>
                   여기에 놓으세요
                 </span>
               </span>
@@ -291,8 +294,9 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
         ))}
       </div>
 
-      {/* 판정 결과 — 하단 중앙 필, 색+아이콘+텍스트 병행 (FR-020) */}
-      <div className="flex min-h-14 shrink-0 items-center justify-center gap-3">
+      {/* 판정 결과 — 하단 중앙 필, 색+아이콘+텍스트 병행 (FR-020).
+          실측(2026-08-14): h52·글자 22 흰색(시안 원색 — 대비 미달 인지 채택)·pad 40 */}
+      <div className="flex min-h-[52px] shrink-0 items-center justify-center gap-3">
         {submitting && (
           <span className="animate-pulse text-2xl text-ink" role="status" aria-label="순서를 확인하는 중">
             ● ● ●
@@ -302,7 +306,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
           <button
             type="button"
             onClick={onProceed}
-            className="flex h-14 items-center gap-3 rounded-full bg-sage px-10 font-display text-[22px] text-ink shadow-[0_6px_20px_rgba(61,190,139,0.33)] active:bg-ink active:text-white"
+            className="flex h-[52px] items-center gap-3 rounded-full bg-sage px-10 font-display text-[22px] text-white shadow-[0_6px_20px_rgba(61,190,139,0.33)] active:bg-ink"
           >
             <span aria-hidden>✓</span> {MESSAGE_CORRECT}
           </button>
@@ -311,7 +315,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
           // 표시 전용 버튼(클릭 동작 없음 — 2.4.4 구성요소) — 카드 재드래그로만 복구
           <span
             role="status"
-            className="flex h-14 items-center gap-3 rounded-full bg-primary px-10 font-display text-[22px] text-ink shadow-[0_6px_20px_rgba(255,122,61,0.33)]"
+            className="flex h-[52px] items-center gap-3 rounded-full bg-primary px-10 font-display text-[22px] text-white shadow-[0_6px_20px_rgba(255,122,61,0.33)]"
           >
             <span aria-hidden>✕</span> {MESSAGE_WRONG}
           </span>
