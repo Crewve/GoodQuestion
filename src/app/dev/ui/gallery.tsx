@@ -23,7 +23,6 @@ type FixtureScene = {
   character_opening?: string;
 };
 const scenes = story.scenes as FixtureScene[];
-const sceneByOrder = (order: number) => scenes.find((s) => s.scene_order === order)!;
 // 장면 선택기 — 내레이션 5(도입·전개1~4)·대화 4(대화1~4) 전 장면 검토 가능해야 한다
 const narrationScenes = scenes.filter((s) => s.type === 'narration');
 const dialogueScenes = scenes.filter((s) => s.type === 'dialogue');
@@ -36,12 +35,15 @@ const CHARACTER_NAMES: Record<string, string> = {
 const noop = () => {};
 const asyncNoop = async () => {};
 
-/** 2.4.4/2.4.5 미리보기용 카드 4세트 — 실데이터는 DB post_activity_config(R-09), 여기서는 장면 이미지 재사용 예시 */
-const PREVIEW_CARDS: PostActivityCard[] = [1, 3, 7, 9].map((order) => {
-  const s = sceneByOrder(order);
-  return { id: s.external_id, imageUrl: sceneImageUrl(s.external_id), label: s.label ?? s.external_id };
-});
-const PREVIEW_KEYWORDS = ['방귀', '걱정', '배나무', '웃음'];
+/** 2.4.4/2.4.5 미리보기 — fixtures post_activity_config 파생(시드와 동일 SoT).
+    하드코딩 샘플이던 시절 콘텐츠 개정(카드 라벨·키워드)이 갤러리에 반영 안 되는 혼선이 있어 실데이터 파생으로 교체 */
+const activityConfig = story.story.post_activity_config;
+const PREVIEW_CARDS: PostActivityCard[] = activityConfig.cards.map((card) => ({
+  id: card.id,
+  imageUrl: sceneImageUrl(card.id),
+  label: card.label,
+}));
+const PREVIEW_KEYWORDS = activityConfig.keywords;
 
 const VIEWS = [
   { key: 'narration', label: '도입·전개 2.4.1' },
