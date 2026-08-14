@@ -11,7 +11,7 @@ import storyFixture from '../fixtures/story.banggui.json';
 import { rules as ruleThresholds } from '../src/lib/config';
 import type { ThinkingElement } from '../src/lib/contracts';
 import { analyzeUtterance } from '../src/lib/llm/analysis';
-import { generateReply, loadCharacter } from '../src/lib/llm/generate';
+import { generateClosingReaction, generateReply, loadCharacter } from '../src/lib/llm/generate';
 import { postprocessAnalysis } from '../src/lib/llm/postprocess';
 import { missionForScene } from '../src/lib/missions';
 import { evaluateTurn, initialRuleState, type SceneRuleData } from '../src/lib/rules/engine';
@@ -120,7 +120,25 @@ async function main() {
     }
 
     if (effectiveDecision.mode === 'CLOSING') {
-      // R-04: CLOSING은 캐릭터 LLM 미호출 — 고정 character_closing 재생
+      // MAX_TURNS 종료 — 클로징 앞 짧은 반응 (/api/turn 미러, 기능명세서 2.4.3. 실패 시 클로징 단독)
+      if (effectiveDecision.sceneEndReason === 'MAX_TURNS') {
+        const reactionContext = {
+          character,
+          closingText: scene.character_closing ?? '',
+          history,
+          childName: scenario.childName,
+        };
+        try {
+          // /api/turn과 동일한 1회 재시도 미러 (withRetry)
+          const reaction = await generateClosingReaction(reactionContext).catch(() =>
+            generateClosingReaction(reactionContext),
+          );
+          console.log(`\n🎭 ${character.name} (짧은 반응 — MAX_TURNS): ${reaction}`);
+        } catch (error) {
+          console.log(`   ⚠️ 짧은 반응 생성 실패 — 클로징 단독 폴백: ${error instanceof Error ? error.message : error}`);
+        }
+      }
+      // R-04: 클로징 대사 자체는 캐릭터 LLM 미호출 — 고정 character_closing 재생
       console.log(`\n🎭 ${character.name} (고정 클로징 — LLM 미호출): ${scene.character_closing}`);
       console.log(`\n장면 종료: ${effectiveDecision.sceneEndReason} (goal_met=${effectiveDecision.sceneEndReason === 'GOAL_MET'}, mission=${missionPhase ?? '없음'})`);
       return;

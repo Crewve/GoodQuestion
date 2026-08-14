@@ -18,9 +18,9 @@
 | | |
 |---|---|
 | 요청 | `{ sessionId, sceneId, text, sttRawText, isMission?: boolean }` — '보내기' 클릭 시에만 호출 |
-| 처리 | ① `messages` 저장(turn_order 증가) → ② 분석 LLM(4필드) → ③ 서버 후처리(인용 검증·중복·보정, raw 로그) → ④ `utterance_analyses` 저장 → ⑤ 규칙 엔진: 누적 갱신·미션 노출 판정·NORMAL/GUIDED/CLOSING → ⑥ CLOSING이면 LLM 미호출·고정 오디오 URL 반환, 아니면 캐릭터 LLM(GUIDED 시 부족 요소 1~2개만 유도)+후검증 → ⑦ TTS(캐시 히트 시 재합성 생략) → ⑧ `story_sessions` 상태 갱신 |
-| 응답 200 | `{ mode: 'NORMAL'\|'GUIDED'\|'CLOSING', characterReplyText: string, audioUrl: string, exposeMission?: 'mission_1'\|'mission_2', missionPhase?: 'progress'\|'success', sceneEnd?: { reason: 'GOAL_MET'\|'MAX_TURNS', nextSceneId: string\|null }, progress: { accumulated: ThinkingElement[], missing: ThinkingElement[], turn: number, maxTurns: number } }` |
-| 계약 | CLOSING 응답의 `audioUrl`은 `fixed-audio` 사전 생성 mp3 — LLM/TTS 장애와 무관하게 성공해야 한다. 캐릭터 응답 생성 실패 시 서버가 1회 자동 재시도 후 502. 미션 노출 판정은 이 응답의 `exposeMission`으로만 전달(클라이언트 판정 금지) |
+| 처리 | ① `messages` 저장(turn_order 증가) → ② 분석 LLM(4필드) → ③ 서버 후처리(인용 검증·중복·보정, raw 로그) → ④ `utterance_analyses` 저장 → ⑤ 규칙 엔진: 누적 갱신·미션 노출 판정·NORMAL/GUIDED/CLOSING → ⑥ CLOSING이면 고정 오디오 URL 반환(MAX_TURNS 종료 턴만 클로징 앞 짧은 반응 `preClosing` 생성 시도 — 실패 시 생략), 아니면 캐릭터 LLM(GUIDED 시 부족 요소 1~2개만 유도)+후검증 → ⑦ TTS(캐시 히트 시 재합성 생략) → ⑧ `story_sessions` 상태 갱신 |
+| 응답 200 | `{ mode: 'NORMAL'\|'GUIDED'\|'CLOSING', characterReplyText: string, audioUrl: string, preClosing?: { text: string, audioUrl: string\|null }, exposeMission?: 'mission_1'\|'mission_2', missionPhase?: 'progress'\|'success', sceneEnd?: { reason: 'GOAL_MET'\|'MAX_TURNS', nextSceneId: string\|null }, progress: { accumulated: ThinkingElement[], missing: ThinkingElement[], turn: number, maxTurns: number } }` |
+| 계약 | CLOSING 응답의 `audioUrl`은 `fixed-audio` 사전 생성 mp3 — LLM/TTS 장애와 무관하게 성공해야 한다. 캐릭터 응답 생성 실패 시 서버가 1회 자동 재시도 후 502. 미션 노출 판정은 이 응답의 `exposeMission`으로만 전달(클라이언트 판정 금지). `preClosing`은 MAX_TURNS 종료 턴 한정 additive 필드(2026-08-14, 기능명세서 2.4.3 "짧은 반응 → character_closing") — 클라이언트는 반응을 먼저 재생한 뒤 클로징을 이어 재생하고, 생성·TTS 실패 시 서버가 필드를 생략하므로 없으면 기존 흐름 그대로 |
 | 미션 (T041) | **노출 턴**: `exposeMission`+`missionPhase:'progress'`, `characterReplyText:''`·`audioUrl:null` — 캐릭터 음성 없이 팝업만 표시(기능명세서 2.4.3), 캐릭터 메시지 미저장. **미션 응답 턴**(`isMission:true`): 저장·분석은 일반 턴과 동일 경로(요소 확인 활용, 정답 판정 아님), 응답에 `missionPhase:'success'` + 다음 캐릭터 대사 포함 — 클라이언트(T042)는 팝업 [성공 완료] 표시 후 닫힐 때 재생. 노출은 장면당 1회(`story_sessions.mission_phase`, 002 마이그레이션). 미션 미수행 상태의 GOAL_MET은 종료 보류(R-18), MAX_TURNS는 즉시 종료 |
 
 ## POST `/api/sessions` — 세션 시작/재개

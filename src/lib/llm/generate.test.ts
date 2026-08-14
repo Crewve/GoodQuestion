@@ -2,7 +2,15 @@
 // API 호출부는 simulate CLI로 검증한다.
 import { expect, test } from 'vitest';
 import charactersFixture from '../../../fixtures/characters.banggui.json';
-import { buildGenerateMessages, loadCharacter, validateReply, type GenerateContext } from './generate';
+import {
+  buildGenerateMessages,
+  buildReactionMessages,
+  loadCharacter,
+  stripClosingEcho,
+  validateReply,
+  type GenerateContext,
+  type ReactionContext,
+} from './generate';
 
 function context(overrides: Partial<GenerateContext> = {}): GenerateContext {
   return {
@@ -17,6 +25,56 @@ function context(overrides: Partial<GenerateContext> = {}): GenerateContext {
     ...overrides,
   };
 }
+
+// ── MAX_TURNS 짧은 반응 (기능명세서 2.4.3 화면 이동 — 명세 감사 후속) ──
+
+function reactionContext(overrides: Partial<ReactionContext> = {}): ReactionContext {
+  return {
+    character: loadCharacter('ch_banggui_daughter_in_law'),
+    closingText: '이야기해 줘서 고마워. 이제 다음 이야기를 보러 가자!',
+    history: [
+      { speaker: 'character', text: '가족들이 나를 이상하게 생각하지 않을까?' },
+      { speaker: 'child', text: '그냥 참으면 되잖아요' },
+    ],
+    ...overrides,
+  };
+}
+
+test('짧은 반응 프롬프트 — 평가·지적 금지와 질문 금지가 포함된다 (max_turns 종료는 평가 없는 톤)', () => {
+  const system = buildReactionMessages(reactionContext())[0].content;
+  expect(system).toContain('평가');
+  expect(system).toContain('지적');
+  expect(system).toContain('질문하지 않는다');
+  expect(system).toContain('1문장');
+});
+
+test('짧은 반응 프롬프트 — 이어질 클로징 대사가 연결 목표로 포함된다', () => {
+  const system = buildReactionMessages(reactionContext())[0].content;
+  expect(system).toContain('이야기해 줘서 고마워. 이제 다음 이야기를 보러 가자!');
+});
+
+test('짧은 반응 프롬프트 — 대화 내역이 role 매핑되어 마지막이 아이 발화다', () => {
+  const messages = buildReactionMessages(reactionContext());
+  expect(messages.at(-1)).toEqual({ role: 'user', content: '그냥 참으면 되잖아요' });
+  expect(messages[1].role).toBe('assistant');
+});
+
+test('클로징 복창 제거 — 모델이 마무리 인사를 이어 붙이면 반응 문장만 남긴다 (simulate 실측 사례)', () => {
+  const closing = '그래도 아직은 못 말하겠어. 조금만 더 참아 볼게.';
+  expect(stripClosingEcho(`그렇구나, 방귀 때문에 슬펐을 것 같아. ${closing}`, closing)).toBe(
+    '그렇구나, 방귀 때문에 슬펐을 것 같아.',
+  );
+});
+
+test('클로징 복창 제거 — 복창이 없으면 원문 그대로', () => {
+  const closing = '그래도 아직은 못 말하겠어. 조금만 더 참아 볼게.';
+  expect(stripClosingEcho('네 말을 들으니 마음이 따뜻해지는구나.', closing)).toBe('네 말을 들으니 마음이 따뜻해지는구나.');
+});
+
+test('클로징 복창 제거 — 전부 복창이면 빈 문자열 (호출부가 EMPTY로 재시도)', () => {
+  const closing = '그래도 아직은 못 말하겠어. 조금만 더 참아 볼게.';
+  expect(stripClosingEcho(closing, closing)).toBe('');
+});
 
 test('fixtures 캐릭터를 external_id로 로드한다', () => {
   const character = loadCharacter('ch_banggui_daughter_in_law');

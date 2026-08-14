@@ -90,7 +90,14 @@ export default async function BadgesPage(props: PageProps<'/my/badges'>) {
         {/* 수행 현황 진행바 3/7권 — 명세 예시 원문 고정값 (기존 데이터 규칙 유지) */}
         <section className="rounded-3xl border border-[#EDE5D8] bg-white px-5 py-4 shadow-[0_4px_16px_rgba(58,44,30,0.08)]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[#6F6152]">내가 읽은 책</h2>
+            <div className="flex items-center gap-2.5">
+              {/* 미션 단계 배지 (기능명세서 3.6 구성요소) — 명세 예시 원문 고정값. 시안에 없는 요소라
+                  페이지 기존 칩 톤으로 임시 배치 — 디자인 확정 시 조정 (수정사항 체크리스트 D7) */}
+              <span className="inline-flex items-center rounded-full bg-primary/15 px-3 py-1 text-lg font-bold text-[#B84A12]">
+                미션 2단계
+              </span>
+              <h2 className="text-xl font-bold text-[#6F6152]">내가 읽은 책</h2>
+            </div>
             <p className="text-xl font-bold" aria-label="7권 중 3권 완료">
               <span className="text-[#177A4F]">3</span>
               <span className="text-[#6F6152]"> / 7 권</span>

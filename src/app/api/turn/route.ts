@@ -1,12 +1,13 @@
 // POST /api/turn — 확정 텍스트 → 캐릭터 응답 1턴 (T032, contracts/api-routes.md)
 // ①메시지 저장 → ②분석 → ③후처리 → ④분석 저장 → ⑤규칙 판정 → ⑥생성 또는 고정 대사 →
 // ⑦TTS(캐시) → ⑧세션 갱신. 분석·생성은 1회 재시도, TTS 실패는 텍스트만 반환(폴백 매트릭스).
-// CLOSING은 LLM·TTS 미호출 — fixed-audio 사전 생성 mp3 URL 반환 (R-04, 장애와 무관하게 성공).
+// CLOSING 대사는 LLM·TTS 미호출 — fixed-audio 사전 생성 mp3 URL 반환 (R-04, 장애와 무관하게 성공).
+// 단 MAX_TURNS 종료 턴은 클로징 앞 짧은 반응(preClosing)을 생성 시도 — 실패해도 클로징은 그대로 진행.
 import { substituteChildName } from '@/lib/child-name';
 import { givenName } from '@/lib/profile-display';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
 import { ANALYSIS_VERSION, analyzeUtterance } from '@/lib/llm/analysis';
-import { generateReply, loadCharacter } from '@/lib/llm/generate';
+import { generateClosingReaction, generateReply, loadCharacter } from '@/lib/llm/generate';
 import { postprocessAnalysis } from '@/lib/llm/postprocess';
 import { missionForScene } from '@/lib/missions';
 import { evaluateTurn, type RuleState } from '@/lib/rules/engine';
@@ -203,11 +204,48 @@ export async function POST(request: Request) {
   //    CLOSING: LLM 미호출, 고정 클로징 (R-04) / NORMAL·GUIDED: 캐릭터 생성 (1회 재시도)
   let characterReplyText: string;
   let audioUrl: string | null = null;
+  // MAX_TURNS 종료 — 클로징 앞에 재생할 "아이 마지막 발화에 대한 짧은 반응" (기능명세서 2.4.3 화면 이동)
+  let preClosing: { text: string; audioUrl: string | null } | null = null;
   if (exposure.expose) {
     characterReplyText = '';
   } else if (effectiveDecision.mode === 'CLOSING') {
     characterReplyText = sceneRow.character_closing ?? '';
     audioUrl = fixture ? fixedAudioUrl(`${fixture.external_id}__closing`) : null;
+    if (effectiveDecision.sceneEndReason === 'MAX_TURNS') {
+      // 클로징 자체는 장애와 무관하게 성공해야 하므로(R-04) 반응 생성·TTS 실패는 클로징 단독 폴백
+      try {
+        const reactionText = await withRetry(() =>
+          generateClosingReaction({
+            character,
+            closingText: characterReplyText,
+            childName,
+            history: [
+              ...(history ?? []).map((m) => ({
+                speaker: (m.speaker_type === 'character' ? 'character' : 'child') as 'character' | 'child',
+                text: m.text,
+              })),
+              { speaker: 'child' as const, text: text.trim() },
+            ],
+          }),
+        );
+        let reactionAudio: string | null = null;
+        try {
+          const voice = voiceForRole(sceneRow.character_name);
+          const synthesis = await synthesizeWithCache(reactionText, voice.voice_id, {
+            model: voice.model,
+            storage: admin,
+          });
+          reactionAudio = synthesis.url ?? null;
+        } catch (error) {
+          console.warn(`[turn] 반응 TTS 실패 — 텍스트만 반환: ${error instanceof Error ? error.message : error}`);
+        }
+        preClosing = { text: reactionText, audioUrl: reactionAudio };
+      } catch (error) {
+        console.warn(
+          `[turn] MAX_TURNS 짧은 반응 생성 실패 — 클로징 단독 폴백: ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    }
   } else {
     // 입력측 부적절·주제 이탈 발화 (T075, E2E 항목 24) — 차단 없이 캐릭터가 따라 말하지 않고 주제 복귀
     const redirect = containsInappropriateLanguage(text)
@@ -253,16 +291,17 @@ export async function POST(request: Request) {
   }
 
   // 캐릭터 메시지 저장 (CLOSING 고정 대사 포함 — Notion §8: 서버가 closing을 messages에 저장)
-  // 미션 노출 턴은 캐릭터 발화가 없어 저장하지 않는다
-  if (characterReplyText) {
+  // 미션 노출 턴은 캐릭터 발화가 없어 저장하지 않는다. MAX_TURNS 짧은 반응은 클로징 앞 순서로 저장
+  const characterTexts = [preClosing?.text, characterReplyText].filter((t): t is string => !!t);
+  for (const [i, characterText] of characterTexts.entries()) {
     await admin.from('messages').insert({
       id: crypto.randomUUID(), // 스키마 기본값 없음 — 클라이언트 생성
       created_at: new Date().toISOString(),
       session_id: sessionId,
       scene_id: sceneId,
       speaker_type: 'character',
-      turn_order: nextTurnOrder + 1,
-      text: characterReplyText,
+      turn_order: nextTurnOrder + 1 + i,
+      text: characterText,
     });
   }
 
@@ -300,6 +339,8 @@ export async function POST(request: Request) {
     mode: effectiveDecision.mode,
     characterReplyText,
     audioUrl,
+    // MAX_TURNS 종료 — 클라이언트가 반응 재생 후 클로징을 이어 재생 (계약 외 additive 필드)
+    ...(preClosing ? { preClosing } : {}),
     // 미션 분기 (T041) — 노출은 이 필드로만 전달(클라이언트 판정 금지), missionPhase는 팝업 단계 표기
     ...(exposure.expose && mission ? { exposeMission: mission.id, missionPhase: 'progress' as const } : {}),
     ...(isMission && missionPhase === 'completed' ? { missionPhase: 'success' as const } : {}),
