@@ -25,11 +25,11 @@
       "keywords": [
         ["걱정", "고민", "불안"],
         ["당황", "놀람", "실수", "부끄러움"],
-        ["고민", "방법", "지혜"],
+        ["방법", "지혜"],
         ["미안함", "반성", "사과", "이해"]
       ]
     },
-    "post_activity_note": "임시 저작(R-09/T051) — 노션에 미정의라 전개1~4 장면 이미지를 재사용해 저작, 기획 회신 시 데이터만 교체. 규약: cards 배열 순서=answer_order(정답 순서)로 기록하며 무작위 셔플은 프런트 몫. keywords[i]는 answer_order[i] 장면의 핵심 단어 묶음(기능명세서 2.4.5 '장면 카드+핵심 단어 세트'). image_key는 fixtures/storage-assets.json의 키. ⚠️ 2026-08-15 QA 12('장면 완성 부분에서 카드 아래 장면별 핵심 단어 추가') 반영으로 keywords가 장면당 1개 문자열 → 장면당 묶음(string[][], 3~4개)으로 바뀌었다. 단어 목록은 기획 지정본(2026-08-15 전달). 형태 변경이므로 반드시 `npx tsx scripts/seed.ts` 재실행 필요(DB stories.post_activity_config가 실사용 SoT)."
+    "post_activity_note": "임시 저작(R-09/T051) — 노션에 미정의라 전개1~4 장면 이미지를 재사용해 저작, 기획 회신 시 데이터만 교체. 규약: cards 배열 순서=answer_order(정답 순서)로 기록하며 무작위 셔플은 프런트 몫. keywords[i]는 answer_order[i] 장면의 핵심 단어 묶음(기능명세서 2.4.5 '장면 카드+핵심 단어 세트'). image_key는 fixtures/storage-assets.json의 키. ⚠️ 2026-08-15 QA 12('장면 완성 부분에서 카드 아래 장면별 핵심 단어 추가') 반영으로 keywords가 장면당 1개 문자열 → 장면당 묶음(string[][], 2~4개)으로 바뀌었다. 단어 목록은 기획 지정본(2026-08-15 전달). 형태 변경이므로 반드시 `npx tsx scripts/seed.ts` 재실행 필요(DB stories.post_activity_config가 실사용 SoT)."
   },
   "scenes": [
     {
