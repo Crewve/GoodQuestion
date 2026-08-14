@@ -26,9 +26,8 @@ type FixtureScene = {
   character_opening?: string;
 };
 const scenes = story.scenes as FixtureScene[];
-// 장면 선택기 — 내레이션 5(도입·전개1~4)·대화 4(대화1~4) 전 장면 검토 가능해야 한다
-const narrationScenes = scenes.filter((s) => s.type === 'narration');
-const dialogueScenes = scenes.filter((s) => s.type === 'dialogue');
+// 장면 선택기 — 이야기 진행 전 장면(도입→전개→대화, scene_order 순) 9개를 한 목록에서 검토 가능해야 한다
+const orderedScenes = [...scenes].sort((a, b) => a.scene_order - b.scene_order);
 const CHARACTER_NAMES: Record<string, string> = {
   ch_banggui_daughter_in_law: '방귀 며느리',
   ch_banggui_father_in_law: '시아버지',
@@ -49,8 +48,6 @@ const PREVIEW_CARDS: PostActivityCard[] = activityConfig.cards.map((card) => ({
 const PREVIEW_KEYWORDS = activityConfig.keywords;
 
 const VIEWS = [
-  { key: 'narration', label: '도입·전개 2.4.1' },
-  { key: 'dialogue', label: '대화 2.4.2' },
   { key: 'm1', label: '미션1 진행' },
   { key: 'm1s', label: '미션1 성공' },
   { key: 'm2', label: '미션2 진행' },
@@ -59,11 +56,12 @@ const VIEWS = [
   { key: 'cardB', label: '카드 2.4.4 (오답)' },
   { key: 'retell', label: '문장 2.4.5' },
 ] as const;
-type ViewKey = (typeof VIEWS)[number]['key'];
+// 'scene' = 이야기 진행 장면 뷰 — 어떤 장면인지는 sceneIdx가 정하고, 목록은 story 구간에 직접 렌더한다
+type ViewKey = (typeof VIEWS)[number]['key'] | 'scene';
 
-/** 구간별 아코디언 그룹 — 컴포넌트 리허설 뷰 묶음 */
+/** 구간별 아코디언 그룹 — 컴포넌트 리허설 뷰 묶음 (story 구간은 keys 대신 전 장면 목록을 직접 렌더) */
 const VIEW_GROUPS: { key: string; title: string; keys: ViewKey[] }[] = [
-  { key: 'story', title: '이야기 2.4.1·2', keys: ['narration', 'dialogue'] },
+  { key: 'story', title: '이야기 진행 2.4.1·2', keys: [] },
   { key: 'mission', title: '미션 팝업', keys: ['m1', 'm1s', 'm2', 'm2s'] },
   { key: 'post', title: '학습완료 활동 2.4.4·5', keys: ['cardA', 'cardB', 'retell'] },
 ];
@@ -148,10 +146,9 @@ const DIALOGUE_PHASES: { phase: TurnPhase; label: string; sttText?: string }[] =
 ];
 
 export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
-  const [view, setView] = useState<ViewKey>('narration');
+  const [view, setView] = useState<ViewKey>('scene');
   const [route, setRoute] = useState<string | null>(null); // 실제 라우트 iframe 미리보기
-  const [narrIdx, setNarrIdx] = useState(0); // 내레이션 장면 선택 (도입·전개1~4)
-  const [dlgIdx, setDlgIdx] = useState(0); // 대화 장면 선택 (대화1~4)
+  const [sceneIdx, setSceneIdx] = useState(0); // 이야기 진행 장면 선택 (도입→전개→대화 전 장면)
   const [navOpen, setNavOpen] = useState(true); // 내비 패널 전체 개폐 — 플로팅 버튼으로 토글
   // 구간별 아코디언 개폐 — 항목이 많아 패널이 잘리던 문제를 접기로 해결 (기본은 이야기 구간만 펼침)
   const [openSections, setOpenSections] = useState<Set<string>>(() => new Set(['story']));
@@ -167,10 +164,9 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
   // 화면·장면 전환 시 턴 스토어 초기화 — 이전 뷰의 강제 상태가 남지 않게
   useEffect(() => {
     useTurnStore.getState().reset();
-  }, [view, dlgIdx]);
+  }, [view, sceneIdx]);
 
-  const narrScene = narrationScenes[narrIdx];
-  const dialogueScene = dialogueScenes[dlgIdx];
+  const currentScene = orderedScenes[sceneIdx];
 
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden bg-background">
@@ -209,57 +205,50 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
                       {v.label}
                     </button>
                   ))}
-                  {g.key === 'story' && !route && view === 'narration' && (
+                  {g.key === 'story' && (
                     <>
-                      <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">장면 선택</p>
-                      {narrationScenes.map((s, i) => (
+                      {orderedScenes.map((s, i) => (
                         <button
                           key={s.external_id}
                           type="button"
-                          onClick={() => setNarrIdx(i)}
+                          onClick={() => {
+                            setView('scene');
+                            setSceneIdx(i);
+                            setRoute(null);
+                          }}
                           className={`rounded-lg px-2 py-1.5 text-left ${
-                            narrIdx === i ? 'bg-sunny text-ink' : 'bg-background text-ink active:bg-[#FFE8C9]'
+                            view === 'scene' && !route && sceneIdx === i
+                              ? 'bg-sunny text-ink'
+                              : 'bg-background text-ink active:bg-[#FFE8C9]'
                           }`}
                         >
                           {s.scene_order}. {s.label}
+                          {s.type === 'dialogue' && ` (${CHARACTER_NAMES[s.character ?? ''] ?? '?'})`}
                         </button>
                       ))}
-                    </>
-                  )}
-                  {g.key === 'story' && !route && view === 'dialogue' && (
-                    <>
-                      <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">장면 선택</p>
-                      {dialogueScenes.map((s, i) => (
-                        <button
-                          key={s.external_id}
-                          type="button"
-                          onClick={() => setDlgIdx(i)}
-                          className={`rounded-lg px-2 py-1.5 text-left ${
-                            dlgIdx === i ? 'bg-sunny text-ink' : 'bg-background text-ink active:bg-[#FFE8C9]'
-                          }`}
-                        >
-                          {s.scene_order}. {s.label} ({CHARACTER_NAMES[s.character ?? ''] ?? '?'})
-                        </button>
-                      ))}
-                      <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">대화 상태</p>
-                      {DIALOGUE_PHASES.map((p) => (
-                        <button
-                          key={p.phase}
-                          type="button"
-                          onClick={() =>
-                            useTurnStore.setState({
-                              phase: p.phase,
-                              sttText: p.sttText ?? null,
-                              sttRawText: p.sttText ?? null,
-                            })
-                          }
-                          className={`rounded-lg px-2 py-1.5 text-left ${
-                            phase === p.phase ? 'bg-sage text-white' : 'bg-background text-ink active:bg-[#FFE8C9]'
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
+                      {!route && view === 'scene' && currentScene.type === 'dialogue' && (
+                        <>
+                          <p className="px-1 pt-2 pb-1 font-bold text-[#75664F]">대화 상태</p>
+                          {DIALOGUE_PHASES.map((p) => (
+                            <button
+                              key={p.phase}
+                              type="button"
+                              onClick={() =>
+                                useTurnStore.setState({
+                                  phase: p.phase,
+                                  sttText: p.sttText ?? null,
+                                  sttRawText: p.sttText ?? null,
+                                })
+                              }
+                              className={`rounded-lg px-2 py-1.5 text-left ${
+                                phase === p.phase ? 'bg-sage text-white' : 'bg-background text-ink active:bg-[#FFE8C9]'
+                              }`}
+                            >
+                              {p.label}
+                            </button>
+                          ))}
+                        </>
+                      )}
                     </>
                   )}
                 </>
@@ -298,36 +287,33 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
 
       {/* 스테이지 — 실제 라우트 iframe 또는 컴포넌트 마운트 */}
       {route && <iframe src={route} title="실제 화면 미리보기" className="h-full w-full border-0" />}
-      {!route && view === 'narration' && (
+      {!route && view === 'scene' && (
         <>
-          <ProgressHeader title="방귀 뀌는 며느리" n={narrScene.scene_order} N={scenes.length} onExit={noop} />
-          <NarrationScene
-            key={narrScene.external_id}
-            description={narrScene.narration ?? ''}
-            imageUrl={sceneImageUrl(narrScene.external_id)}
-            onProceed={noop}
-          />
-        </>
-      )}
-
-      {!route && view === 'dialogue' && (
-        <>
-          <ProgressHeader title="방귀 뀌는 며느리" n={dialogueScene.scene_order} N={scenes.length} onExit={noop} />
-          <DialogueScene
-            key={dialogueScene.external_id}
-            sessionId="dev-rehearsal"
-            childName="진욱"
-            childAvatarKey="boy-2"
-            scene={{
-              id: dialogueScene.external_id,
-              order: dialogueScene.scene_order,
-              characterName: CHARACTER_NAMES[dialogueScene.character ?? ''] ?? '캐릭터',
-              characterImageUrl: characterImageUrl(dialogueScene.character ?? 'ch_banggui_daughter_in_law'),
-              openingText: dialogueScene.character_opening,
-              imageUrl: sceneImageUrl(dialogueScene.external_id),
-            }}
-            onSceneEnd={noop}
-          />
+          <ProgressHeader title="방귀 뀌는 며느리" n={currentScene.scene_order} N={scenes.length} onExit={noop} />
+          {currentScene.type === 'dialogue' ? (
+            <DialogueScene
+              key={currentScene.external_id}
+              sessionId="dev-rehearsal"
+              childName="진욱"
+              childAvatarKey="boy-2"
+              scene={{
+                id: currentScene.external_id,
+                order: currentScene.scene_order,
+                characterName: CHARACTER_NAMES[currentScene.character ?? ''] ?? '캐릭터',
+                characterImageUrl: characterImageUrl(currentScene.character ?? 'ch_banggui_daughter_in_law'),
+                openingText: currentScene.character_opening,
+                imageUrl: sceneImageUrl(currentScene.external_id),
+              }}
+              onSceneEnd={noop}
+            />
+          ) : (
+            <NarrationScene
+              key={currentScene.external_id}
+              description={currentScene.narration ?? ''}
+              imageUrl={sceneImageUrl(currentScene.external_id)}
+              onProceed={noop}
+            />
+          )}
         </>
       )}
 
