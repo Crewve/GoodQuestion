@@ -1,5 +1,6 @@
-// 공지사항 상세 (기능명세서 3.3 / 피그마 3.3 공지사항 상세) — 목록에서 행 클릭 시 진입.
-// 정적 콘텐츠(notices-data) 기준, 없는 id는 404. 하단 '목록으로 돌아가기'와 헤더 뒤로가기 모두 목록 복귀.
+// 공지사항 상세 (기능명세서 3.3 / 피그마 「개발 배포용」 3.3 공지사항_상세) — 목록에서 행 클릭 시 진입.
+// 정적 콘텐츠(notices-data) 기준, 없는 id는 404. 하단 '목록으로'와 헤더 뒤로가기 모두 목록 복귀.
+// 카드는 피그마 실측(2026-08-14)대로 테두리·라운드 없는 흰 박스(pad 24/32) — 제목 22 Bold·날짜 14·본문 15/1.8.
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BottomNav, withChild } from '@/components/bottom-nav';
@@ -20,19 +21,18 @@ export default async function NoticeDetailPage(props: PageProps<'/my/notices/[id
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">공지사항</h2>
 
-        <article className="mt-10 overflow-hidden rounded-2xl border border-[#E8E2DA] bg-white">
-          <header className="border-b border-[#E8E2DA] px-5 py-[18px]">
-            <h3 className="text-[15px] font-bold text-[#1E1A14]">{notice.title}</h3>
-            <p className="mt-1 text-[13px] text-[#7A7268]">{notice.date}</p>
-          </header>
-          <p className="whitespace-pre-line px-5 py-5 text-[15px] leading-[1.8] text-[#1E1A14]">{notice.body}</p>
+        <article className="mt-10 bg-white px-6 py-8">
+          <h3 className="text-[22px] font-bold leading-[1.4] text-[#1E1A14]">{notice.title}</h3>
+          <p className="mt-2 text-sm text-[#7A7268]">{notice.date}</p>
+          <hr className="mt-5 border-t border-[#E8E2DA]" />
+          <p className="mt-7 whitespace-pre-line text-[15px] leading-[1.8] text-[#1E1A14]">{notice.body}</p>
         </article>
 
         <Link
           href={withChild('/my/notices', childId)}
-          className="mt-8 flex h-12 items-center justify-center gap-2 self-center rounded-full bg-primary px-6 text-[15px] font-bold text-white active:bg-ink"
+          className="mt-5 flex h-[46px] w-[172px] items-center justify-center self-center rounded-full border border-[#C8D8D0] bg-white text-base font-bold text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white"
         >
-          <span aria-hidden>←</span> 목록으로 돌아가기
+          목록으로
         </Link>
       </main>
       <BottomNav active="my" childId={childId} />

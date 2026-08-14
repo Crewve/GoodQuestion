@@ -38,8 +38,8 @@ export default async function SupportPage(props: PageProps<'/my/support'>) {
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">고객센터</h2>
 
-        {/* 상단 탭 — FAQ 활성, 1:1 문의 내역은 별도 화면 이동 (스토리보드 3.4) */}
-        <div className="mt-10 flex overflow-hidden border border-[#E8E2DA] bg-white">
+        {/* 상단 탭 — FAQ 활성, 1:1 문의 내역은 별도 화면 이동 (피그마: 비활성 탭 하단 헤어라인·활성 탭 밑줄 2px) */}
+        <div className="mt-10 flex bg-white">
           <span
             aria-current="true"
             className="flex h-[52px] flex-1 items-center justify-center border-b-2 border-[#1E1A14] text-[15px] font-bold text-[#1E1A14]"
@@ -48,7 +48,7 @@ export default async function SupportPage(props: PageProps<'/my/support'>) {
           </span>
           <Link
             href={withChild('/my/support/inquiries', childId)}
-            className="flex h-[52px] flex-1 items-center justify-center text-[15px] text-[#7A7268] active:bg-background"
+            className="flex h-[52px] flex-1 items-center justify-center border-b border-[#E8E2DA] text-[15px] text-[#7A7268] active:bg-background"
           >
             1:1 문의 내역
           </Link>

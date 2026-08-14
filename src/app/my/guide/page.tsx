@@ -61,10 +61,11 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
     return query ? `/my/guide?${query}` : '/my/guide';
   };
 
+  // 피그마 실측(2026-08-14): 탭 바는 하단 헤어라인만, 활성 탭은 밑줄 2px(#1E1A14)
   const tabClass = (active: boolean) =>
     active
       ? 'flex h-[52px] flex-1 items-center justify-center border-b-2 border-[#1E1A14] text-[15px] font-bold text-[#1E1A14]'
-      : 'flex h-[52px] flex-1 items-center justify-center text-[15px] text-[#7A7268] active:bg-background';
+      : 'flex h-[52px] flex-1 items-center justify-center border-b border-[#E8E2DA] text-[15px] text-[#7A7268] active:bg-background';
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -73,7 +74,7 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
         <h2 className="text-2xl font-bold text-[#1E1A14]">이용안내</h2>
 
         {/* 상단 탭 — 같은 라우트에서 ?tab= 쿼리로 약관/가이드 전환 (스토리보드 3.5) */}
-        <div className="mt-10 flex overflow-hidden border border-[#E8E2DA] bg-white">
+        <div className="mt-10 flex bg-white">
           {showTerms ? (
             <span aria-current="true" className={tabClass(true)}>
               서비스 이용약관
@@ -95,29 +96,33 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
         </div>
 
         {showTerms ? (
-          // 약관 전문 — 문서 카드 (제목 15·조항 14.4·각주 12.8)
-          <section className="mt-10 rounded-2xl border border-[#E8E2DA] bg-white px-5 py-5">
+          // 약관 전문 — 피그마 실측 카드(r=14): 테두리 헤더 행(제목 15 + sky 링크) / 조항 14.4 Bold lh 1.75 /
+          // 하단 각주 밴드(#F7F6F3, 12.8 중앙 정렬)
+          <section className="mt-10 overflow-hidden rounded-[14px] border border-[#E8E2DA] bg-white">
             <h3 className="sr-only">서비스 이용약관</h3>
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8E2DA] px-5 py-4">
               <p className="text-[15px] font-bold text-[#1E1A14]">{TERMS_TITLE}</p>
               {/* 처리방침 전문 화면은 미제공(MVP) — 스토리보드 표기만 유지 */}
-              <p className="text-sm text-[#7A7268]">개인정보처리방침 바로가기 ›</p>
+              <p className="text-sm text-sky">개인정보처리방침 바로가기 ›</p>
             </div>
-            <div className="mt-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-4 p-5">
               {TERMS_ARTICLES.map((article) => (
-                <p key={article.slice(0, 12)} className="text-sm leading-[1.8] text-[#1E1A14]">
+                <p key={article.slice(0, 12)} className="text-sm font-bold leading-[1.75] text-[#1E1A14]">
                   {article}
                 </p>
               ))}
             </div>
-            <p className="mt-5 text-[13px] text-[#7A7268]">{TERMS_FOOTNOTE}</p>
+            <p className="border-t border-[#E8E2DA] bg-[#F7F6F3] px-5 py-3 text-center text-[13px] text-[#7A7268]">
+              {TERMS_FOOTNOTE}
+            </p>
           </section>
         ) : (
-          // 이용 가이드 — 카드 4종 상시 펼침 (아코디언 아님, 스토리보드 3.5)
-          <section className="mt-10 flex flex-col gap-2.5">
+          // 이용 가이드 — 카드 4종 상시 펼침 (아코디언 아님). 피그마 실측: 좌우 24 인셋·카드 간 14·pad 20·
+          // 팁 칩 #FFF5D4/r8/#7C4A00
+          <section className="mt-10 flex flex-col gap-3.5 px-6">
             <h3 className="sr-only">서비스 이용 가이드</h3>
             {GUIDES.map((guide) => (
-              <article key={guide.title} className="flex gap-4 rounded-[14px] border border-[#E8E2DA] bg-white px-5 py-[18px]">
+              <article key={guide.title} className="flex gap-4 rounded-[14px] border border-[#E8E2DA] bg-white p-5">
                 <span
                   aria-hidden
                   className="flex size-[52px] shrink-0 items-center justify-center rounded-[14px] bg-[#FFEDE3] text-2xl"
@@ -127,7 +132,7 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
                 <div className="min-w-0 flex-1">
                   <p className="text-[15px] font-bold text-[#1E1A14]">{guide.title}</p>
                   <p className="mt-1.5 text-sm leading-relaxed text-[#7A7268]">{guide.body}</p>
-                  <p className="mt-2 inline-flex items-start gap-1 rounded-md bg-sunny/25 px-2 py-1 text-[13px] text-[#92400E]">
+                  <p className="mt-2 inline-flex items-start gap-1.5 rounded-lg bg-[#FFF5D4] px-2.5 py-1 text-[13px] text-[#7C4A00]">
                     <span aria-hidden>💡</span>
                     {guide.tip}
                   </p>
