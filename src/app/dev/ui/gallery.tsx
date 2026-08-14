@@ -166,11 +166,28 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
       return next;
     });
   const phase = useTurnStore((s) => s.phase);
+  // 리허설 기본 음소거 — dev 확인은 시각 중심(고정 안내음·응답 음성 불필요). 🔊 토글로 해제 가능
+  const [rehearsalMuted, setRehearsalMuted] = useState(true);
 
   // 화면·장면 전환 시 턴 스토어 초기화 — 이전 뷰의 강제 상태가 남지 않게
   useEffect(() => {
     useTurnStore.getState().reset();
   }, [view, sceneIdx]);
+
+  // 음소거 구현 — play 차단이 아니라 muted 재생: onended로 이어지는 진행 흐름(자동 녹음 전환 등)은 유지.
+  // 이 문서의 프로토타입만 패치하므로 iframe(실제 화면)은 별도 문서라 영향 없음(실제 동작 확인용으로 소리 유지).
+  useEffect(() => {
+    if (!rehearsalMuted) return;
+    const original = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function (this: HTMLMediaElement) {
+      this.muted = true;
+      return original.call(this);
+    };
+    return () => {
+      HTMLMediaElement.prototype.play = original;
+      for (const el of document.querySelectorAll('audio, video')) (el as HTMLMediaElement).muted = false;
+    };
+  }, [rehearsalMuted]);
 
   const currentScene = orderedScenes[sceneIdx];
 
@@ -190,7 +207,17 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
       {/* 좌측 컨트롤 패널 — 구간별 아코디언. z-[60]: 미션 팝업·카드 판정 오버레이(z-50) 위 */}
       {navOpen && (
         <aside className="fixed top-1/2 left-2 z-[60] flex max-h-[86dvh] w-52 -translate-y-1/2 flex-col gap-1 overflow-y-auto rounded-2xl bg-white/95 p-2 text-xs shadow-[0_4px_20px_rgba(58,44,30,0.25)]">
-          <p className="px-1 pb-1 font-bold text-ink">UI 리허설 (dev)</p>
+          <div className="flex items-center justify-between px-1 pb-1">
+            <p className="font-bold text-ink">UI 리허설 (dev)</p>
+            <button
+              type="button"
+              onClick={() => setRehearsalMuted((m) => !m)}
+              title={rehearsalMuted ? '리허설 음소거 중 (iframe 실제 화면 제외) — 눌러서 소리 켜기' : '리허설 소리 켜짐 — 눌러서 음소거'}
+              aria-label="리허설 음소거 토글"
+            >
+              {rehearsalMuted ? '🔇' : '🔊'}
+            </button>
+          </div>
           {VIEW_GROUPS.map((g) => (
             <div key={g.key} className="flex flex-col gap-1">
               <SectionHeader title={g.title} open={openSections.has(g.key)} onToggle={() => toggleSection(g.key)} />
