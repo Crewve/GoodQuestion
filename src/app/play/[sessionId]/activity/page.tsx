@@ -63,6 +63,7 @@ export default async function PostActivityPage(props: PageProps<'/play/[sessionI
     <PostActivityFlow
       sessionId={session.id}
       storyId={session.story_id}
+      childId={(session.child_id as string | null) ?? null} // 나가기 링크의 ?child= 원천 (QA 17)
       storyTitle={story.title}
       cards={cards}
       keywords={config.keywords}

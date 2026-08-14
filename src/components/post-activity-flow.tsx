@@ -6,6 +6,7 @@
 // X 나가기: 저장 없이 종료 → 2.3 이야기 상세(2.4.4 화면 이동 — 재진입 라우팅은 서버 저장값 기준).
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { withChild } from '@/components/bottom-nav';
 import { CardOrdering, type PostActivityCard } from '@/components/card-ordering';
 import { Retelling } from '@/components/retelling';
 
@@ -14,6 +15,8 @@ export type PostActivityStep = 'card-order' | 'retelling';
 type PostActivityFlowProps = {
   sessionId: string;
   storyId: string;
+  /** 세션의 아이 — 나가기 링크에 ?child=로 실어 보낸다 (없으면 홈 복귀 시 아이 선택으로 튕김, QA 17) */
+  childId: string | null;
   storyTitle: string;
   /** 정답 순서로 정렬된 카드 4장 — 무작위 제시는 CardOrdering 내부 몫 */
   cards: PostActivityCard[];
@@ -39,6 +42,7 @@ async function postActivity(body: Record<string, unknown>): Promise<Response> {
 export function PostActivityFlow({
   sessionId,
   storyId,
+  childId,
   storyTitle,
   cards,
   keywords,
@@ -49,8 +53,10 @@ export function PostActivityFlow({
   const n = step === 'card-order' ? 1 : 2;
 
   const exitToDetail = useCallback(() => {
-    router.push(`/stories/${storyId}`); // 저장 없이 화면만 종료 — 진행 값은 서버에 이미 반영된 만큼 유지
-  }, [router, storyId]);
+    // 저장 없이 화면만 종료 — 진행 값은 서버에 이미 반영된 만큼 유지.
+    // 아이 컨텍스트 유지는 진행 화면 나가기와 동일 규칙 (QA 17)
+    router.push(withChild(`/stories/${storyId}`, childId));
+  }, [childId, router, storyId]);
 
   const submitCardOrder = useCallback(
     async (submittedOrder: string[]) => {
