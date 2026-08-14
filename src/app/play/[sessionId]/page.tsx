@@ -89,11 +89,11 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
     [scenes, currentOrder],
   );
 
-  // 헤더 n: 도입 동안 1 고정, 이후 현재 속한 전개·대화 쌍의 번호 (문장 진행과 무관 — 2.4.1·2.4.2)
-  const totalPairs = scenes.filter((s) => s.type === '대화').length;
-  const currentPair = useMemo(() => {
+  // 헤더 n: 도입 포함 5분할(2026-08-14 정정) — 도입=1, 전개k·대화k=k+1, N=쌍 수+1 (문장 진행과 무관 — 2.4.1·2.4.2)
+  const totalSteps = scenes.filter((s) => s.type === '대화').length + 1;
+  const currentStep = useMemo(() => {
     if (!currentScene || currentScene.type === '도입') return 1;
-    return Math.max(1, scenes.filter((s) => s.type === '전개' && s.order <= currentScene.order).length);
+    return 1 + Math.max(1, scenes.filter((s) => s.type === '전개' && s.order <= currentScene.order).length);
   }, [currentScene, scenes]);
 
   const exitToDetail = useCallback(() => {
@@ -174,7 +174,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
     // h-dvh 고정 — min-h면 대화 내역이 쌓일 때 페이지가 자라 화면 스크롤 발생 (T071, 핸드오프 §2.2 아이 화면 스크롤 미허용)
     // max-w 1194px — 시안 가로폭. 초광폭 모니터에서 무제한 확장 방지(핸드오프 §2), body 배경이 같은 Base 색이라 바깥 여백은 자연스럽게 이어진다
     <main className="mx-auto flex h-dvh w-full max-w-[1194px] flex-col overflow-hidden bg-background">
-      <ProgressHeader title={STORY_TITLE} n={currentPair} N={totalPairs} onExit={exitToDetail} />
+      <ProgressHeader title={STORY_TITLE} n={currentStep} N={totalSteps} onExit={exitToDetail} />
       {currentScene && currentScene.type !== '대화' ? (
         <NarrationScene
           key={currentScene.id} // 장면 전환 시 문장 인덱스 초기화

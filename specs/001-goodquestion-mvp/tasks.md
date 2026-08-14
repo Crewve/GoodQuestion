@@ -138,7 +138,7 @@
 
 - [x] T034 \[P\] \[US1\] (파트1) 오디오 훅 `src/hooks/useAudioUnlock.ts`·`src/hooks/useRecorder.ts` — 첫 제스처 언락(iPad), MediaRecorder(mp4/webm), RMS·최소 길이 사전 게이트, 30초 자동 종료 (R-15) ✓ 언락은 첫 pointerdown 1회(모듈 전역), mime 협상 webm;opus→webm→mp4, AnalyserNode 실시간 레벨+전구간 평균 RMS, precheckRecording 순수 함수(TOO_SHORT/TOO_QUIET), onComplete 콜백에 사전 게이트 결과 동봉
 
-- [x] T035 \[P\] \[US1\] (파트1) 진행 공통 컴포넌트 `src/components/progress-header.tsx` — 진행률 텍스트·바(도입 n=1 고정)·X 나가기(상세 복귀) ✓ n/N 계산은 컨테이너 책임(도입=1, 전개k/대화k=k — 기능명세서 2.4.1·2.4.2), 터치 48px·텍스트 18px+·progressbar ARIA
+- [x] T035 \[P\] \[US1\] (파트1) 진행 공통 컴포넌트 `src/components/progress-header.tsx` — 진행률 텍스트·바(도입 n=1 고정)·X 나가기(상세 복귀) ✓ n/N 계산은 컨테이너 책임(도입=1, 전개k/대화k=k+1, N=쌍 수+1 — 도입 포함 5분할, 2026-08-14 정정), 터치 48px·텍스트 18px+·progressbar ARIA
 
 - [x] T036 \[US1\] (파트1) 이야기 진행 컨테이너+도입/전개 화면 `src/app/play/[sessionId]/page.tsx`·`src/components/narration-scene.tsx` — scene_description 온점 분리 문장 자동 재생, 이전/다음 화살표(첫/끝 규칙)·다시 듣기·마지막 문장 진행하기 (T031 응답 스키마 의존 — contracts/api-routes.md 기준으로 병렬 개발 가능) ✓ 진입 경로 `?child=&story=`로 /api/sessions 멱등 호출(새로고침 재개 복원). **문장 단위 오디오는 T021 확장으로 사전 생성**(`{scene}__narration_s{i}.mp3` 15건, `src/lib/narration.ts` 분리 함수를 화면·스크립트 공유) — 신규 API 라우트 없음. 대화 장면은 T037 합류 자리표시자, next build·typegen 통과
 
