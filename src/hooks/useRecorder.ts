@@ -97,7 +97,7 @@ export function useRecorder(options: UseRecorderOptions = {}) {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
       setStatus('error');
-      setError('마이크 권한이 필요해요.');
+      setError('마이크 접근 권한이 필요해요'); // 기능명세서 2.4.3 예외 원문 (대화·미션 공용, 2.4.5는 retelling 자체 문구)
       return;
     }
     streamRef.current = stream;

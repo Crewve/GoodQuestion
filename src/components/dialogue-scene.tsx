@@ -49,12 +49,16 @@ type TurnResponse = {
   mode: 'NORMAL' | 'GUIDED' | 'CLOSING';
   characterReplyText: string;
   audioUrl: string | null;
+  /** MAX_TURNS 종료 — 클로징 앞에 먼저 재생하는 짧은 반응 (기능명세서 2.4.3 화면 이동) */
+  preClosing?: { text: string; audioUrl: string | null };
   /** 미션 분기 (T041) — 노출은 이 필드로만 전달, 판정은 서버 전용 (/api/turn이 mission.id를 내려줌) */
   exposeMission?: MissionId;
   missionPhase?: 'progress' | 'success';
   sceneEnd?: { reason: 'GOAL_MET' | 'MAX_TURNS'; nextSceneId: string | null };
   progress: { accumulated: ThinkingElement[]; missing: ThinkingElement[]; turn: number; maxTurns: number };
 };
+
+type CharacterReply = Pick<TurnResponse, 'characterReplyText' | 'audioUrl' | 'sceneEnd' | 'preClosing'>;
 
 type FixtureSceneLite = { external_id: string; scene_order: number; character_opening?: string };
 const fixtureScenes = (story as { scenes: FixtureSceneLite[] }).scenes;
@@ -136,13 +140,19 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   /** 열린 미션 팝업 (T042 배선) — 서버 exposeMission으로만 열린다 */
   const [activeMission, setActiveMission] = useState<MissionId | null>(null);
   /** 미션 응답의 캐릭터 대사 — 팝업 [성공 완료]가 닫힐 때 재생 (기능명세서 ⓕ→⑦) */
-  const heldReplyRef = useRef<Pick<TurnResponse, 'characterReplyText' | 'audioUrl' | 'sceneEnd'> | null>(null);
+  const heldReplyRef = useRef<CharacterReply | null>(null);
+  /** 최근 턴 진행 상황 — max_turns 도달 시 마이크·보내기 비활성 가드 (기능명세서 2.4.3 유효성) */
+  const [turnProgress, setTurnProgress] = useState<TurnResponse['progress'] | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hintAudioRef = useRef<HTMLAudioElement | null>(null);
   const playTokenRef = useRef(0);
   /** undefined=장면 계속, string|null=응답 오디오 종료 후 전달할 nextSceneId */
   const pendingSceneEndRef = useRef<string | null | undefined>(undefined);
+  /** MAX_TURNS 짧은 반응 재생 후 이어 재생할 클로징 — 반응 오디오 종료 시 디큐 */
+  const queuedClosingRef = useRef<{ text: string; audioUrl: string | null; nextSceneId: string | null } | null>(null);
+  /** afterCharacterAudio → playCharacterAudio 역참조 (useCallback 순환 의존 회피 — recorderStartRef 패턴) */
+  const playAudioRef = useRef<(url: string | null | undefined) => void>(() => undefined);
   /** 클로징 후 지연 전환 타이머 — 장면 전환·이탈 시 해제 */
   const sceneEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const historyEndRef = useRef<HTMLDivElement | null>(null);
@@ -210,6 +220,15 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   }, []);
 
   const afterCharacterAudio = useCallback(() => {
+    // MAX_TURNS 짧은 반응이 끝났으면 클로징을 이어 재생 (기능명세서 2.4.3 — 짧은 반응 → character_closing)
+    const queued = queuedClosingRef.current;
+    if (queued) {
+      queuedClosingRef.current = null;
+      if (queued.text) setHistory((h) => [...h, { speaker: 'character', text: queued.text }]);
+      pendingSceneEndRef.current = queued.nextSceneId;
+      playAudioRef.current(queued.audioUrl);
+      return;
+    }
     const pending = pendingSceneEndRef.current;
     if (pending !== undefined) {
       pendingSceneEndRef.current = undefined;
@@ -249,6 +268,10 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
     [afterCharacterAudio],
   );
 
+  useEffect(() => {
+    playAudioRef.current = playCharacterAudio; // 렌더 중 ref 쓰기 금지(react-hooks/refs) — effect에서 최신 유지
+  }, [playCharacterAudio]);
+
   const replayAudio = useCallback(() => {
     // 반복 가능 — 턴 진행·상태에는 영향 없음 (재생 종료 콜백은 phase 가드로 무시됨)
     if (lastAudioUrl) {
@@ -259,32 +282,64 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
 
   // --- 턴 제출 ---
 
+  /** 캐릭터 응답 표시·재생 공통 경로 (일반 턴·미션 복귀) — preClosing이 있으면 반응 → 클로징 순차 재생 */
+  const presentCharacterReply = useCallback(
+    (reply: CharacterReply) => {
+      useTurnStore.getState().characterSpeaking(); // SUBMITTED → CHAR_SPEAKING
+      if (reply.preClosing?.text) {
+        setHistory((h) => [...h, { speaker: 'character', text: reply.preClosing!.text }]);
+        queuedClosingRef.current = {
+          text: reply.characterReplyText,
+          audioUrl: reply.audioUrl,
+          nextSceneId: reply.sceneEnd ? reply.sceneEnd.nextSceneId : null,
+        };
+        pendingSceneEndRef.current = undefined; // 장면 전환은 클로징 재생 후 (afterCharacterAudio 디큐)
+        playCharacterAudio(reply.preClosing.audioUrl);
+        return;
+      }
+      if (reply.characterReplyText) {
+        setHistory((h) => [...h, { speaker: 'character', text: reply.characterReplyText }]);
+      }
+      pendingSceneEndRef.current = reply.sceneEnd ? reply.sceneEnd.nextSceneId : undefined;
+      playCharacterAudio(reply.audioUrl);
+    },
+    [playCharacterAudio],
+  );
+
   const requestTurn = useCallback(
     async (text: string, sttRawText: string) => {
       setTurnRetry(null);
-      try {
-        const res = await fetch('/api/turn', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId, sceneId: scene.id, text, sttRawText }),
-        });
-        if (!res.ok) throw new Error(`turn HTTP ${res.status}`);
-        const turn = (await res.json()) as TurnResponse;
-        if (turn.exposeMission) {
-          // 노출 턴 — 캐릭터 응답 없음, 팝업이 마이크·보내기를 소유 (전역 턴은 SUBMITTED 유지)
-          setActiveMission(turn.exposeMission);
+      // 기능명세서 2.4.3 예외 — 생성 실패 시 "생각을 정리하는 중이에요..." + 자동 1회 재시도.
+      // 서버 내부 LLM 재시도와 별개의 요청 단위 재시도(네트워크 단절 포함) — 그래도 실패하면 수동 다시 보내기
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const res = await fetch('/api/turn', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId, sceneId: scene.id, text, sttRawText }),
+          });
+          if (!res.ok) throw new Error(`turn HTTP ${res.status}`);
+          const turn = (await res.json()) as TurnResponse;
+          setStatusMessage(null);
+          setTurnProgress(turn.progress);
+          if (turn.exposeMission) {
+            // 노출 턴 — 캐릭터 응답 없음, 팝업이 마이크·보내기를 소유 (전역 턴은 SUBMITTED 유지)
+            setActiveMission(turn.exposeMission);
+            return;
+          }
+          presentCharacterReply(turn);
           return;
+        } catch {
+          if (attempt === 0) {
+            setStatusMessage('생각을 정리하는 중이에요...');
+            continue;
+          }
+          setStatusMessage(null);
+          setTurnRetry({ text, sttRawText });
         }
-        setHistory((h) => [...h, { speaker: 'character', text: turn.characterReplyText }]);
-        pendingSceneEndRef.current = turn.sceneEnd ? turn.sceneEnd.nextSceneId : undefined;
-        useTurnStore.getState().characterSpeaking(); // SUBMITTED → CHAR_SPEAKING
-        playCharacterAudio(turn.audioUrl);
-      } catch {
-        // 서버가 이미 1회 재시도했으므로 클라이언트는 수동 재시도 (기능명세서 예외 규칙)
-        setTurnRetry({ text, sttRawText });
       }
     },
-    [playCharacterAudio, scene.id, sessionId],
+    [presentCharacterReply, scene.id, sessionId],
   );
 
   const handleSubmit = useCallback(() => {
@@ -321,11 +376,13 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
       });
       if (!res.ok) throw new Error(`turn HTTP ${res.status}`);
       const turn = (await res.json()) as TurnResponse;
+      setTurnProgress(turn.progress);
       setHistory((h) => [...h, { speaker: 'child', text: missionText }]); // 미션 응답도 대화 내역에 표시 (기능명세서 ⓓ)
       heldReplyRef.current = {
         characterReplyText: turn.characterReplyText,
         audioUrl: turn.audioUrl,
         sceneEnd: turn.sceneEnd,
+        preClosing: turn.preClosing,
       };
     },
     [scene.id, sessionId],
@@ -337,23 +394,20 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
     const held = heldReplyRef.current;
     heldReplyRef.current = null;
     if (!held) return;
-    if (held.characterReplyText) {
-      setHistory((h) => [...h, { speaker: 'character', text: held.characterReplyText }]);
-    }
-    pendingSceneEndRef.current = held.sceneEnd ? held.sceneEnd.nextSceneId : undefined;
-    useTurnStore.getState().characterSpeaking(); // SUBMITTED → CHAR_SPEAKING
-    playCharacterAudio(held.audioUrl);
-  }, [playCharacterAudio]);
+    presentCharacterReply(held);
+  }, [presentCharacterReply]);
 
   // --- 장면 진입/전환 ---
 
   useEffect(() => {
     useTurnStore.getState().reset();
     pendingSceneEndRef.current = undefined;
+    queuedClosingRef.current = null;
     heldReplyRef.current = null;
     setActiveMission(null);
     setTurnRetry(null);
     setStatusMessage(null);
+    setTurnProgress(null); // 턴 카운트는 장면 단위 (규칙 상태 리셋과 동일)
     // 세션 페이로드 텍스트 우선 — 서버가 고른 오디오(실명본/폴백)와 표기가 일치한다
     const opening =
       scene.openingText ??
@@ -381,9 +435,11 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   // 현재(마지막) 캐릭터 대사 — 리스트 맨 아래 카드에만 다시 듣기 칩을 붙인다
   const lastCharacterIndex = history.findLastIndex((b) => b.speaker === 'character');
   const badgeLabel = PHASE_LABELS[phase];
+  // 기능명세서 2.4.3 유효성 — max_turns 도달 후 마이크·보내기 비활성 (서버 CLOSING 강제 종료의 UI 이중 방어)
+  const turnsExhausted = turnProgress !== null && turnProgress.maxTurns > 0 && turnProgress.turn >= turnProgress.maxTurns;
   // REVIEW에서도 마이크 활성 — 보내기 전 재녹음 허용 (T072, E2E 항목 13)
-  const micEnabled = (phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting';
-  const sendEnabled = phase === 'REVIEW' && !!sttText?.trim();
+  const micEnabled = (phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting' && !turnsExhausted;
+  const sendEnabled = phase === 'REVIEW' && !!sttText?.trim() && !turnsExhausted;
 
   // 상태 카드(대화 영역) 톤 — 시안: 듣는 중 #F5EDE0/#8A7A68, 녹음 primary/white, 변환 sunny/ink
   // (듣는 중 #8A7A68은 대비 3.6:1 — 아동 하한 4.5:1 충족 위해 ink/70로 상향)

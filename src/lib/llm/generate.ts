@@ -1,6 +1,8 @@
 // 캐릭터 생성 LLM (T027, FR-011) — 페르소나 반영 응답 1건 생성.
 // GUIDED 시 서버가 지정한 부족 요소(guidanceTarget 1개, 최대 2개)만 유도한다 — 그 외 요소 언급 금지.
-// CLOSING은 이 모듈을 호출하지 않는다 (R-04 — 고정 character_closing 재생).
+// CLOSING 대사 자체는 이 모듈이 만들지 않는다 (R-04 — 고정 character_closing 재생).
+// 단 MAX_TURNS 종료 턴은 클로징 앞에 붙는 "아이 마지막 발화에 대한 짧은 반응" 1문장만 생성한다
+// (기능명세서 2.4.3 화면 이동 — 평가·지적 없이 다음 전개로 자연스럽게 연결).
 // 후검증(validateReply) 실패 시 throw하지 않고 사유를 반환 — 재시도(1회)는 호출부(/api/turn) 책임.
 import charactersFixture from '../../../fixtures/characters.banggui.json';
 import { substituteChildName } from '../child-name';
@@ -150,6 +152,78 @@ export function validateReply(text: string, maxChars = 160): ReplyValidation {
     return { ok: false, reason: 'BANNED_WORD' };
   }
   return { ok: true };
+}
+
+export type ReactionContext = {
+  character: CharacterPersona;
+  /** 이어서 재생될 고정 마무리 대사 — 반응이 이 대사로 자연스럽게 이어져야 한다 */
+  closingText: string;
+  /** 이번 장면의 대화 내역 (오래된 것부터, 마지막이 아이의 최종 발화) */
+  history: { speaker: 'child' | 'character'; text: string }[];
+  childName?: string;
+};
+
+/** MAX_TURNS 종료 턴의 짧은 반응 프롬프트 (기능명세서 2.4.3) — 질문 없이 1문장, 클로징으로 연결 */
+export function buildReactionMessages(context: ReactionContext) {
+  const { character } = context;
+  const childCall = context.childName ? givenName(context.childName) : '친구야';
+  const system = `너는 동화 「방귀 뀌는 며느리」의 캐릭터 '${character.display_name}'(${character.name})이다. 6~9세 아이와의 대화를 마무리하는 중이다.
+
+[임무]
+아이의 마지막 말에 대한 짧은 반응 딱 1문장을 만든다. 이 반응 바로 뒤에 네 마무리 인사 "${context.closingText}"가 이어서 재생된다 — 반응은 그 인사로 자연스럽게 이어지는 다리 역할만 한다.
+
+[규칙 — 반드시 지킨다]
+- 출력은 반응 1문장뿐이다 — 마무리 인사의 문장을 출력에 포함하거나 미리 반복하지 않는다
+- 질문하지 않는다 — 물음표 금지, 아이가 답할 턴이 없다. 질문 대신 따뜻한 공감으로 끝낸다
+- 평가·지적 금지 (틀렸다·아니다·부족하다 금지) — 아이의 말을 있는 그대로 따뜻하게 받아 준다
+- 쉬운 말, '${character.display_name}' 말투 유지 (${character.tagline})
+- 아이 이름은 '${childCall}' — 직전 대사에서 이미 불렀다면 이름 없이 바로 말한다`;
+
+  const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+    { role: 'system', content: system },
+  ];
+  for (const turn of context.history) {
+    messages.push({
+      role: turn.speaker === 'character' ? 'assistant' : 'user',
+      content: turn.text,
+    });
+  }
+  return messages;
+}
+
+/** 모델이 마무리 인사를 반응 뒤에 복창하는 실수(simulate 실측) — 클로징 문장을 잘라내고 반응만 남긴다 */
+export function stripClosingEcho(reply: string, closingText: string): string {
+  let out = reply;
+  const sentences = closingText
+    .split(/(?<=[.!?…])/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 4);
+  for (const sentence of sentences) {
+    out = out.split(sentence).join('');
+  }
+  return out.replace(/\s{2,}/g, ' ').trim();
+}
+
+/**
+ * MAX_TURNS 종료 턴의 짧은 반응 1문장 생성 + 후처리(클로징 복창 제거)·후검증(80자·금칙어·질문 금지).
+ * 실패 시 throw — 호출부(/api/turn)가 1회 재시도 후 실패하면 클로징 단독 폴백 (R-04 보호).
+ */
+export async function generateClosingReaction(context: ReactionContext): Promise<string> {
+  const completion = await getOpenAI().chat.completions.create({
+    model: models.generation,
+    messages: buildReactionMessages(context),
+    temperature: 0.7,
+    max_tokens: 120,
+  });
+  const reply = stripClosingEcho(completion.choices[0]?.message?.content?.trim() ?? '', context.closingText);
+  const validation = validateReply(reply, 80); // 클로징 앞 여운 1문장 — 통상 응답(160자)의 절반
+  if (!validation.ok) {
+    throw new Error(`짧은 반응 후검증 실패(${validation.reason}): ${reply.slice(0, 80)}`);
+  }
+  if (reply.includes('?') || reply.includes('？')) {
+    throw new Error(`짧은 반응에 질문 포함 — 클로징 직전이라 답할 턴이 없다: ${reply.slice(0, 80)}`);
+  }
+  return reply;
 }
 
 /**
