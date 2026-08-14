@@ -178,15 +178,16 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
               </div>
               {/* 칩 글자 — 피그마 원색 sage 채택(2026-08-14 "피그마와 동일하게" 지시, 대비 미달 인지).
                   포함(✓) 상태는 시안 미정의라 기존 채움 피드백 유지.
-                  시안은 장면당 칩 1개지만 QA 12로 장면별 핵심 단어를 여러 개 주기로 해 줄바꿈 나열한다 */}
+                  시안은 장면당 칩 1개지만 QA 12로 장면별 핵심 단어를 3~4개 주기로 했다 —
+                  카드 폭 안에서 2열 그리드로 쌓아 칩 너비를 고르게 맞춘다(기획 전달 시안 2026-08-15) */}
               {sceneKeywords.length > 0 && (
-                <figcaption className="flex shrink-0 flex-wrap justify-center gap-1.5">
+                <figcaption className="grid shrink-0 grid-cols-2 gap-1.5">
                   {sceneKeywords.map((keyword) => {
                     const included = !!stt?.text.includes(keyword); // 포함 여부 시각 피드백 (비차단)
                     return (
                       <span
                         key={keyword}
-                        className={`flex h-11 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-sage px-3 font-display text-lg ${
+                        className={`flex h-11 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-sage px-2 font-display text-lg ${
                           included ? 'bg-sage text-ink' : 'bg-sage/10 text-sage'
                         }`}
                       >
