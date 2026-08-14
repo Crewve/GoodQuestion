@@ -16,16 +16,20 @@
     "status": "published",
     "post_activity_config": {
       "cards": [
-        { "id": "sc_banggui_01", "image_key": "stories/banggui/scenes/sc_banggui_01.png", "label": "방귀 소리가 아주 컸어요" },
         { "id": "sc_banggui_02", "image_key": "stories/banggui/scenes/sc_banggui_02.png", "label": "방귀를 꾹꾹 참았어요" },
         { "id": "sc_banggui_04", "image_key": "stories/banggui/scenes/sc_banggui_04.png", "label": "방귀가 펑 하고 터졌어요" },
         { "id": "sc_banggui_06", "image_key": "stories/banggui/scenes/sc_banggui_06.png", "label": "높은 배나무를 만났어요" },
         { "id": "sc_banggui_08", "image_key": "stories/banggui/scenes/sc_banggui_08.png", "label": "특별한 힘을 알게 됐어요" }
       ],
-      "answer_order": ["sc_banggui_01", "sc_banggui_02", "sc_banggui_04", "sc_banggui_06", "sc_banggui_08"],
-      "keywords": ["부끄러움", "걱정", "당황", "지혜", "사과"]
+      "answer_order": ["sc_banggui_02", "sc_banggui_04", "sc_banggui_06", "sc_banggui_08"],
+      "keywords": [
+        ["걱정", "참기", "솔직함"],
+        ["당황", "방귀", "갓"],
+        ["지혜", "배나무", "마을 사람들"],
+        ["사과", "특별한 힘", "도움"]
+      ]
     },
-    "post_activity_note": "임시 저작(R-09/T051) — 노션에 미정의라 도입·전개1~4 장면 이미지를 재사용해 저작, 기획 회신 시 데이터만 교체. keywords는 스토리보드(피그마 2.4.5) 확정값 기준(2026-08-13). 규약: cards 배열 순서=answer_order(정답 순서)로 기록하며 무작위 셔플은 프런트 몫. keywords[i]는 answer_order[i] 장면과 세트 쌍(기능명세서 2.4.5 '장면 카드+핵심 단어 세트'). image_key는 fixtures/storage-assets.json의 키. ⚠️ 2026-08-15 QA 12 반영으로 4장→5장(도입 추가): MVP 요건 원문 '주요 장면 카드 4~5개' 범위 안이지만 기능명세서·스토리보드 표기(4장/4세트)와는 어긋난다 — specs/001-goodquestion-mvp/research.md R-09에 기록. 카드 수 변경 시 반드시 `npx tsx scripts/seed.ts` 재실행 필요(DB stories.post_activity_config가 실사용 SoT)."
+    "post_activity_note": "임시 저작(R-09/T051) — 노션에 미정의라 전개1~4 장면 이미지를 재사용해 저작, 기획 회신 시 데이터만 교체. 규약: cards 배열 순서=answer_order(정답 순서)로 기록하며 무작위 셔플은 프런트 몫. keywords[i]는 answer_order[i] 장면의 핵심 단어 묶음(기능명세서 2.4.5 '장면 카드+핵심 단어 세트'). image_key는 fixtures/storage-assets.json의 키. ⚠️ 2026-08-15 QA 12('장면 완성 부분에서 카드 아래 장면별 핵심 단어 추가') 반영으로 keywords가 장면당 1개 문자열 → 장면당 3개 묶음(string[][])으로 바뀌었다. 단어는 각 장면 내레이션에 실제로 나오는 말에서 골랐다(아이가 그대로 쓸 수 있게). 형태 변경이므로 반드시 `npx tsx scripts/seed.ts` 재실행 필요(DB stories.post_activity_config가 실사용 SoT)."
   },
   "scenes": [
     {

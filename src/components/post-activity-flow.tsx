@@ -21,8 +21,8 @@ type PostActivityFlowProps = {
   storyTitle: string;
   /** 정답 순서로 정렬된 카드 N장(config.cards) — 무작위 제시는 CardOrdering 내부 몫 */
   cards: PostActivityCard[];
-  /** cards와 인덱스 쌍 핵심 단어 (2.4.5 세트, 개수는 cards와 동일) */
-  keywords: string[];
+  /** keywords[i] = cards[i] 장면의 핵심 단어 묶음 (2.4.5 카드 아래 칩들) */
+  keywords: string[][];
   /** 재진입 라우팅 결과 — is_order_correct=true면 2.4.5부터 (서버 판정) */
   initialStep: PostActivityStep;
 };

@@ -16,7 +16,12 @@ const config: PostActivityConfig = {
     { id: 'sc_banggui_08', image_key: 'stories/banggui/scenes/sc_banggui_08.png', label: '특별한 힘을 알게 됐어요' },
   ],
   answer_order: ['sc_banggui_02', 'sc_banggui_04', 'sc_banggui_06', 'sc_banggui_08'],
-  keywords: ['방귀', '갓', '배나무', '특별한 힘'],
+  keywords: [
+    ['걱정', '참기', '솔직함'],
+    ['당황', '방귀', '갓'],
+    ['지혜', '배나무', '마을 사람들'],
+    ['사과', '특별한 힘', '도움'],
+  ],
 };
 
 describe('parsePostActivityConfig — stories.post_activity_config JSON 검증 (R-09)', () => {
@@ -36,9 +41,19 @@ describe('parsePostActivityConfig — stories.post_activity_config JSON 검증 (
     ).toBeNull();
   });
 
-  test('cards·answer_order·keywords 길이가 서로 다르면 null (2.4.5 4세트 쌍)', () => {
+  test('cards·answer_order·keywords 길이가 서로 다르면 null (2.4.5 장면 단위 1:1)', () => {
     expect(parsePostActivityConfig({ ...config, answer_order: config.answer_order.slice(0, 3) })).toBeNull();
     expect(parsePostActivityConfig({ ...config, keywords: config.keywords.slice(0, 3) })).toBeNull();
+  });
+
+  test('빈 단어 묶음·문자열 아닌 원소는 null (저작 오류)', () => {
+    expect(parsePostActivityConfig({ ...config, keywords: [[], ['당황'], ['지혜'], ['사과']] })).toBeNull();
+    expect(parsePostActivityConfig({ ...config, keywords: [[1], ['당황'], ['지혜'], ['사과']] })).toBeNull();
+  });
+
+  test('장면당 1개였던 이전 형태(string[])는 한 묶음으로 감싸 받는다 — 시드 재실행 전 배포 대비', () => {
+    const legacy = { ...config, keywords: ['걱정', '당황', '지혜', '사과'] };
+    expect(parsePostActivityConfig(legacy)?.keywords).toEqual([['걱정'], ['당황'], ['지혜'], ['사과']]);
   });
 });
 
