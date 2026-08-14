@@ -133,9 +133,10 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
             </p>
           )}
 
+          {/* 1.1.1 유효성 "비밀번호 | 1자 이상, 공백 불가" — 가입 규칙(validatePassword)과 동일하게 공백 포함 차단 */}
           <button
             type="submit"
-            disabled={submitting || !email.trim() || password.length < 1}
+            disabled={submitting || !email.trim() || password.length < 1 || /\s/.test(password)}
             className="mt-2 h-13 rounded-full bg-primary text-base font-bold text-white shadow-[0_6px_20px_rgba(255,122,61,0.33)] active:bg-ink disabled:opacity-40 disabled:shadow-none"
           >
             {submitting ? '로그인 중…' : '로그인하기'}

@@ -200,10 +200,18 @@ export async function POST(request: Request) {
     };
   });
 
-  // 진행률 — N=대화 장면 수(전개+대화 쌍), n=재개 지점 이전에 완료된 대화 수
-  const dialogueOrders = scenes.filter((s) => sceneTypeForRow(s) === '대화').map((s) => s.scene_order);
-  const N = dialogueOrders.length;
-  const n = dialogueOrders.filter((order) => order < resumeSceneOrder).length;
+  // 진행률 — N=대화 장면 수(전개+대화 쌍), n=재개 지점이 속한 쌍 번호(도입=1 고정 — 기능명세서 2.4.1·2.4.2).
+  // play 헤더(play/[sessionId]/page.tsx currentPair)와 반드시 같은 정의여야 홈 이어하기 카드와
+  // 진행 화면 표기가 일치한다. 장면 전부 완료(후속 활동 단계, resumeScene=null)는 n=N.
+  const N = scenes.filter((s) => sceneTypeForRow(s) === '대화').length;
+  const n = !resumeScene
+    ? N
+    : sceneTypeForRow(resumeScene) === '도입'
+      ? 1
+      : Math.max(
+          1,
+          scenes.filter((s) => sceneTypeForRow(s) === '전개' && s.scene_order <= resumeScene.scene_order).length,
+        );
 
   return Response.json({
     sessionId: session.id,
