@@ -35,6 +35,19 @@ export type CacheOpts = SynthesizeOpts & {
   storage?: SupabaseClient;
 };
 
+/**
+ * 로컬 1층 캐시 쓰기는 best-effort — 서버리스(Vercel)는 배포 디렉토리가 read-only(EROFS)라
+ * 쓰기 실패가 정상 경로다. 여기서 throw하면 합성이 성공했는데도 audioUrl=null로 무음이 되고
+ * 타입캐스트 과금만 남는다 (2026-08-14 스테이징 무음 원인). Storage 2층이 런타임 캐시의 SoT.
+ */
+function tryWriteLocal(dir: string, key: string, mp3: Buffer): void {
+  try {
+    writeLocal(dir, key, mp3);
+  } catch (error) {
+    console.warn(`[tts] 로컬 캐시 쓰기 생략(${key}): ${error instanceof Error ? error.message : error}`);
+  }
+}
+
 export async function synthesizeWithCache(
   text: string,
   voiceId: string,
@@ -56,13 +69,13 @@ export async function synthesizeWithCache(
   if (opts.storage) {
     const remote = await readStorage(opts.storage, key);
     if (remote) {
-      writeLocal(localDir, key, remote); // 로컬로 승격 — 다음 조회는 디스크
+      tryWriteLocal(localDir, key, remote); // 로컬로 승격 — 다음 조회는 디스크
       return { buffer: remote, key, source: 'storage', url: storageUrl(opts.storage, key) };
     }
   }
 
   const mp3 = await synthesize(text, voiceId, { model: opts.model, emotion: opts.emotion });
-  writeLocal(localDir, key, mp3);
+  tryWriteLocal(localDir, key, mp3);
   let url: string | undefined;
   if (opts.storage) {
     await writeStorage(opts.storage, key, mp3);
