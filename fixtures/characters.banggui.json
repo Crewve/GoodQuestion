@@ -39,7 +39,7 @@
     {
       "external_id": "ch_banggui_village_chief",
       "name": "마을 이장님",
-      "display_name": "마을 이장",
+      "display_name": "마을 이장님",
       "tagline": "마을 일을 챙기며 현실적인 문제 해결을 중요하게 생각하는, 친근하고 반응이 큰 어른",
       "traits": [
         { "trait": "마을 사람들을 대표함", "detail": "마을의 불편이나 문제를 먼저 살피고 사람들의 의견을 모은다." },

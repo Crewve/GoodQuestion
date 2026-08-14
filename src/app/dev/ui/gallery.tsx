@@ -15,6 +15,7 @@ import { useTurnStore, type TurnPhase } from '@/store/turn';
 import { NOTICES } from '../../my/notices/notices-data';
 import { INQUIRIES } from '../../my/support/inquiries-data';
 import story from '../../../../fixtures/story.banggui.json';
+import charactersFixture from '../../../../fixtures/characters.banggui.json';
 
 type FixtureScene = {
   external_id: string;
@@ -34,11 +35,10 @@ const stepOf = (scene: FixtureScene) => {
   const pair = orderedScenes.filter((s) => s.label?.startsWith('전개') && s.scene_order <= scene.scene_order).length;
   return pair === 0 ? 1 : pair + 1;
 };
-const CHARACTER_NAMES: Record<string, string> = {
-  ch_banggui_daughter_in_law: '방귀 며느리',
-  ch_banggui_father_in_law: '시아버지',
-  ch_banggui_village_chief: '마을이장',
-};
+// 표기는 fixtures display_name에서 파생 — 실제 /api/sessions의 characterName과 같은 값 (QA 11)
+const CHARACTER_NAMES: Record<string, string> = Object.fromEntries(
+  charactersFixture.characters.map((c) => [c.external_id, c.display_name]),
+);
 
 const noop = () => {};
 const asyncNoop = async () => {};

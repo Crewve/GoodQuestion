@@ -124,67 +124,81 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
 
       <main className="mx-auto w-full min-h-0 max-w-[1194px] flex-1 overflow-y-auto px-6 py-6">
         {stories.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
+          // '필터 초기화' 버튼은 삭제 (QA 19) — 상단 필터 칩의 '전체'로 되돌린다
+          <div className="flex h-full flex-col items-center justify-center text-center">
             <p className="font-display text-2xl text-ink">해당 조건의 이야기가 없어요</p>
-            <Link
-              href={withParams('/stories', { child })}
-              replace
-              // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
-              className="flex h-[55px] items-center rounded-full bg-primary px-8 font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90"
-            >
-              필터 초기화
-            </Link>
           </div>
         ) : (
           <ul className="grid grid-cols-3 gap-5">
             {stories.map((story) => {
               const levelLabel = difficultyLabel(story.difficulty);
+              // 콘텐츠가 없는 이야기(MVP는 '방귀 뀌는 며느리' 1편)는 UI 비활성 — 링크 대신 표시 전용 카드 (QA 3)
+              const available = story.id === BANGGUI_STORY_ID;
+              const body = (
+                <>
+                  {available ? (
+                    <Image
+                      src={storyThumbnailUrl(true)}
+                      alt=""
+                      width={1448}
+                      height={1086}
+                      sizes="370px"
+                      loading="eager"
+                      className="aspect-[5/2] w-full object-cover"
+                    />
+                  ) : (
+                    <div className="aspect-[5/2] w-full bg-sunny/15" aria-hidden />
+                  )}
+                  <div className="flex flex-1 flex-col gap-2 p-4">
+                    <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
+                    <p className="truncate text-lg text-[#75664F]">{story.summary}</p>
+                    <div className="mt-auto flex flex-wrap items-center gap-1.5">
+                      {(story.topics ?? []).slice(0, 2).map((t) => (
+                        <span
+                          key={t}
+                          className={`rounded-md px-2.5 py-1 font-display text-lg font-bold leading-none ${CARD_TOPIC_CHIP}`}
+                        >
+                          {t}
+                        </span>
+                      ))}
+                      <span
+                        className={`rounded-lg px-2.5 py-1 font-display text-lg font-bold leading-none ${
+                          DIFFICULTY_CHIP_TINT[levelLabel] ?? 'bg-sky/15 text-[#075985]'
+                        }`}
+                      >
+                        {levelLabel}
+                      </span>
+                      {story.estimated_minutes != null && (
+                        <span className="rounded-lg bg-[#F5EDE0] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#75664F]">
+                          {story.estimated_minutes}분
+                        </span>
+                      )}
+                      {!available && (
+                        <span className="rounded-lg bg-[#EFE7DA] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#75664F]">
+                          준비 중
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </>
+              );
               return (
                 <li key={story.id}>
-                  <Link
-                    href={withParams(`/stories/${story.id}`, { child })}
-                    className="flex h-full flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] active:opacity-80"
-                  >
-                    {story.id === BANGGUI_STORY_ID ? (
-                      <Image
-                        src={storyThumbnailUrl(true)}
-                        alt=""
-                        width={1448}
-                        height={1086}
-                        sizes="370px"
-                        loading="eager"
-                        className="aspect-[5/2] w-full object-cover"
-                      />
-                    ) : (
-                      <div className="aspect-[5/2] w-full bg-sunny/15" aria-hidden />
-                    )}
-                    <div className="flex flex-1 flex-col gap-2 p-4">
-                      <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
-                      <p className="truncate text-lg text-[#75664F]">{story.summary}</p>
-                      <div className="mt-auto flex flex-wrap items-center gap-1.5">
-                        {(story.topics ?? []).slice(0, 2).map((t) => (
-                          <span
-                            key={t}
-                            className={`rounded-md px-2.5 py-1 font-display text-lg font-bold leading-none ${CARD_TOPIC_CHIP}`}
-                          >
-                            {t}
-                          </span>
-                        ))}
-                        <span
-                          className={`rounded-lg px-2.5 py-1 font-display text-lg font-bold leading-none ${
-                            DIFFICULTY_CHIP_TINT[levelLabel] ?? 'bg-sky/15 text-[#075985]'
-                          }`}
-                        >
-                          {levelLabel}
-                        </span>
-                        {story.estimated_minutes != null && (
-                          <span className="rounded-lg bg-[#F5EDE0] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#75664F]">
-                            {story.estimated_minutes}분
-                          </span>
-                        )}
-                      </div>
+                  {available ? (
+                    <Link
+                      href={withParams(`/stories/${story.id}`, { child })}
+                      className="flex h-full flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] active:opacity-80"
+                    >
+                      {body}
+                    </Link>
+                  ) : (
+                    <div
+                      aria-disabled
+                      className="flex h-full flex-col overflow-hidden rounded-[20px] bg-white opacity-50 shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
+                    >
+                      {body}
                     </div>
-                  </Link>
+                  )}
                 </li>
               );
             })}
