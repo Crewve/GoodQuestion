@@ -70,9 +70,11 @@ export function NarrationScene({
   const sentences = useMemo(() => splitNarrationSentences(description), [description]);
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  /** 자동재생 차단 안내 — 대화 화면과 동일하게 '다시 듣기'가 복구 제스처임을 알린다 (QA 30·33) */
+  const [blocked, setBlocked] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isLast = index === sentences.length - 1;
-  // 문장 오디오 종료 전에는 화살표·진행하기 잠금 — 개발 환경은 확인 편의상 즉시 넘김 허용
+  // 문장 오디오 종료 전에는 화살표 잠금 — 개발 환경은 확인 편의상 즉시 넘김 허용
   const locked = isPlaying && process.env.NODE_ENV !== 'development';
 
   const playCurrent = useCallback(() => {
@@ -81,10 +83,15 @@ export function NarrationScene({
     audio.src = narrationSentenceAudioUrl(narrationAudioUrl, index);
     audio.currentTime = 0;
     setIsPlaying(true);
-    // 실패(자동재생 차단·파일 부재)는 조용히 무시 — 텍스트는 이미 노출, '다시 듣기'가 재시도 경로.
+    setBlocked(false);
     // 잠금 해제는 재생 미시작으로 남은 때만 — 연타로 이전 play()가 중단된 rejection이 새 재생의 잠금을 풀지 않게
-    void audio.play().catch(() => {
-      if (audio.paused) setIsPlaying(false);
+    void audio.play().catch((error: unknown) => {
+      if (!audio.paused) return; // 새 재생이 이미 시작됨 — 이전 play()의 중단 rejection
+      setIsPlaying(false);
+      // 자동재생 차단(이어하기·새로고침 직후 등)은 텍스트만 남아 "소리가 안 난다"로 보인다.
+      // 대화 화면(dialogue-scene)과 달리 안내가 없어 복구 경로를 몰랐던 문제 — 안내를 노출한다 (QA 30·33).
+      // 파일 부재·디코드 실패는 error 이벤트로 따로 처리되므로 여기서는 차단만 구분한다.
+      if ((error as DOMException)?.name === 'NotAllowedError') setBlocked(true);
     });
   }, [index, narrationAudioUrl]);
 
@@ -100,16 +107,19 @@ export function NarrationScene({
     const audio = audioRef.current;
     if (!audio) return;
     const unlock = () => setIsPlaying(false);
+    const clearBlocked = () => setBlocked(false); // 재생이 실제로 시작되면 안내 회수
     audio.addEventListener('ended', unlock);
     audio.addEventListener('error', unlock);
+    audio.addEventListener('playing', clearBlocked);
     return () => {
       audio.removeEventListener('ended', unlock);
       audio.removeEventListener('error', unlock);
+      audio.removeEventListener('playing', clearBlocked);
     };
   }, []);
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col">
+    <section className="relative flex min-h-0 flex-1 flex-col">
       <audio ref={audioRef} hidden />
 
       {/* 장면 일러스트 — 시안 1154×592, 좌우 20px 여백·라운드 20 */}
@@ -161,10 +171,21 @@ export function NarrationScene({
 
       {/* 하단 버튼 — 다시 듣기(sage) 단독. '진행하기'는 삭제하고 진행은 화살표로 일원화 (QA 7) */}
       <div className="flex h-[88px] shrink-0 items-center justify-center px-5 pb-4">
+        {/* 자동재생 차단 안내 — 버튼 줄 위에 겹쳐 띄워 레이아웃(88px 고정)을 흔들지 않는다 */}
+        {blocked && (
+          <p
+            role="status"
+            className="pointer-events-none absolute inset-x-0 bottom-[92px] text-center font-display text-xl text-ink"
+          >
+            🔊 다시 듣기를 눌러 소리를 들어 보자!
+          </p>
+        )}
         <button
           type="button"
           onClick={playCurrent}
-          className="flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white"
+          className={`flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white ${
+            blocked ? 'ring-4 ring-primary' : '' // 차단 시 복구 버튼을 눈에 띄게
+          }`}
         >
           <RepeatIcon />
           다시 듣기
