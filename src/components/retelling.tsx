@@ -48,8 +48,8 @@ function MicIcon({ className = 'size-6' }: { className?: string }) {
 export type RetellingProps = {
   /** 장면 카드 4컷 — 2.4.4에서 배치한 순서(=정답 순서)대로 컨테이너가 정렬해 전달 */
   cards: PostActivityCard[];
-  /** 핵심 단어 4개 (post_activity_config.keywords) — cards와 인덱스로 짝지어 4세트 표시 */
-  keywords: string[];
+  /** keywords[i] = cards[i] 장면의 핵심 단어 묶음 (post_activity_config.keywords) — 카드 아래 칩으로 나열 */
+  keywords: string[][];
   /** STT 어휘 힌트용 장면 external_id — 미지정 시 기본 어휘(제목·주제·캐릭터)만 사용 */
   sceneId?: string;
   /**
@@ -162,14 +162,13 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
 
       {/* 장면 카드 + 핵심 단어 세트 — 표시 전용, 사용자 조작 불가 (2.4.5 구성요소).
           스토리보드처럼 콘텐츠 높이만 차지(flex-1 미사용) — 아래 요소들이 위로 붙는다.
-          열 수는 카드 수를 따른다(수정사항 C3 / QA 12로 4세트 고정 해제) */}
+          열 수는 카드 수를 따른다(하드코딩 4 제거 — 콘텐츠 교체만으로 장면 수가 바뀌어도 따라간다) */}
       <div
         style={{ gridTemplateColumns: `repeat(${Math.max(cards.length, 1)}, minmax(0, 1fr))` }}
         className="grid shrink-0 gap-4"
       >
         {cards.map((card, index) => {
-          const keyword = keywords[index];
-          const included = !!keyword && !!stt?.text.includes(keyword); // 포함 여부 시각 피드백 (비차단)
+          const sceneKeywords = keywords[index] ?? [];
           return (
             <figure key={card.id} className="flex min-h-0 flex-col gap-2.5">
               {/* 피그마 장면 카드 275×218 비율 고정 — flex 잔여 공간이 카드를 세로로 늘리지 않게 */}
@@ -178,15 +177,25 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
                 <img src={card.imageUrl} alt={card.label} className="h-full w-full object-cover" />
               </div>
               {/* 칩 글자 — 피그마 원색 sage 채택(2026-08-14 "피그마와 동일하게" 지시, 대비 미달 인지).
-                  포함(✓) 상태는 시안 미정의라 기존 채움 피드백 유지 */}
-              {keyword && (
-                <figcaption
-                  className={`flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-sage font-display text-lg ${
-                    included ? 'bg-sage text-ink' : 'bg-sage/10 text-sage'
-                  }`}
-                >
-                  {included && <CheckIcon className="w-3.5 shrink-0" />}
-                  {keyword}
+                  포함(✓) 상태는 시안 미정의라 기존 채움 피드백 유지.
+                  시안은 장면당 칩 1개지만 QA 12로 장면별 핵심 단어를 3~4개 주기로 했다 —
+                  카드 폭 안에서 2열 그리드로 쌓아 칩 너비를 고르게 맞춘다(기획 전달 시안 2026-08-15) */}
+              {sceneKeywords.length > 0 && (
+                <figcaption className="grid shrink-0 grid-cols-2 gap-1.5">
+                  {sceneKeywords.map((keyword) => {
+                    const included = !!stt?.text.includes(keyword); // 포함 여부 시각 피드백 (비차단)
+                    return (
+                      <span
+                        key={keyword}
+                        className={`flex h-11 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-sage px-2 font-display text-lg ${
+                          included ? 'bg-sage text-ink' : 'bg-sage/10 text-sage'
+                        }`}
+                      >
+                        {included && <CheckIcon className="w-3.5 shrink-0" />}
+                        {keyword}
+                      </span>
+                    );
+                  })}
                 </figcaption>
               )}
             </figure>

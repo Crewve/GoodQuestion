@@ -1,7 +1,7 @@
 'use client';
 // 카드 순서 배열 화면 (T053, 기능명세서 2.4.4 "장면 카드 맞추기") — 무작위 N장을 슬롯 1~N에 배치.
-// 카드 수는 post_activity_config.cards 길이를 그대로 따른다(2026-08-15 수정사항 C3 / QA 12 "카드 몇가지 더 추가"로
-// 4장 고정 → 가변). 트레이·슬롯 열 수도 같이 늘어나므로 Tailwind 정적 클래스 대신 gridTemplateColumns로 지정한다.
+// 슬롯 수는 post_activity_config.cards 길이를 그대로 따른다(하드코딩 4 제거 — 콘텐츠 교체만으로 장면 수가
+// 바뀌어도 화면이 따라간다). 열 수가 런타임 값이라 Tailwind 정적 클래스 대신 gridTemplateColumns로 지정한다.
 // 드래그앤드롭 기본 + Tap-to-Move 보조(FR-020, 핸드오프 §6.1 — 저학년 드래그 미숙 대비 병행 제공).
 // 드래그는 Pointer Events 직접 구현(2026-08-13) — HTML5 DnD API는 터치(태블릿 1순위 타깃)에서
 // 동작하지 않아 교체. 이동 8px 전에는 탭으로 취급해 Tap-to-Move와 충돌하지 않는다.

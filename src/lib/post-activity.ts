@@ -6,7 +6,8 @@ export type PostActivityCard = { id: string; image_key: string; label: string };
 export type PostActivityConfig = {
   cards: PostActivityCard[];
   answer_order: string[];
-  keywords: string[];
+  /** keywords[i] = answer_order[i] 장면의 핵심 단어 묶음 (2.4.5 카드 아래 칩들, QA 12) */
+  keywords: string[][];
 };
 
 export type PostActivityRequest =
@@ -21,6 +22,22 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((v) => typeof v === 'string');
 }
 
+/**
+ * keywords 정규화 — 장면당 단어 묶음(string[][])이 현재 형태.
+ * 장면당 1개였던 이전 형태(string[])도 그대로 받아 [단어] 한 묶음으로 감싼다:
+ * 코드 배포가 시드 재실행보다 먼저 나가는 순간이 있어(스테이징 자동 배포) 그 사이에도 화면이 죽지 않게 한다.
+ */
+function normalizeKeywords(value: unknown): string[][] | null {
+  if (!Array.isArray(value)) return null;
+  if (isStringArray(value)) return value.map((word) => [word]);
+  const groups: string[][] = [];
+  for (const group of value) {
+    if (!isStringArray(group) || group.length === 0) return null;
+    groups.push(group);
+  }
+  return groups;
+}
+
 /** DB JSON → 검증된 config. 미저작(null)·형식 불일치는 null — 라우트에서 오류 응답으로 변환. */
 export function parsePostActivityConfig(value: unknown): PostActivityConfig | null {
   if (typeof value !== 'object' || value === null) return null;
@@ -31,12 +48,14 @@ export function parsePostActivityConfig(value: unknown): PostActivityConfig | nu
     const { id, image_key, label } = card as Record<string, unknown>;
     if (typeof id !== 'string' || typeof image_key !== 'string' || typeof label !== 'string') return null;
   }
-  if (!isStringArray(answer_order) || !isStringArray(keywords)) return null;
-  // 카드·정답 순서·키워드는 4세트 쌍(기능명세서 2.4.5) — 길이가 어긋난 콘텐츠는 저작 오류
-  if (answer_order.length !== cards.length || keywords.length !== cards.length) return null;
+  if (!isStringArray(answer_order)) return null;
+  const keywordGroups = normalizeKeywords(keywords);
+  if (keywordGroups === null) return null;
+  // 카드·정답 순서·키워드 묶음은 장면 단위로 1:1(기능명세서 2.4.5) — 길이가 어긋난 콘텐츠는 저작 오류
+  if (answer_order.length !== cards.length || keywordGroups.length !== cards.length) return null;
   const cardIds = new Set((cards as PostActivityCard[]).map((c) => c.id));
   if (!answer_order.every((id) => cardIds.has(id))) return null;
-  return { cards: cards as PostActivityCard[], answer_order, keywords };
+  return { cards: cards as PostActivityCard[], answer_order, keywords: keywordGroups };
 }
 
 /** 카드 순서 정답 판정 — answer_order와 위치까지 완전 일치해야 정답. */
