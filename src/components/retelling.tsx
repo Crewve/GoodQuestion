@@ -145,15 +145,15 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
   const micLabel = recorder.isRecording ? '말 끝났어요! (녹음 마치기)' : stt ? '다시 말하기' : '눌러서 말하기';
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col gap-4 px-6 pb-5 pt-5">
+    <section className="flex min-h-0 flex-1 flex-col gap-6 px-6 pb-6 pt-8">
       <audio ref={hintAudioRef} hidden />
 
-      {/* 활동 안내 — 스토리보드(피그마 2.4.5) 원문으로 교체 (2026-08-13) + 보조 안내 (instruction-banner 예시 문구) */}
+      {/* 활동 안내 — 스토리보드(피그마 2.4.5) 원문. 실측(2026-08-14): 제목 32 · 보조 22 #8A7A68 · 간격 8 */}
       <div className="shrink-0">
         <p className="font-display text-[32px] leading-snug text-ink">
           아래 단어들을 넣어서 나만의 이야기를 만들어 보세요
         </p>
-        <p className="mt-3 font-display text-[22px] text-[#6F6152]">
+        <p className="mt-2 font-display text-[22px] text-[#8A7A68]">
           &quot;며느리는 솔직하게 말하기로 했어요&quot;처럼 자유롭게 이야기를 들려주세요
         </p>
       </div>
@@ -171,11 +171,12 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
                 {/* eslint-disable-next-line @next/next/no-img-element -- Storage 외부 URL (기존 화면과 동일 패턴) */}
                 <img src={card.imageUrl} alt={card.label} className="h-full w-full object-cover" />
               </div>
-              {/* 칩 글자 — 시안 sage 원색은 대비 미달이라 같은 계열 명도만 낮춘 #177A4F (핸드오프 대비 하한 4.5:1) */}
+              {/* 칩 글자 — 피그마 원색 sage 채택(2026-08-14 "피그마와 동일하게" 지시, 대비 미달 인지).
+                  포함(✓) 상태는 시안 미정의라 기존 채움 피드백 유지 */}
               {keyword && (
                 <figcaption
                   className={`flex h-11 shrink-0 items-center justify-center rounded-[10px] border-[1.5px] border-sage font-display text-lg ${
-                    included ? 'bg-sage text-ink' : 'bg-sage/10 text-[#177A4F]'
+                    included ? 'bg-sage text-ink' : 'bg-sage/10 text-sage'
                   }`}
                 >
                   {included ? '✓ ' : ''}
@@ -187,11 +188,11 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
         })}
       </div>
 
-      {/* 내가 한 말 — 상시 노출 카드, 인식 실패 시 비워둔 채 유지 (2.4.5) */}
-      <div className="w-full shrink-0 rounded-[20px] border border-sky/25 bg-[#DDF0FB]/80 px-5 py-4">
-        {/* 라벨 — 시안 sky 원색은 대비 미달이라 같은 계열 명도만 낮춘 #1D6FAE (핸드오프 대비 하한 4.5:1) */}
-        <p className="text-lg font-bold text-[#1D6FAE]">내가 한 말</p>
-        <p className={`mt-2 min-h-14 font-display text-[22px] leading-normal ${stt ? 'text-ink' : 'text-ink/70'}`}>
+      {/* 내가 한 말 — 상시 노출 카드, 인식 실패 시 비워둔 채 유지 (2.4.5).
+          실측(2026-08-14): pad 20 · 라벨 18 Bold sky 원색(대비 미달 인지 채택) · 본문 22 간격 12 */}
+      <div className="w-full shrink-0 rounded-[20px] border border-sky/25 bg-[#DDF0FB]/80 p-5">
+        <p className="text-lg font-bold text-sky">내가 한 말</p>
+        <p className={`mt-3 min-h-14 font-display text-[22px] leading-normal ${stt ? 'text-ink' : 'text-ink/70'}`}>
           {stt ? stt.text : '마이크를 눌러 이야기를 들려주세요'}
         </p>
       </div>
@@ -234,8 +235,9 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
         )}
       </div>
 
-      {/* 마이크(버튼 시작·재녹음 겸용)·보내기 — 스토리보드 실측(2026-08-13): 마이크 원형 88px·글리프 40px·간격 20px·보내기 h48 */}
-      <div className="flex shrink-0 items-center justify-center gap-5">
+      {/* 마이크(버튼 시작·재녹음 겸용)·보내기 — 피그마 실측(2026-08-14 재대조): 마이크 원형 88·글리프 28·
+          간격 16·보내기 h48 pad 20·마이크 그림자 (0,10,28,-8) primary 33% */}
+      <div className="flex shrink-0 items-center justify-center gap-4">
         <button
           type="button"
           onClick={handleMicClick}
@@ -244,18 +246,18 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
           style={
             recorder.isRecording ? { transform: `scale(${1 + Math.min(recorder.level * 2, 0.15)})` } : undefined
           }
-          className={`flex size-22 items-center justify-center rounded-full text-white shadow-[0_8px_24px_-6px_rgba(255,122,61,0.5)] transition-transform ${
+          className={`flex size-22 items-center justify-center rounded-full text-white shadow-[0_10px_28px_-8px_rgba(255,122,61,0.33)] transition-transform ${
             recorder.isRecording ? 'bg-sunny' : 'bg-primary'
           } disabled:opacity-40`}
         >
-          <MicIcon className="size-10" />
+          <MicIcon className="size-7" />
         </button>
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!sendEnabled}
           // 시안 확정(2026-08-13 사용자 지시): sage + 흰 글자 — 대비 2.4:1로 하한(4.5:1) 미달임을 인지하고 채택
-          className="h-12 rounded-full bg-sage px-6 font-display text-lg font-bold text-white active:bg-ink disabled:opacity-40"
+          className="h-12 rounded-full bg-sage px-5 font-display text-lg font-bold text-white active:bg-ink disabled:opacity-40"
         >
           보내기 →
         </button>

@@ -86,8 +86,8 @@ export function PostActivityFlow({
           <span className="font-display text-2xl text-current">나가기</span>
         </button>
         <span
-          // 스토리보드 주황 계열 — 시안 원색(#FF7A3D)은 페치 배경 대비 2.4:1 미달이라 명도만 낮춘 #B33D0D(4.9:1, 핸드오프 §대비 하한)
-          className="rounded-full bg-[#FFE8C9] px-3.5 py-1.5 font-display text-[22px] leading-none text-[#B33D0D]"
+          // 피그마 원색 primary 채택(2026-08-14 "피그마와 동일하게" 지시) — 페치 배경 대비 2.4:1 미달 인지
+          className="rounded-full bg-[#FFE8C9] px-3.5 py-1.5 font-display text-[22px] leading-none text-primary"
           aria-label={`학습완료 활동 진행 ${n}단계 / 전체 2단계`}
         >
           {n} / 2

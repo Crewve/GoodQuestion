@@ -19,9 +19,21 @@ export function MyPageHeader({ backHref }: { backHref?: string }) {
           <Link
             href={backHref}
             aria-label="뒤로 가기"
-            className="flex size-12 shrink-0 items-center justify-center text-2xl text-ink active:opacity-70"
+            className="flex size-12 shrink-0 items-center justify-center text-ink active:opacity-70"
           >
-            ‹
+            {/* 피그마 CaretLeft 채움형 글리프(9×16.5/48 탭 영역) — 텍스트 ‹ 는 획이 얇아 교체 (2026-08-14) */}
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              aria-hidden
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M14.5 4.5 7 12l7.5 7.5" />
+            </svg>
           </Link>
         ) : (
           // 시안 공통: 뒤로가기 없는 화면도 타이틀은 좌측 72px 정렬 (빈 슬롯 유지)
