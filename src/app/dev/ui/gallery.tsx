@@ -28,6 +28,13 @@ type FixtureScene = {
 const scenes = story.scenes as FixtureScene[];
 // 장면 선택기 — 이야기 진행 전 장면(도입→전개→대화, scene_order 순) 9개를 한 목록에서 검토 가능해야 한다
 const orderedScenes = [...scenes].sort((a, b) => a.scene_order - b.scene_order);
+// 진행 헤더 n/N — 실제 /play와 동일 규칙: N=대화 쌍 수(4), 도입은 1 고정, 이후 현재 속한 전개·대화 쌍 번호
+const TOTAL_PAIRS = orderedScenes.filter((s) => s.type === 'dialogue').length;
+const pairOf = (scene: FixtureScene) =>
+  Math.max(
+    1,
+    orderedScenes.filter((s) => s.label?.startsWith('전개') && s.scene_order <= scene.scene_order).length,
+  );
 const CHARACTER_NAMES: Record<string, string> = {
   ch_banggui_daughter_in_law: '방귀 며느리',
   ch_banggui_father_in_law: '시아버지',
@@ -289,7 +296,7 @@ export function UiRehearsalGallery({ ctx }: { ctx: RouteContext }) {
       {route && <iframe src={route} title="실제 화면 미리보기" className="h-full w-full border-0" />}
       {!route && view === 'scene' && (
         <>
-          <ProgressHeader title="방귀 뀌는 며느리" n={currentScene.scene_order} N={scenes.length} onExit={noop} />
+          <ProgressHeader title="방귀 뀌는 며느리" n={pairOf(currentScene)} N={TOTAL_PAIRS} onExit={noop} />
           {currentScene.type === 'dialogue' ? (
             <DialogueScene
               key={currentScene.external_id}
