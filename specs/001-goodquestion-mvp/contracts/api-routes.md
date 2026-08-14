@@ -29,7 +29,7 @@
 |---|---|
 | 요청 | `{ childId, storyId }` |
 | 처리 | 진행 중 세션 조회 또는 생성. 재개 지점: `scene_goal_met=true` 최신 장면의 `scene_order+1`, 없으면 도입 완료 직후(scene_order=2), 도입 미완은 도입 1문장부터 |
-| 응답 200 | `{ sessionId, childName, resumeSceneId, resumeSceneOrder, scenes: [{ id, order, type: '도입'\|'전개'\|'대화', description?, characterName?, openingText?, openingAudioUrl?, imageUrl }], progress: { n, N, percent } }` — 진행률 n/N은 전개+대화 쌍=1(도입 제외) 규칙 |
+| 응답 200 | `{ sessionId, childName, resumeSceneId, resumeSceneOrder, scenes: [{ id, order, type: '도입'\|'전개'\|'대화', description?, characterName?, openingText?, openingAudioUrl?, imageUrl }], progress: { n, N, percent } }` — 진행률 n/N은 도입 포함 5분할 규칙(N=도입 1+전개·대화 쌍 수, 도입=1, 전개k·대화k=k+1 — 2026-08-14 정정) |
 | R-07 | 자리표시자('ㅇㅇ') 오프닝의 `openingAudioUrl`은 실명 치환 런타임 TTS 합성본(캐시) 우선 — 시간 예산(3.5초) 내 미준비 시 '친구야' 사전 생성본 폴백. `openingText`(대화 장면 전용)는 서버가 고른 오디오와 표기를 항상 일치시킨 표시 텍스트 — 클라이언트는 이 값을 그대로 렌더한다(2026-08-11 확정) |
 
 ## POST `/api/post-activity` — 학습완료 활동
