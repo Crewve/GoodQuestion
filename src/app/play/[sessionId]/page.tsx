@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Attribution } from '@/components/attribution';
 import { withChild } from '@/components/bottom-nav';
 import { DialogueScene } from '@/components/dialogue-scene';
+import { ConfettiIcon } from '@/components/icons';
 import { NarrationScene } from '@/components/narration-scene';
 import { ProgressHeader } from '@/components/progress-header';
 import { useAudioUnlock } from '@/hooks/useAudioUnlock';
@@ -171,7 +172,10 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
   if (finished) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-        <p className="font-display text-3xl text-ink">이야기를 끝까지 들었어요! 🎉</p>
+        {/* 이모지(🎉)는 기기별 렌더가 달라 공용 SVG로 교체 (수정사항 C1 / QA 4) */}
+        <p className="flex items-center gap-2 font-display text-3xl text-ink">
+          이야기를 끝까지 들었어요! <ConfettiIcon className="size-8" />
+        </p>
         <p className="font-display text-xl text-ink">학습완료 활동으로 이동하고 있어요…</p>
       </main>
     );

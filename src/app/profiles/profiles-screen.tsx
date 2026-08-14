@@ -8,6 +8,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChildProfileForm } from '@/components/child-profile-form';
+import { PlusCircleIcon, UserIcon } from '@/components/icons';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { koreanAge, mergeAddedProfiles } from '@/lib/profile-display';
 import { saveChildProfile } from './save-profile';
@@ -23,7 +24,8 @@ export type ChildProfile = {
 const AVATAR_KEYS = new Set<string>(['boy-1', 'boy-2', 'girl-1', 'girl-2']);
 
 // 카드 색상 — 시안 2.1: 슬롯 순서대로 오렌지·써니·베리 파스텔 순환 (최대 3명 시안 실측)
-// 배지 글자는 시안의 흰색 12px가 아동 하한(18px·대비 4.5:1) 미달이라 ink 18px로 상향.
+// 배지 글자색은 스토리보드 실측 흰색으로 복귀(QA 13 "색상 기준은 스토리보드 기준으로") — 크기만 아동 하한
+// 18px 유지(핸드오프 가이드 §3, 색이 아닌 별도 기준). Sunny 배지 위 흰 글자는 대비 1.7:1 미달 인지하고 채택.
 const CARD_STYLES = [
   { card: 'bg-[#FFEDE3]', badge: 'bg-primary', glow: 'shadow-[0_6px_20px_rgba(255,122,61,0.25)]', spark: 'text-primary' },
   { card: 'bg-[#FFF5D4]', badge: 'bg-sunny', glow: 'shadow-[0_6px_20px_rgba(255,201,60,0.25)]', spark: 'text-sunny' },
@@ -95,8 +97,8 @@ export function ProfilesScreen({ profiles: serverProfiles }: { profiles: ChildPr
 
       <div className="shrink-0 px-6 pt-5 text-center">
         <h1 className="font-display text-[2rem] leading-normal text-ink">오늘은 누가 이야기할까요?</h1>
-        {/* 시안 #8A7A68은 Base 배경 대비 3.9:1 — 아동 하한 4.5:1 충족 위해 ink/70로 상향 */}
-        <p className="mt-1 font-display text-lg text-ink/70">학습할 친구를 선택해 주세요.</p>
+        {/* 스토리보드 실측 #8A7A68 (Base 배경 대비 3.9:1 — QA 13 지시로 시안 원색 채택) */}
+        <p className="mt-1 font-display text-lg text-[#8A7A68]">학습할 친구를 선택해 주세요.</p>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6 pb-8">
@@ -132,9 +134,7 @@ export function ProfilesScreen({ profiles: serverProfiles }: { profiles: ChildPr
                       className="size-[74%] object-contain"
                     />
                   ) : (
-                    <span aria-hidden className="text-4xl">
-                      🙂
-                    </span>
+                    <UserIcon className="size-12 text-primary/70" />
                   )}
                   <span aria-hidden className="absolute -top-1.5 -right-1 font-display text-sm text-sunny">
                     ★
@@ -148,7 +148,7 @@ export function ProfilesScreen({ profiles: serverProfiles }: { profiles: ChildPr
                   <span className="font-display text-2xl text-ink">{profile.name}</span>
                   {/* 계산값 0세 미만/150세 이상은 비정상 데이터 — 배지 미표시 (2.1 유효성) */}
                   {age !== null && (
-                    <span className={`rounded-full px-3 py-0.5 text-lg font-bold text-ink ${style.badge}`}>
+                    <span className={`rounded-full px-3 py-0.5 text-lg font-bold text-white ${style.badge}`}>
                       만 {age}세
                     </span>
                   )}
@@ -166,15 +166,15 @@ export function ProfilesScreen({ profiles: serverProfiles }: { profiles: ChildPr
             >
               <span
                 aria-hidden
-                // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
-                className="flex size-16 items-center justify-center rounded-2xl bg-primary text-4xl font-bold text-ink"
+                // 스토리보드 PlusCircle: primary 채움 원형 글리프 (흰 배경 위 아이콘)
+                className="flex size-16 items-center justify-center rounded-full text-primary"
               >
-                ＋
+                <PlusCircleIcon className="size-16" />
               </span>
               <span className="flex flex-col items-center gap-1">
-                {/* 시안 primary 글자는 흰 배경 대비 2.6:1 — 하한 충족 위해 딥 오렌지로 상향 */}
-                <span className="font-display text-xl text-[#C24E12]">아이 추가</span>
-                <span className="text-lg text-ink/70">새로운 친구를 추가해요.</span>
+                {/* 스토리보드 실측: '아이 추가' primary · 보조 문구 #8A7A68 (QA 13) */}
+                <span className="font-display text-xl text-primary">아이 추가</span>
+                <span className="text-lg text-[#8A7A68]">새로운 친구를 추가해요.</span>
               </span>
             </button>
           )}

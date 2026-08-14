@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
 import { BottomNav, withChild } from '@/components/bottom-nav';
+import { BookIcon, ChatBubbleIcon, ChevronRightIcon, HangingMedalIcon } from '@/components/icons';
 import { assetUrl } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
@@ -29,57 +30,8 @@ const SUMMARY_ERROR_MESSAGE = '학습 정보를 불러오지 못했습니다';
 const LOGOUT_CONFIRM_MESSAGE = '정말 로그아웃 하시겠습니까?';
 const LOGOUT_ERROR = '로그아웃에 실패했어요. 잠시 후 다시 시도해 주세요.';
 
-/* 활동 요약 카드 아이콘 3종 — 스토리보드 3.1: 잉크 아웃라인 글리프(책·말풍선) + 컬러 메달.
-   이모지(📖💬🎖️)는 플랫폼별 렌더가 달라 SVG로 교체(2026-08-13) — 책은 완료 화면 BookIcon,
-   메달 배색은 배지 화면 MedalIcon(#F7C325/#EDB01B/#CE4444/#FFF3C4)과 동일 계열 재사용 */
-function BookIcon({ className = 'size-7' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 5.5C10.5 4.2 8.4 3.6 6 3.6c-1 0-2 .13-3 .4v14.5c1-.27 2-.4 3-.4 2.4 0 4.5.63 6 1.9 1.5-1.27 3.6-1.9 6-1.9 1 0 2 .13 3 .4V4c-1-.27-2-.4-3-.4-2.4 0-4.5.63-6 1.9v14.1" />
-    </svg>
-  );
-}
-
-function ChatBubbleIcon({ className = 'size-7' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3.5c-5 0-9 3.3-9 7.5 0 2.4 1.3 4.5 3.3 5.9l-.7 3.9 4-1.6c.8.2 1.6.3 2.4.3 5 0 9-3.4 9-7.5 0-4.2-4-7.5-9-7.5z" />
-      <circle cx="8.5" cy="11" r="0.9" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="11" r="0.9" fill="currentColor" stroke="none" />
-      <circle cx="15.5" cy="11" r="0.9" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function HangingMedalIcon({ className = 'size-7' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path d="M8.2 1.5h3l2.3 8.2h-3z" fill="#CE4444" />
-      <path d="M15.8 1.5h-3l-2.3 8.2h3z" fill="#983535" />
-      <circle cx="12" cy="15.5" r="6.2" fill="#F7C325" />
-      <circle cx="12" cy="15.5" r="4.7" fill="#EDB01B" />
-      <path d="M12 12.4l1 2 2.2.3-1.6 1.6.4 2.2-2-1-2 1 .4-2.2-1.6-1.6 2.2-.3z" fill="#FFF3C4" />
-    </svg>
-  );
-}
+/* 활동 요약 카드 아이콘 3종(책·말풍선·메달)은 components/icons.tsx 공용 세트로 이동 —
+   완료 화면·배지 화면과 같은 글리프를 쓰기 위함 (수정사항 C1 / QA 4 아이콘 통일) */
 
 /* 설정 메뉴 아이콘 — 스토리보드 3.1: 웜그레이(#8A7A68) 아웃라인 글리프 3종 (이모지 대체 2026-08-13).
    말풍선은 활동 요약 ChatBubbleIcon 재사용, 문서는 GNB NoteIcon 형태 참조한 아웃라인 변형 */
@@ -227,8 +179,9 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
                 className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5 active:bg-white"
               >
                 <HangingMedalIcon className="size-7" />
-                {/* 시안의 Sunny 값 색상은 흰 바탕 대비 미달 — 동일 계열의 진한 색으로 보정 */}
-                <span className="text-xl font-bold text-[#B8860B]">{summary.badgeCount}개</span>
+                {/* 스토리보드 실측 Sunny(#FFC93C) 그대로 — 흰 바탕 대비 1.7:1 미달을 인지하고 채택
+                    (QA 13 "색상 기준은 스토리보드 기준으로") */}
+                <span className="text-xl font-bold text-sunny">{summary.badgeCount}개</span>
                 <span className="text-center text-xs text-[#8A7A68]">획득한 배지</span>
               </Link>
             </div>
@@ -246,9 +199,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
             >
               <item.Icon className="size-6 text-[#8A7A68]" />
               {item.label}
-              <span aria-hidden className="ml-auto text-[#8A7A68]">
-                ›
-              </span>
+              <ChevronRightIcon className="ml-auto size-4 text-[#8A7A68]" />
             </Link>
           ))}
           <div aria-hidden className="h-1 bg-background" />

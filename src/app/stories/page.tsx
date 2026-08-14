@@ -6,6 +6,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
+import { StoryBookIcon } from '@/components/icons';
 import { storyThumbnailUrl } from '@/lib/assets';
 import {
   DIFFICULTY_FILTERS,
@@ -19,14 +20,33 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic'; // 목록은 항상 최신 조회 (필터 재조회 규칙)
 
-/* 칩 팔레트 (피그마 2.2) — 파스텔 배경은 시안 그대로,
-   글자색은 같은 색상 계열에서 명도만 낮춰 대비 4.5:1 하한을 맞춘 값(시안 원색은 2.1~2.5:1 미달). */
-const CARD_TOPIC_CHIP = 'bg-[#F7F1E8] text-[#B33D0D]';
-const DIFFICULTY_CHIP_TINT: Record<string, string> = {
-  '새싹 이야기': 'bg-sage/15 text-[#047857]',
-  '튼튼 이야기': 'bg-sky/15 text-[#075985]',
-  '도전 이야기': 'bg-berry/15 text-[#9F1239]',
+/* 칩 팔레트 — 피그마 「개발 배포용」 '주제'·'난이도' 심볼 실측: 배경 = 해당 색 13% 틴트, 글자 = 같은 색 원색
+   (다름 Primary · 용기 Sunny · 친절 Berry · 나눔 Sage / 새싹 Sage · 튼튼 Sky · 도전 Berry).
+   기존 명도 보정값은 QA 13("색상 기준은 스토리보드 기준으로")에 따라 철회 — 원색 대비 2.1~2.5:1 미달 인지하고 채택. */
+const TOPIC_CHIP_BY_NAME: Record<string, string> = {
+  다름: 'bg-primary/15 text-primary',
+  용기: 'bg-sunny/15 text-sunny',
+  친절: 'bg-berry/15 text-berry',
+  나눔: 'bg-sage/15 text-sage',
 };
+/** 시안에 없는 주제어는 같은 4색을 순환 적용 */
+const TOPIC_CHIP_CYCLE = [
+  'bg-primary/15 text-primary',
+  'bg-sunny/15 text-sunny',
+  'bg-berry/15 text-berry',
+  'bg-sage/15 text-sage',
+] as const;
+
+function topicChip(topic: string, index = 0): string {
+  return TOPIC_CHIP_BY_NAME[topic] ?? TOPIC_CHIP_CYCLE[index % TOPIC_CHIP_CYCLE.length];
+}
+
+const DIFFICULTY_CHIP_TINT: Record<string, string> = {
+  '새싹 이야기': 'bg-sage/15 text-sage',
+  '튼튼 이야기': 'bg-sky/15 text-sky',
+  '도전 이야기': 'bg-berry/15 text-berry',
+};
+const DIFFICULTY_CHIP_FALLBACK = 'bg-sky/15 text-sky';
 
 function withParams(base: string, params: Record<string, string | null>): string {
   const search = new URLSearchParams();
@@ -101,9 +121,7 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
       {/* 헤더 69px — 타이틀 32px Cafe24 + 하단 보더 #F0E4D3 (2.2) */}
       <header className="flex h-[69px] shrink-0 items-center gap-3 border-b border-[#F0E4D3] px-6">
         <h1 className="font-display text-[32px] leading-none text-ink">이야기 모음</h1>
-        <span aria-hidden className="text-[26px]">
-          📖
-        </span>
+        <StoryBookIcon className="h-[26px] w-[29px] text-ink" />
       </header>
 
       <div className="shrink-0">
@@ -151,30 +169,30 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
                   )}
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
-                    <p className="truncate text-lg text-[#75664F]">{story.summary}</p>
+                    <p className="truncate text-lg text-[#8A7A68]">{story.summary}</p>
                     <div className="mt-auto flex flex-wrap items-center gap-1.5">
-                      {(story.topics ?? []).slice(0, 2).map((t) => (
+                      {(story.topics ?? []).slice(0, 2).map((t, i) => (
                         <span
                           key={t}
-                          className={`rounded-md px-2.5 py-1 font-display text-lg font-bold leading-none ${CARD_TOPIC_CHIP}`}
+                          className={`rounded-md px-2.5 py-1 font-display text-lg font-bold leading-none ${topicChip(t, i)}`}
                         >
                           {t}
                         </span>
                       ))}
                       <span
                         className={`rounded-lg px-2.5 py-1 font-display text-lg font-bold leading-none ${
-                          DIFFICULTY_CHIP_TINT[levelLabel] ?? 'bg-sky/15 text-[#075985]'
+                          DIFFICULTY_CHIP_TINT[levelLabel] ?? DIFFICULTY_CHIP_FALLBACK
                         }`}
                       >
                         {levelLabel}
                       </span>
                       {story.estimated_minutes != null && (
-                        <span className="rounded-lg bg-[#F5EDE0] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#75664F]">
+                        <span className="rounded-lg bg-[#F5EDE0] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#8A7A68]">
                           {story.estimated_minutes}분
                         </span>
                       )}
                       {!available && (
-                        <span className="rounded-lg bg-[#EFE7DA] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#75664F]">
+                        <span className="rounded-lg bg-[#EFE7DA] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#8A7A68]">
                           준비 중
                         </span>
                       )}

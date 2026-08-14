@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
+import { ChevronRightIcon, PlayIcon, UserIcon } from '@/components/icons';
 import { avatarUrl, recommendedThumbnailUrls, storyThumbnailUrl, type AvatarKey } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
 import { difficultyLabel } from '@/lib/stories-view';
@@ -40,19 +41,37 @@ const DUMMY_STORIES = [
   { title: '개미와 베짱이', keywords: ['성실', '준비'], difficulty: '쉬움', minutes: 15 },
 ];
 
-/* 칩 팔레트 (피그마 2.0/2.2/2.3 공통) — 파스텔 배경은 시안 그대로,
-   글자색은 같은 색상 계열에서 명도만 낮춰 대비 4.5:1 하한을 맞춘 값(시안 원색은 2.1~2.5:1 미달). */
-const TOPIC_CHIP_TINTS = ['bg-primary/15 text-[#B33D0D]', 'bg-sunny/15 text-[#92400E]'] as const;
-const CARD_TOPIC_CHIP = 'bg-[#F7F1E8] text-[#B33D0D]';
-const DIFFICULTY_CHIP_TINT: Record<string, string> = {
-  '새싹 이야기': 'bg-sage/15 text-[#047857]',
-  '튼튼 이야기': 'bg-sky/15 text-[#075985]',
-  '도전 이야기': 'bg-berry/15 text-[#9F1239]',
+/* 칩 팔레트 — 피그마 「개발 배포용」 '주제'·'난이도' 심볼 실측: 배경 = 해당 색 13% 틴트, 글자 = 같은 색 원색
+   (다름 Primary · 용기 Sunny · 친절 Berry · 나눔 Sage / 새싹 Sage · 튼튼 Sky · 도전 Berry).
+   기존 명도 보정값은 QA 13("색상 기준은 스토리보드 기준으로")에 따라 철회 — 원색 대비 2.1~2.5:1 미달 인지하고 채택. */
+const TOPIC_CHIP_BY_NAME: Record<string, string> = {
+  다름: 'bg-primary/15 text-primary',
+  용기: 'bg-sunny/15 text-sunny',
+  친절: 'bg-berry/15 text-berry',
+  나눔: 'bg-sage/15 text-sage',
 };
+/** 시안에 없는 주제어는 같은 4색을 순환 적용 */
+const TOPIC_CHIP_CYCLE = [
+  'bg-primary/15 text-primary',
+  'bg-sunny/15 text-sunny',
+  'bg-berry/15 text-berry',
+  'bg-sage/15 text-sage',
+] as const;
+
+function topicChip(topic: string, index = 0): string {
+  return TOPIC_CHIP_BY_NAME[topic] ?? TOPIC_CHIP_CYCLE[index % TOPIC_CHIP_CYCLE.length];
+}
+
+const DIFFICULTY_CHIP_TINT: Record<string, string> = {
+  '새싹 이야기': 'bg-sage/15 text-sage',
+  '튼튼 이야기': 'bg-sky/15 text-sky',
+  '도전 이야기': 'bg-berry/15 text-berry',
+};
+const DIFFICULTY_CHIP_FALLBACK = 'bg-sky/15 text-sky';
 
 function difficultyChip(raw: string): { label: string; tint: string } {
   const label = difficultyLabel(raw);
-  return { label, tint: DIFFICULTY_CHIP_TINT[label] ?? 'bg-sky/15 text-[#075985]' };
+  return { label, tint: DIFFICULTY_CHIP_TINT[label] ?? DIFFICULTY_CHIP_FALLBACK };
 }
 
 function Chip({ tint, rounded = 'rounded-md', children }: { tint: string; rounded?: string; children: ReactNode }) {
@@ -115,7 +134,7 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
       {/* Header — 상단 고정 (핸드오프 §2.1, 피그마 h104·하단 보더 #F0E4D3) */}
       <header className="flex h-[104px] shrink-0 items-center justify-between gap-4 border-b border-[#F0E4D3] bg-background/90 px-10">
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="font-display text-lg font-bold text-[#75664F]">반가워요!</p>
+          <p className="font-display text-lg font-bold text-[#8A7A68]">반가워요!</p>
           <h1 className="truncate font-display text-[32px] leading-none text-ink">
             {givenName(childName)} 어린이
           </h1>
@@ -128,7 +147,7 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
           {avatarSrc ? (
             <Image src={avatarSrc} alt="" width={59} height={57} className="size-[59px] object-contain" />
           ) : (
-            <span aria-hidden>👤</span>
+            <UserIcon className="size-9 text-primary" />
           )}
         </Link>
       </header>
@@ -153,12 +172,12 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col">
-              <h2 className="flex items-center gap-1.5 font-display text-xl text-[#B33D0D]">
-                <span aria-hidden>📖</span> 이어하기
+              <h2 className="flex items-center gap-1.5 font-display text-xl text-primary">
+                <PlayIcon className="size-6 text-primary" /> 이어하기
               </h2>
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                 {story.topics.map((topic, i) => (
-                  <Chip key={topic} tint={TOPIC_CHIP_TINTS[i % TOPIC_CHIP_TINTS.length]}>
+                  <Chip key={topic} tint={topicChip(topic, i)}>
                     {topic}
                   </Chip>
                 ))}
@@ -169,12 +188,12 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
               <p className="mt-3 truncate font-display text-[32px] leading-tight text-ink">{story.title}</p>
               {resume ? (
                 <>
-                  <p className="mt-1.5 font-display text-xl text-[#75664F]">
+                  <p className="mt-1.5 font-display text-xl text-[#8A7A68]">
                     장면 {resume.progress.n}/{resume.progress.N} 진행 중 ⋯
                   </p>
                   <div className="mt-auto flex items-center justify-between pt-2">
-                    <span className="font-display text-lg text-[#75664F]">진행률</span>
-                    <span className="font-display text-lg text-[#B33D0D]">{percent}%</span>
+                    <span className="font-display text-lg text-[#8A7A68]">진행률</span>
+                    <span className="font-display text-lg text-primary">{percent}%</span>
                   </div>
                   <div
                     className="mt-2 h-[11px] overflow-hidden rounded bg-ink/10"
@@ -187,7 +206,7 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   </div>
                 </>
               ) : (
-                <p className="mt-auto pt-2 text-lg text-[#75664F]">
+                <p className="mt-auto pt-2 text-lg text-[#8A7A68]">
                   {resumeError ? '이어하기 정보를 불러오지 못했어요.' : '진행 정보를 불러오는 중…'}
                 </p>
               )}
@@ -198,8 +217,8 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   resume &&
                   router.push(`/play/${resume.sessionId}?child=${childId}&story=${story.id}`)
                 }
-                // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
-                className="mt-5 h-[55px] w-full shrink-0 rounded-full bg-primary font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
+                // 스토리보드 Button 심볼 실측: primary 필 + 흰 글자 (대비 2.6:1 미달 인지, QA 13 지시로 시안값 채택)
+                className="mt-5 h-[55px] w-full shrink-0 rounded-full bg-primary font-display text-xl font-bold text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
               >
                 이야기 계속하기
               </button>
@@ -216,16 +235,16 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
             <div className="flex min-w-0 flex-col">
               <h2 className="font-display text-2xl text-ink">추천 이야기</h2>
               {!hasSession && (
-                <p className="mt-1.5 font-display text-lg font-bold text-[#75664F]">
+                <p className="mt-1.5 font-display text-lg font-bold text-[#8A7A68]">
                   원하는 이야기를 골라 동화 속 인물과 대화해보세요.
                 </p>
               )}
             </div>
             <Link
               href={`/stories?child=${childId}`}
-              className="flex h-12 shrink-0 items-center gap-1 font-display text-lg font-bold text-[#B33D0D] active:opacity-70"
+              className="flex h-12 shrink-0 items-center gap-1 font-display text-lg font-bold text-primary active:opacity-70"
             >
-              모두 보기 <span aria-hidden>›</span>
+              모두 보기 <ChevronRightIcon className="size-4" />
             </Link>
           </div>
           <div className="mt-4 grid shrink-0 grid-cols-3 gap-5">
@@ -246,15 +265,15 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                 <div className="flex flex-col gap-2 p-3.5">
                   <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {story.topics.slice(0, 2).map((topic) => (
-                      <Chip key={topic} tint={CARD_TOPIC_CHIP}>
+                    {story.topics.slice(0, 2).map((topic, i) => (
+                      <Chip key={topic} tint={topicChip(topic, i)}>
                         {topic}
                       </Chip>
                     ))}
                     <Chip rounded="rounded-lg" tint={storyDifficulty.tint}>
                       {storyDifficulty.label}
                     </Chip>
-                    <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#75664F]">
+                    <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#8A7A68]">
                       {story.estimatedMinutes}분
                     </Chip>
                   </div>
@@ -283,15 +302,15 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   <div className="flex flex-col gap-2 p-3.5">
                     <p className="truncate font-display text-[22px] leading-tight text-ink">{dummy.title}</p>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {dummy.keywords.map((keyword) => (
-                        <Chip key={keyword} tint={CARD_TOPIC_CHIP}>
+                      {dummy.keywords.map((keyword, i) => (
+                        <Chip key={keyword} tint={topicChip(keyword, i)}>
                           {keyword}
                         </Chip>
                       ))}
                       <Chip rounded="rounded-lg" tint={dummyDifficulty.tint}>
                         {dummyDifficulty.label}
                       </Chip>
-                      <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#75664F]">
+                      <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#8A7A68]">
                         {dummy.minutes}분
                       </Chip>
                       <Chip rounded="rounded-lg" tint="bg-[#EFE7DA] text-[#75664F]">

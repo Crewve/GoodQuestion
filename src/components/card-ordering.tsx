@@ -1,5 +1,7 @@
 'use client';
-// 카드 순서 배열 화면 (T053, 기능명세서 2.4.4 "장면 카드 맞추기") — 무작위 4장을 슬롯 1~4에 배치.
+// 카드 순서 배열 화면 (T053, 기능명세서 2.4.4 "장면 카드 맞추기") — 무작위 N장을 슬롯 1~N에 배치.
+// 카드 수는 post_activity_config.cards 길이를 그대로 따른다(2026-08-15 수정사항 C3 / QA 12 "카드 몇가지 더 추가"로
+// 4장 고정 → 가변). 트레이·슬롯 열 수도 같이 늘어나므로 Tailwind 정적 클래스 대신 gridTemplateColumns로 지정한다.
 // 드래그앤드롭 기본 + Tap-to-Move 보조(FR-020, 핸드오프 §6.1 — 저학년 드래그 미숙 대비 병행 제공).
 // 드래그는 Pointer Events 직접 구현(2026-08-13) — HTML5 DnD API는 터치(태블릿 1순위 타깃)에서
 // 동작하지 않아 교체. 이동 8px 전에는 탭으로 취급해 Tap-to-Move와 충돌하지 않는다.
@@ -14,6 +16,7 @@
 // 판정 표시는 색+아이콘+텍스트 병행. 필 텍스트는 시안 원색 흰색 채택(2026-08-14 "피그마와 동일하게" 지시,
 // sage/primary 배경 대비 하한 미달 인지).
 import { useCallback, useRef, useState } from 'react';
+import { CheckIcon, CloseIcon } from '@/components/icons';
 
 /** post_activity_config.cards 항목 (R-09 스키마) — 이미지 URL은 컨테이너가 T011 헬퍼로 조합해 내려준다 */
 export type PostActivityCard = { id: string; imageUrl: string; label: string };
@@ -33,10 +36,10 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 export type CardOrderingProps = {
-  /** 장면 카드 4장 — 제시 순서는 컴포넌트가 무작위화 */
+  /** 장면 카드 N장(config.cards 그대로) — 제시 순서는 컴포넌트가 무작위화 */
   cards: PostActivityCard[];
   /**
-   * 4칸 채움 시 자동 호출 — 서버 판정(/api/post-activity kind:'card-order', T052)은 컨테이너 책임.
+   * 모든 칸 채움 시 자동 호출 — 서버 판정(/api/post-activity kind:'card-order', T052)은 컨테이너 책임.
    * 제출마다 서버가 attempt_count를 누적한다(시도별 배열 내용은 저장하지 않음 — 2.4.4).
    */
   onSubmit: (submittedOrder: string[]) => Promise<{ isOrderCorrect: boolean }>;
@@ -46,7 +49,9 @@ export type CardOrderingProps = {
 
 export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) {
   const [trayIds, setTrayIds] = useState<string[]>(() => shuffle(cards.map((card) => card.id)));
-  const [slots, setSlots] = useState<(string | null)[]>([null, null, null, null]);
+  const [slots, setSlots] = useState<(string | null)[]>(() => cards.map(() => null));
+  // 카드 수만큼 열을 나눈다 — grid-cols-N은 Tailwind가 정적 스캔이라 런타임 값으로 못 만든다
+  const columns = { gridTemplateColumns: `repeat(${Math.max(cards.length, 1)}, minmax(0, 1fr))` };
   const [selectedId, setSelectedId] = useState<string | null>(null); // Tap-to-Move 선택 상태
   const [verdict, setVerdict] = useState<'correct' | 'wrong' | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -97,7 +102,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
       nextSlots[slotIndex] = cardId;
       setSlots(nextSlots);
       setTrayIds(nextTray);
-      // 4개 슬롯이 모두 채워지면 서버로 제출 (2.4.4 유효성 — 채움이 곧 제출 트리거)
+      // 슬롯이 모두 채워지면 서버로 제출 (2.4.4 유효성 — 채움이 곧 제출 트리거)
       if (nextSlots.every((id) => id !== null)) void submitOrder(nextSlots as string[]);
     },
     [locked, slots, submitOrder, trayIds],
@@ -252,7 +257,8 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
       {/* 카드 트레이 — 무작위 제시, 슬롯 외 영역 드롭 = 원위치/트레이 복귀 (미제출) */}
       <div
         onClick={() => selectedId && slots.includes(selectedId) && returnCard(selectedId)}
-        className="grid min-h-0 flex-1 grid-cols-4 gap-4"
+        style={columns}
+        className="grid min-h-0 flex-1 gap-4"
         aria-label="카드 보관함"
       >
         {trayIds.map((cardId) => (
@@ -262,8 +268,8 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
         ))}
       </div>
 
-      {/* 순서 슬롯 1~4 — 드롭·탭 배치, 점유 슬롯은 자리 교환 (피그마 card_slot: 흰 배경 #F0E4D3 2px) */}
-      <div className="grid min-h-0 flex-1 grid-cols-4 gap-4">
+      {/* 순서 슬롯 1~N — 드롭·탭 배치, 점유 슬롯은 자리 교환 (피그마 card_slot: 흰 배경 #F0E4D3 2px) */}
+      <div style={columns} className="grid min-h-0 flex-1 gap-4">
         {slots.map((cardId, index) => (
           <div
             key={index}
@@ -308,7 +314,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
             onClick={onProceed}
             className="flex h-[52px] items-center gap-3 rounded-full bg-sage px-10 font-display text-[22px] text-white shadow-[0_6px_20px_rgba(61,190,139,0.33)] active:bg-ink"
           >
-            <span aria-hidden>✓</span> {MESSAGE_CORRECT}
+            <CheckIcon className="w-6" /> {MESSAGE_CORRECT}
           </button>
         )}
         {verdict === 'wrong' && (
@@ -317,7 +323,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
             role="status"
             className="flex h-[52px] items-center gap-3 rounded-full bg-primary px-10 font-display text-[22px] text-white shadow-[0_6px_20px_rgba(255,122,61,0.33)]"
           >
-            <span aria-hidden>✕</span> {MESSAGE_WRONG}
+            <CloseIcon className="size-6" /> {MESSAGE_WRONG}
           </span>
         )}
         {submitError && (

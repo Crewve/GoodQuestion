@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { LockIcon } from '@/components/icons';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import {
@@ -422,7 +423,7 @@ export default function SignupPage() {
             {/* 아동 동의 — 탭 무관 화면 공통 1회 (시안 민감정보 수집 동의 박스) */}
             <div className="rounded-2xl border border-[#FFE580] bg-[#FFF5D4] p-4">
               <p className="flex items-center gap-1.5 text-xs font-bold text-[#B8763F]">
-                <span aria-hidden>🔒</span>
+                <LockIcon className="size-4" />
                 민감정보 수집 동의
               </p>
               <label className="mt-2.5 flex cursor-pointer items-start gap-2.5">
