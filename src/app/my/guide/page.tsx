@@ -73,17 +73,10 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">이용안내</h2>
 
-        {/* 상단 탭 — 같은 라우트에서 ?tab= 쿼리로 약관/가이드 전환 (스토리보드 3.5) */}
+        {/* 상단 탭 — 같은 라우트에서 ?tab= 쿼리로 가이드/약관 전환 (스토리보드 3.5).
+            기본 진입 화면인 '이용 가이드'를 왼쪽에 둔다 (QA 26 — 예전 순서에서는 진입 즉시
+            오른쪽 탭이 활성이라 잘못 들어온 것처럼 보였다). 고객센터 탭바와 같은 규칙. */}
         <div className="mt-10 flex bg-white">
-          {showTerms ? (
-            <span aria-current="true" className={tabClass(true)}>
-              서비스 이용약관
-            </span>
-          ) : (
-            <Link href={tabHref(true)} replace className={tabClass(false)}>
-              서비스 이용약관
-            </Link>
-          )}
           {showTerms ? (
             <Link href={tabHref(false)} replace className={tabClass(false)}>
               서비스 이용 가이드
@@ -92,6 +85,15 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
             <span aria-current="true" className={tabClass(true)}>
               서비스 이용 가이드
             </span>
+          )}
+          {showTerms ? (
+            <span aria-current="true" className={tabClass(true)}>
+              서비스 이용약관
+            </span>
+          ) : (
+            <Link href={tabHref(true)} replace className={tabClass(false)}>
+              서비스 이용약관
+            </Link>
           )}
         </div>
 

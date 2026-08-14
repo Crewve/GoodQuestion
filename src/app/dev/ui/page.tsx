@@ -2,6 +2,8 @@
 // 실제 라우트 화면(홈·목록·상세·인증·마이페이지 계열)은 iframe 미리보기용 컨텍스트(아이·완료 세션)를
 // 서버에서 조회해 내린다. 실서비스(Vercel production) 배포에서만 존재하지 않는 라우트로 취급하고(404),
 // 로컬·스테이징(preview)에서는 접근을 허용한다.
+// 스테이징이 production 타깃으로 배포되는 경우를 위해 DEV_UI_ENABLED=1 오버라이드를 둔다 (QA 24) —
+// 실서비스 프로젝트에는 이 값을 설정하지 않는다.
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getAuthedUser } from '@/lib/supabase-server';
@@ -10,7 +12,8 @@ import { UiRehearsalGallery, type RouteContext } from './gallery';
 import story from '../../../../fixtures/story.banggui.json';
 
 export default async function DevUiPage() {
-  if (process.env.VERCEL_ENV === 'production') notFound();
+  const enabled = process.env.DEV_UI_ENABLED === '1' || process.env.VERCEL_ENV !== 'production';
+  if (!enabled) notFound();
 
   const ctx: RouteContext = {
     loggedIn: false,

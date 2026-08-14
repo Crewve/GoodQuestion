@@ -3,7 +3,7 @@
 // 개발 배포용 시안에 전용 프레임이 없어 3.1 '등록된 아이' 카드 스타일(팔레트 순환)을 준용하고,
 // 기존 기능 흐름(관리 모드 토글 → 카드별 수정·삭제, 삭제 확인 팝업)은 그대로 유지한다.
 // 아이 추가·수정은 2.1.1 폼 재사용(ChildProfileForm — 수정은 initialValue·동의 재요구 없음),
-// 3명 제한은 3.2 요건대로 버튼 비활성 + 초과 문구(2.1의 '카드 숨김'과 다름).
+// 3명 제한은 추가 버튼 숨김 + 초과 문구 (QA 18 — 3.2 원문의 '비활성'에서 변경).
 // 삭제는 확인 팝업 후 DELETE /api/profiles/[childId] — 학습 기록(세션·메시지·분석·활동 결과)까지 서버가 함께 삭제한다.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -113,7 +113,9 @@ export function ManageProfilesScreen({
 
         {profiles.length === 0 && <p className="mt-6 text-base text-[#7A7268]">{EMPTY_MESSAGE}</p>}
 
-        <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 카드는 개수와 무관하게 가운데 정렬 (QA 20) — 1fr 그리드는 삭제 후 남은 카드가 좌측에 몰렸다.
+            고정폭(272px) 트랙 + auto-fit이라 빈 트랙이 접히고 justify-center가 실제로 먹는다. */}
+        <ul className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(0,272px))] justify-center gap-3">
           {profiles.map((profile, index) => (
             <ChildProfileCard
               key={profile.id}
@@ -149,16 +151,19 @@ export function ManageProfilesScreen({
           ))}
         </ul>
 
-        {/* 아이 추가 — 3명 미만일 때만 가능, 3명이면 비활성 + 초과 문구 (3.2 유효성·예외 처리) */}
-        <button
-          type="button"
-          disabled={profiles.length >= 3}
-          onClick={() => setView({ mode: 'add' })}
-          className="mt-6 flex h-14 items-center justify-center gap-2 rounded-full bg-primary text-lg font-bold text-white active:bg-ink disabled:bg-ink/20 disabled:text-ink/50"
-        >
-          ＋ 아이 추가
-        </button>
-        {profiles.length >= 3 && <p className="mt-3 text-center text-sm text-[#7A7268]">{LIMIT_MESSAGE}</p>}
+        {/* 아이 추가 — 3명 미만일 때만 노출. 3명이면 버튼을 숨기고 초과 문구만 남긴다
+            (QA 18 — 기능명세서 3.2의 '비활성'에서 변경, 초과 문구는 유지) */}
+        {profiles.length < 3 ? (
+          <button
+            type="button"
+            onClick={() => setView({ mode: 'add' })}
+            className="mt-6 flex h-14 items-center justify-center gap-2 rounded-full bg-primary text-lg font-bold text-white active:bg-ink"
+          >
+            ＋ 아이 추가
+          </button>
+        ) : (
+          <p className="mt-6 text-center text-sm text-[#7A7268]">{LIMIT_MESSAGE}</p>
+        )}
       </main>
 
       {/* 삭제 확인 팝업 — 학습 기록 동반 삭제 고지 후 진행 (로그아웃 팝업과 동일한 커스텀 다이얼로그) */}
