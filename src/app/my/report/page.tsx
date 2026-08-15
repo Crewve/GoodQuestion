@@ -353,8 +353,9 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
             <ChevronLeftThinIcon className="h-[17px] w-[9px]" />
           </Link>
           <h1 className="text-[22px] font-bold text-ink">보호자 리포트</h1>
+          {/* 아이 칩 — 시안 캡처 실측(2026-08-16): 라운드 사각 r12 (pill 아님), 테두리 primary 1px */}
           {child && (
-            <span className="ml-auto flex h-11 shrink-0 items-center gap-2 rounded-full border border-primary bg-[#FFEDE3] pl-1.5 pr-4">
+            <span className="ml-auto flex h-11 shrink-0 items-center gap-2 rounded-xl border border-primary bg-[#FFEDE3] pl-1.5 pr-4">
               {avatarKey ? (
                 <Image
                   src={avatarUrl(avatarKey as AvatarKey, 'select')}
@@ -460,7 +461,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
             {/* 역량 카드 — 어휘/표현/논리 3행, 행 구분선 */}
             <div className="mt-5 rounded-2xl bg-white shadow-[0_4px_18px_rgba(58,44,30,0.06)]">
               {/* 어휘 */}
-              <div className="flex flex-col gap-5 p-6 md:flex-row">
+              <div className="flex flex-col gap-5 p-4 md:flex-row">
                 <SkillHead circleClass="bg-[#DDF5EC] text-sage" nameClass="text-sage" name="어휘" caption={VOCAB.caption}>
                   <VocaIcon className="size-5" />
                 </SkillHead>
@@ -483,7 +484,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
               </div>
 
               {/* 표현 */}
-              <div className="flex flex-col gap-5 border-t border-[#F0E4D3] p-6 md:flex-row">
+              <div className="flex flex-col gap-5 border-t border-[#F0E4D3] p-4 md:flex-row">
                 <SkillHead
                   circleClass="bg-berry/10 text-berry"
                   nameClass="text-berry"
@@ -500,7 +501,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
               </div>
 
               {/* 논리 */}
-              <div className="flex flex-col gap-5 border-t border-[#F0E4D3] p-6 md:flex-row">
+              <div className="flex flex-col gap-5 border-t border-[#F0E4D3] p-4 md:flex-row">
                 <SkillHead circleClass="bg-[#DDF0FB] text-sky" nameClass="text-sky" name="논리" caption={LOGIC.caption}>
                   <BulbBlueIcon className="size-5" />
                 </SkillHead>
@@ -521,7 +522,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
 
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               {UTTERANCES.map(({ quote, reason }) => (
-                <article key={quote.slice(0, 10)} className="rounded-2xl bg-white p-6 shadow-[0_4px_18px_rgba(58,44,30,0.06)]">
+                <article key={quote.slice(0, 10)} className="rounded-2xl bg-white p-5 shadow-[0_4px_18px_rgba(58,44,30,0.06)]">
                   <div aria-hidden className="flex justify-between text-ink">
                     <QuoteLeftIcon className="size-6" />
                     <QuoteRightIcon className="size-6" />
@@ -529,7 +530,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
                   <p className="mx-auto -mt-1 max-w-[420px] whitespace-pre-line text-center text-[17px] font-bold leading-relaxed text-ink">
                     {quote}
                   </p>
-                  <p className="mt-5 rounded-xl bg-[#FFF5D4] px-4 py-3 text-sm leading-relaxed text-[#8A7A68]">
+                  <p className="mt-5 rounded-lg bg-[#FFF5D4] px-4 py-2.5 text-sm leading-relaxed text-[#8A7A68]">
                     <BulbLineIcon className="mr-1 inline size-4 align-[-2px] text-primary" />
                     <span className="mr-1.5 font-bold text-primary">선정 이유</span>
                     {reason}
@@ -552,8 +553,9 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
               이야기 주제 이야기하기
             </p>
             <div className="mt-3 grid gap-6 md:grid-cols-2">
+              {/* 카드 실측(시안 캡처 2026-08-16): pad 20·번호 원 30·밴드 r8/py6 */}
               {GUIDE_STORY.map(({ question, goal }, i) => (
-                <article key={question} className="rounded-2xl bg-white p-6 shadow-[0_4px_18px_rgba(58,44,30,0.06)]">
+                <article key={question} className="rounded-2xl bg-white p-5 shadow-[0_4px_18px_rgba(58,44,30,0.06)]">
                   <span
                     aria-hidden
                     className="flex size-8 items-center justify-center rounded-full bg-primary text-[15px] font-bold text-white"
@@ -561,7 +563,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
                     {i + 1}
                   </span>
                   <p className="mt-3 text-[15px] font-bold text-ink">{question}</p>
-                  <p className="mt-3 rounded-xl bg-[#FFF5D4] px-4 py-2.5 text-[13px] text-[#8A7A68]">
+                  <p className="mt-3 rounded-lg bg-[#FFF5D4] px-4 py-1.5 text-[13px] text-[#8A7A68]">
                     <span className="mr-2 font-bold text-primary">학습 목표</span>
                     {goal}
                   </p>
@@ -577,7 +579,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
             </p>
             <div className="mt-3 grid gap-6 md:grid-cols-2">
               {GUIDE_DAILY.map(({ question, goal }, i) => (
-                <article key={question} className="rounded-2xl bg-white p-6 shadow-[0_4px_18px_rgba(58,44,30,0.06)]">
+                <article key={question} className="rounded-2xl bg-white p-5 shadow-[0_4px_18px_rgba(58,44,30,0.06)]">
                   <span
                     aria-hidden
                     className="flex size-8 items-center justify-center rounded-full bg-sage text-[15px] font-bold text-white"
@@ -585,7 +587,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
                     {i + 3}
                   </span>
                   <p className="mt-3 text-[15px] font-bold text-ink">{question}</p>
-                  <p className="mt-3 rounded-xl bg-[#DDF5EC] px-4 py-2.5 text-[13px] text-[#8A7A68]">
+                  <p className="mt-3 rounded-lg bg-[#DDF5EC] px-4 py-1.5 text-[13px] text-[#8A7A68]">
                     <span className="mr-2 font-bold text-sage">학습 목표</span>
                     {goal}
                   </p>
