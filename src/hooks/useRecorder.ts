@@ -61,6 +61,8 @@ export function useRecorder(options: UseRecorderOptions = {}) {
   const [error, setError] = useState<string | null>(null);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
+  /** getUserMedia 진행 중 가드 — 마이크 연타 시 스트림·레코더가 이중 생성되는 문제 차단 (피그마 코멘트 #114) */
+  const startingRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -89,13 +91,27 @@ export function useRecorder(options: UseRecorderOptions = {}) {
   useEffect(() => cleanup, [cleanup]); // 언마운트 시 마이크 해제
 
   const start = useCallback(async () => {
-    if (recorderRef.current) return; // 이미 녹음 중
+    if (recorderRef.current || startingRef.current) return; // 이미 녹음 중·시작 중 (#114 다중 터치 중복 방지)
+    startingRef.current = true;
     setError(null);
     setStatus('requesting');
+    // RMS 측정용 AudioContext는 마이크 클릭 제스처 안에서 '동기'로 만든다 (2026-08-15 STT 불통 조사) —
+    // getUserMedia await 뒤(특히 권한 프롬프트로 수 초 대기 후)에 만들면 사용자 활성화가 소멸해
+    // Safari/iPad 등이 suspended로 시작하고, 분석기가 0만 반환해 실제 발화 전체가 TOO_QUIET로 오탈락한다.
+    let ctx: AudioContext | null = null;
+    try {
+      ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+      if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
+    } catch {
+      ctx = null; // 분석기 없이 진행 — 측정 0회면 사전 게이트가 RMS를 통과 처리 (서버 게이트가 최종 방어)
+    }
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
+      startingRef.current = false;
+      cleanup(); // 권한 거부 시 위에서 만든 AudioContext 회수
       setStatus('error');
       setError('마이크 접근 권한이 필요해요'); // 기능명세서 2.4.3 예외 원문 (대화·미션 공용, 2.4.5는 retelling 자체 문구)
       return;
@@ -104,25 +120,29 @@ export function useRecorder(options: UseRecorderOptions = {}) {
 
     // RMS 측정 — AnalyserNode 시간 영역 샘플로 프레임마다 계산, 전 구간 평균을 사전 게이트에 사용
     try {
-      const ctx = new AudioContext();
-      audioCtxRef.current = ctx;
-      const source = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 2048;
-      source.connect(analyser);
-      const buf = new Float32Array(analyser.fftSize);
-      const tick = () => {
-        if (!recorderRef.current) return;
-        analyser.getFloatTimeDomainData(buf);
-        let sum = 0;
-        for (let i = 0; i < buf.length; i += 1) sum += buf[i] * buf[i];
-        const rms = Math.sqrt(sum / buf.length);
-        rmsSumRef.current += rms;
-        rmsCountRef.current += 1;
-        setLevel(rms);
+      if (ctx) {
+        if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined); // 프롬프트 후 재시도
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+        const buf = new Float32Array(analyser.fftSize);
+        const tick = () => {
+          if (!recorderRef.current) return;
+          rafRef.current = requestAnimationFrame(tick);
+          // suspended 프레임은 집계하지 않는다 — 0을 세면 평균이 무너져 실발화가 TOO_QUIET로 오탈락.
+          // 끝까지 한 프레임도 못 재면 측정 0회 통과 규칙이 적용된다 (진짜 무음은 running 상태의 0으로만 판정)
+          if (audioCtxRef.current?.state !== 'running') return;
+          analyser.getFloatTimeDomainData(buf);
+          let sum = 0;
+          for (let i = 0; i < buf.length; i += 1) sum += buf[i] * buf[i];
+          const rms = Math.sqrt(sum / buf.length);
+          rmsSumRef.current += rms;
+          rmsCountRef.current += 1;
+          setLevel(rms);
+        };
         rafRef.current = requestAnimationFrame(tick);
-      };
-      rafRef.current = requestAnimationFrame(tick);
+      }
     } catch {
       // 분석기 실패 시 레벨 없이 진행 — rms=0이면 사전 게이트 TOO_QUIET로 걸리므로 카운트를 남기지 않는다
     }
@@ -150,12 +170,21 @@ export function useRecorder(options: UseRecorderOptions = {}) {
         rms,
         precheck: precheckRecording(durationMs, rms),
       };
+      if (!result.precheck.ok) {
+        // QA 진단 — 서버(/api/stt)에 닿기 전에 버려진 녹음의 사유를 남긴다 (2026-08-15 스테이징 STT 불통 조사).
+        // rms=0.0000·측정 프레임 0이 아닌데도 반복 탈락하면 입력 장치가 무음(잘못된 기본 마이크·음소거)일 가능성이 높다.
+        console.warn(
+          `[recorder] precheck 탈락 ${result.precheck.reason}: ${durationMs}ms, rms=${rms.toFixed(4)}, ` +
+            `측정 ${rmsCountRef.current}프레임, ctx=${audioCtxRef.current?.state ?? '없음'}`,
+        );
+      }
       cleanup();
       setStatus('idle');
       onCompleteRef.current?.(result);
     };
 
     recorder.start();
+    startingRef.current = false;
     setStatus('recording');
     timeoutRef.current = setTimeout(() => {
       if (recorderRef.current?.state === 'recording') recorderRef.current.stop();

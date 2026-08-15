@@ -1,6 +1,6 @@
 // POST /api/sessions — 세션 시작/재개 (T031, contracts/api-routes.md)
 // 재개 지점: scene_goal_met=true면 현재 장면 +1, 아니면 현재 장면(도입 미완은 항상 처음 — FR-017).
-// 진행률 n/N: 전개+대화 쌍=1(도입 제외) — 이 이야기에서는 완료된 대화 장면 수 / 대화 장면 수.
+// 진행률 n/N: 도입 포함 5분할(2026-08-14 정정) — N=도입(1)+전개·대화 쌍 수, 도입=1, 전개k·대화k=k+1.
 // 장면 유형(도입/전개/대화)은 DB 컬럼이 아니라 fixtures 매핑에서 파생한다 (Notion 설계서 SoT — 스키마 무변경).
 import { characterImageUrl, sceneImageUrl } from '@/lib/assets';
 import { substituteChildName } from '@/lib/child-name';
@@ -183,7 +183,9 @@ export async function POST(request: Request) {
       order: scene.scene_order,
       type: sceneType,
       description: isDialogue ? undefined : scene.scene_description,
-      characterName: isDialogue && scene.character_name ? loadCharacter(scene.character_name).name : undefined,
+      // 화면 표기는 display_name (QA 11 — '며느리' → '방귀쟁이 며느리'). name은 LLM 프롬프트 전용
+      characterName:
+        isDialogue && scene.character_name ? loadCharacter(scene.character_name).display_name : undefined,
       characterImageUrl: isDialogue && scene.character_name ? characterImageUrl(scene.character_name) : undefined,
       // 오프닝 표시 텍스트 — 아래에서 반환하는 오디오와 항상 일치(실명본이면 실명, 폴백이면 '친구' 표기)
       openingText: isDialogue
@@ -200,15 +202,16 @@ export async function POST(request: Request) {
     };
   });
 
-  // 진행률 — N=대화 장면 수(전개+대화 쌍), n=재개 지점이 속한 쌍 번호(도입=1 고정 — 기능명세서 2.4.1·2.4.2).
-  // play 헤더(play/[sessionId]/page.tsx currentPair)와 반드시 같은 정의여야 홈 이어하기 카드와
+  // 진행률 — 도입 포함 5분할(2026-08-14 정정): N=도입(1)+전개·대화 쌍 수, 도입=1, 전개k·대화k=k+1.
+  // play 헤더(play/[sessionId]/page.tsx currentStep)와 반드시 같은 정의여야 홈 이어하기 카드와
   // 진행 화면 표기가 일치한다. 장면 전부 완료(후속 활동 단계, resumeScene=null)는 n=N.
-  const N = scenes.filter((s) => sceneTypeForRow(s) === '대화').length;
+  const N = scenes.filter((s) => sceneTypeForRow(s) === '대화').length + 1;
   const n = !resumeScene
     ? N
     : sceneTypeForRow(resumeScene) === '도입'
       ? 1
-      : Math.max(
+      : 1 +
+        Math.max(
           1,
           scenes.filter((s) => sceneTypeForRow(s) === '전개' && s.scene_order <= resumeScene.scene_order).length,
         );

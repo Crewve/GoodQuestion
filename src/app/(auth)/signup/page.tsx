@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { LockIcon } from '@/components/icons';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import {
@@ -196,9 +197,10 @@ export default function SignupPage() {
               <li
                 key={label}
                 aria-current={active ? 'step' : undefined}
+                // 활성 탭: 피치 배경 + 하단 라인(피그마 코멘트 #93 — 테두리 전체가 아니라 밑줄 강조)
                 className={`flex h-13 flex-1 items-center justify-center text-center text-sm ${
                   active
-                    ? 'border border-primary bg-[#FFEDE3] font-bold text-primary'
+                    ? 'border-b-[3px] border-primary bg-[#FFEDE3] font-bold text-primary'
                     : 'border-b border-[#F0E4D3] bg-[#F7F6F3] text-[#8A7A68]'
                 }`}
               >
@@ -422,7 +424,7 @@ export default function SignupPage() {
             {/* 아동 동의 — 탭 무관 화면 공통 1회 (시안 민감정보 수집 동의 박스) */}
             <div className="rounded-2xl border border-[#FFE580] bg-[#FFF5D4] p-4">
               <p className="flex items-center gap-1.5 text-xs font-bold text-[#B8763F]">
-                <span aria-hidden>🔒</span>
+                <LockIcon className="size-4" />
                 민감정보 수집 동의
               </p>
               <label className="mt-2.5 flex cursor-pointer items-start gap-2.5">

@@ -92,7 +92,7 @@
 
 | # | 갭 | 조치 | 차단 화면 |
 |---|---|---|---|
-| 1 | `story_scenes.scene_type` 없음 | **컬럼 미추가** — fixtures type/label 파생(`src/lib/story.ts` sceneTypeOf). 진행률 N = 전개+대화 쌍=1 카운트(도입 제외) | 없음 (코드로 충족) |
+| 1 | `story_scenes.scene_type` 없음 | **컬럼 미추가** — fixtures type/label 파생(`src/lib/story.ts` sceneTypeOf). 진행률 N = 도입(1)+전개·대화 쌍 카운트 — 도입 포함 5분할(2026-08-14 정정) | 없음 (코드로 충족) |
 | 2 | `children.avatar_key`·`birth_date` 없음 | **컬럼 2종 추가 확정·적용**(001_children_profile_fields, 사용자 승인) — 사용자 입력이라 코드 파생 불가. birth_year는 유지(리포트 호환). Notion 설계서 개정 공유 예정 | 없음 (요건 충족 가능) |
 | 3 | 미션 테이블 없음 | MVP는 fixtures 로드로 대체(신설 보류 — 연동기준 §2-A 방침). 진행 상태만 `story_sessions.mission_phase` 1컬럼 추가(002 마이그레이션, 사용자 승인 2026-08-11 — R-18) | 없음 (서버 설정+컬럼 1개로 충족) |
 | 4 | `utterance_analyses` raw 컬럼 없음 | 서버 로그 보존으로 대체, 컬럼 추가는 협의 | 없음 (디버깅 편의만 영향) |

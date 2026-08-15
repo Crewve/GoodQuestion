@@ -1,6 +1,7 @@
 'use client';
-// 재구성 발화 화면 (T054, 기능명세서 2.4.5 "단어로 문장만들기") — 장면 카드+핵심 단어 4세트(표시 전용,
-// 2.4.4 배치 순서 = 정답 순서), 마이크 버튼 시작 녹음(자동 아님), "내가 한 말" 카드에 STT 결과 표시 후 보내기.
+// 재구성 발화 화면 (T054, 기능명세서 2.4.5 "단어로 문장만들기") — 장면 카드+핵심 단어 세트(표시 전용,
+// 2.4.4 배치 순서 = 정답 순서, 세트 수 = post_activity_config.cards 길이), 마이크 버튼 시작 녹음(자동 아님),
+// "내가 한 말" 카드에 STT 결과 표시 후 보내기.
 // 녹음→/api/stt(context=retelling)→표시→보내기 사이클은 미션 팝업(T042)과 같은 기계 구조지만 문구는 2.4.5 원문:
 // 인식 실패 "다시 한 번 말해줄래요?"(대화·미션의 "다시 한번 말해줄래?"와 다름), 권한 거부 "마이크 사용을 허용해주세요".
 // 저장·완료 처리(/api/post-activity kind:'retelling', T052)와 X 나가기·재진입 라우팅은 컨테이너(파트2 T055) 소유 —
@@ -11,9 +12,11 @@
 // 스타일: 피그마 「개발 배포용」 2.4.5 — 카드+단어 칩 4세트·하늘색 "내가 한 말" 카드·원형 마이크+보내기 필.
 import { useCallback, useRef, useState } from 'react';
 import type { PostActivityCard } from '@/components/card-ordering';
+import { CheckIcon, PencilIcon } from '@/components/icons';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import type { SttResult } from '@/lib/contracts';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
+import { keywordIncluded } from '@/lib/retelling-keywords';
 
 export type { PostActivityCard } from '@/components/card-ordering';
 
@@ -46,8 +49,8 @@ function MicIcon({ className = 'size-6' }: { className?: string }) {
 export type RetellingProps = {
   /** 장면 카드 4컷 — 2.4.4에서 배치한 순서(=정답 순서)대로 컨테이너가 정렬해 전달 */
   cards: PostActivityCard[];
-  /** 핵심 단어 4개 (post_activity_config.keywords) — cards와 인덱스로 짝지어 4세트 표시 */
-  keywords: string[];
+  /** keywords[i] = cards[i] 장면의 핵심 단어 묶음 (post_activity_config.keywords) — 카드 아래 칩으로 나열 */
+  keywords: string[][];
   /** STT 어휘 힌트용 장면 external_id — 미지정 시 기본 어휘(제목·주제·캐릭터)만 사용 */
   sceneId?: string;
   /**
@@ -158,12 +161,15 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
         </p>
       </div>
 
-      {/* 장면 카드 + 핵심 단어 4세트 — 표시 전용, 사용자 조작 불가 (2.4.5 구성요소).
-          스토리보드처럼 콘텐츠 높이만 차지(flex-1 미사용) — 아래 요소들이 위로 붙는다 */}
-      <div className="grid shrink-0 grid-cols-4 gap-4">
+      {/* 장면 카드 + 핵심 단어 세트 — 표시 전용, 사용자 조작 불가 (2.4.5 구성요소).
+          스토리보드처럼 콘텐츠 높이만 차지(flex-1 미사용) — 아래 요소들이 위로 붙는다.
+          열 수는 카드 수를 따른다(하드코딩 4 제거 — 콘텐츠 교체만으로 장면 수가 바뀌어도 따라간다) */}
+      <div
+        style={{ gridTemplateColumns: `repeat(${Math.max(cards.length, 1)}, minmax(0, 1fr))` }}
+        className="grid shrink-0 gap-4"
+      >
         {cards.map((card, index) => {
-          const keyword = keywords[index];
-          const included = !!keyword && !!stt?.text.includes(keyword); // 포함 여부 시각 피드백 (비차단)
+          const sceneKeywords = keywords[index] ?? [];
           return (
             <figure key={card.id} className="flex min-h-0 flex-col gap-2.5">
               {/* 피그마 장면 카드 275×218 비율 고정 — flex 잔여 공간이 카드를 세로로 늘리지 않게 */}
@@ -172,15 +178,26 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
                 <img src={card.imageUrl} alt={card.label} className="h-full w-full object-cover" />
               </div>
               {/* 칩 글자 — 피그마 원색 sage 채택(2026-08-14 "피그마와 동일하게" 지시, 대비 미달 인지).
-                  포함(✓) 상태는 시안 미정의라 기존 채움 피드백 유지 */}
-              {keyword && (
-                <figcaption
-                  className={`flex h-11 shrink-0 items-center justify-center rounded-[10px] border-[1.5px] border-sage font-display text-lg ${
-                    included ? 'bg-sage text-ink' : 'bg-sage/10 text-sage'
-                  }`}
-                >
-                  {included ? '✓ ' : ''}
-                  {keyword}
+                  포함(✓) 상태는 시안 미정의라 기존 채움 피드백 유지.
+                  시안은 장면당 칩 1개지만 QA 12로 장면별 핵심 단어를 3~4개 주기로 했다 —
+                  카드 폭 안에서 2열 그리드로 쌓아 칩 너비를 고르게 맞춘다(기획 전달 시안 2026-08-15) */}
+              {sceneKeywords.length > 0 && (
+                <figcaption className="grid shrink-0 grid-cols-2 gap-1.5">
+                  {sceneKeywords.map((keyword) => {
+                    // 포함 여부 시각 피드백 (비차단) — 활용형(미안함→미안해요 등)까지 인식 (#84 검증)
+                    const included = !!stt && keywordIncluded(stt.text, keyword);
+                    return (
+                      <span
+                        key={keyword}
+                        className={`flex h-11 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-sage px-2 font-display text-lg ${
+                          included ? 'bg-sage text-ink' : 'bg-sage/10 text-sage'
+                        }`}
+                      >
+                        {included && <CheckIcon className="w-3.5 shrink-0" />}
+                        {keyword}
+                      </span>
+                    );
+                  })}
                 </figcaption>
               )}
             </figure>
@@ -202,13 +219,13 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
       <div className="flex min-h-0 shrink-0 items-center justify-center gap-3 empty:hidden">
         {phase === 'RECORDING' && (
           <span className="flex h-10 items-center gap-2 rounded-full bg-sunny px-5 text-lg font-semibold text-ink">
-            <span aria-hidden>🎤</span>
+            <MicIcon className="size-5" />
             생각을 말해보세요!
           </span>
         )}
         {phase === 'TRANSCRIBING' && (
           <span className="flex h-10 items-center gap-2 rounded-full bg-sunny px-5 text-lg font-semibold text-ink">
-            <span aria-hidden>✍️</span>
+            <PencilIcon className="size-5" />
             말을 글자로 바꾸는 중이에요!
           </span>
         )}
@@ -227,7 +244,7 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
             <button
               type="button"
               onClick={() => void requestSubmit(stt.text)}
-              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-ink active:bg-ink active:text-white"
+              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-white active:bg-ink"
             >
               다시 보내기
             </button>

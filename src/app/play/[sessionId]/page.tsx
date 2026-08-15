@@ -6,7 +6,9 @@
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Attribution } from '@/components/attribution';
+import { withChild } from '@/components/bottom-nav';
 import { DialogueScene } from '@/components/dialogue-scene';
+import { ConfettiIcon } from '@/components/icons';
 import { NarrationScene } from '@/components/narration-scene';
 import { ProgressHeader } from '@/components/progress-header';
 import { useAudioUnlock } from '@/hooks/useAudioUnlock';
@@ -89,18 +91,20 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
     [scenes, currentOrder],
   );
 
-  // 헤더 n: 도입 동안 1 고정, 이후 현재 속한 전개·대화 쌍의 번호 (문장 진행과 무관 — 2.4.1·2.4.2)
-  const totalPairs = scenes.filter((s) => s.type === '대화').length;
-  const currentPair = useMemo(() => {
+  // 헤더 n: 도입 포함 5분할(2026-08-14 정정) — 도입=1, 전개k·대화k=k+1, N=쌍 수+1 (문장 진행과 무관 — 2.4.1·2.4.2)
+  const totalSteps = scenes.filter((s) => s.type === '대화').length + 1;
+  const currentStep = useMemo(() => {
     if (!currentScene || currentScene.type === '도입') return 1;
-    return Math.max(1, scenes.filter((s) => s.type === '전개' && s.order <= currentScene.order).length);
+    return 1 + Math.max(1, scenes.filter((s) => s.type === '전개' && s.order <= currentScene.order).length);
   }, [currentScene, scenes]);
 
   const exitToDetail = useCallback(() => {
-    // X 나가기 — 이야기 상세 복귀 (진행 상태는 서버 세션에 이미 반영된 만큼만 유지)
-    if (storyId) router.push(`/stories/${storyId}`);
+    // X 나가기 — 이야기 상세 복귀 (진행 상태는 서버 세션에 이미 반영된 만큼만 유지).
+    // 아이 컨텍스트(?child=)를 반드시 실어 보낸다 — 빠뜨리면 상세→목록→홈 복귀 시 /home이
+    // 컨텍스트 없음으로 판정해 2.1 아이 선택으로 튕긴다 (QA 17).
+    if (storyId) router.push(withChild(`/stories/${storyId}`, childId));
     else router.back();
-  }, [router, storyId]);
+  }, [childId, router, storyId]);
 
   const proceed = useCallback(() => {
     setCurrentOrder((order) => (order === null ? order : order + 1));
@@ -131,11 +135,15 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
         : splitNarrationSentences(next.description ?? '').map((_, i) =>
             narrationSentenceAudioUrl(audioBase, i),
           );
+    // HTTP 캐시만 데우면 되는 목적이라 fetch로 받는다. 이전에는 장면마다 new Audio()를 만들고
+    // 정리하지 않아 이야기 후반에는 십수 개가 미디어 리소스를 잡은 채 남았고, Safari의 동시 미디어
+    // 한도에 걸리면 정작 실제 재생용 <audio>가 로드·재생에 실패한다 — 후반 내레이션이 안 나오는
+    // 경로 (QA 30·33). fetch는 디코더를 점유하지 않고 장면 이탈 시 abort로 확실히 정리된다.
+    const controller = new AbortController();
     for (const url of urls) {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audio.src = url;
+      void fetch(url, { cache: 'force-cache', signal: controller.signal }).catch(() => undefined);
     }
+    return () => controller.abort();
   }, [scenes, currentOrder]);
 
   if (error) {
@@ -145,7 +153,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
         <button
           type="button"
           onClick={exitToDetail}
-          className="h-14 rounded-full bg-primary px-8 font-display text-xl text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:bg-ink active:text-white"
+          className="h-14 rounded-full bg-primary px-8 font-display text-xl text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:bg-ink"
         >
           돌아가기
         </button>
@@ -164,7 +172,10 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
   if (finished) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-        <p className="font-display text-3xl text-ink">이야기를 끝까지 들었어요! 🎉</p>
+        {/* 이모지(🎉)는 기기별 렌더가 달라 공용 SVG로 교체 (수정사항 C1 / QA 4) */}
+        <p className="flex items-center gap-2 font-display text-3xl text-ink">
+          이야기를 끝까지 들었어요! <ConfettiIcon className="size-8" />
+        </p>
         <p className="font-display text-xl text-ink">학습완료 활동으로 이동하고 있어요…</p>
       </main>
     );
@@ -174,7 +185,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
     // h-dvh 고정 — min-h면 대화 내역이 쌓일 때 페이지가 자라 화면 스크롤 발생 (T071, 핸드오프 §2.2 아이 화면 스크롤 미허용)
     // max-w 1194px — 시안 가로폭. 초광폭 모니터에서 무제한 확장 방지(핸드오프 §2), body 배경이 같은 Base 색이라 바깥 여백은 자연스럽게 이어진다
     <main className="mx-auto flex h-dvh w-full max-w-[1194px] flex-col overflow-hidden bg-background">
-      <ProgressHeader title={STORY_TITLE} n={currentPair} N={totalPairs} onExit={exitToDetail} />
+      <ProgressHeader title={STORY_TITLE} n={currentStep} N={totalSteps} onExit={exitToDetail} />
       {currentScene && currentScene.type !== '대화' ? (
         <NarrationScene
           key={currentScene.id} // 장면 전환 시 문장 인덱스 초기화

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
 import { BottomNav, withChild } from '@/components/bottom-nav';
+import { BookIcon, ChatBubbleIcon, ChevronNextIcon, HangingMedalIcon } from '@/components/icons';
 import { assetUrl } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
@@ -29,57 +30,8 @@ const SUMMARY_ERROR_MESSAGE = '학습 정보를 불러오지 못했습니다';
 const LOGOUT_CONFIRM_MESSAGE = '정말 로그아웃 하시겠습니까?';
 const LOGOUT_ERROR = '로그아웃에 실패했어요. 잠시 후 다시 시도해 주세요.';
 
-/* 활동 요약 카드 아이콘 3종 — 스토리보드 3.1: 잉크 아웃라인 글리프(책·말풍선) + 컬러 메달.
-   이모지(📖💬🎖️)는 플랫폼별 렌더가 달라 SVG로 교체(2026-08-13) — 책은 완료 화면 BookIcon,
-   메달 배색은 배지 화면 MedalIcon(#F7C325/#EDB01B/#CE4444/#FFF3C4)과 동일 계열 재사용 */
-function BookIcon({ className = 'size-7' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 5.5C10.5 4.2 8.4 3.6 6 3.6c-1 0-2 .13-3 .4v14.5c1-.27 2-.4 3-.4 2.4 0 4.5.63 6 1.9 1.5-1.27 3.6-1.9 6-1.9 1 0 2 .13 3 .4V4c-1-.27-2-.4-3-.4-2.4 0-4.5.63-6 1.9v14.1" />
-    </svg>
-  );
-}
-
-function ChatBubbleIcon({ className = 'size-7' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3.5c-5 0-9 3.3-9 7.5 0 2.4 1.3 4.5 3.3 5.9l-.7 3.9 4-1.6c.8.2 1.6.3 2.4.3 5 0 9-3.4 9-7.5 0-4.2-4-7.5-9-7.5z" />
-      <circle cx="8.5" cy="11" r="0.9" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="11" r="0.9" fill="currentColor" stroke="none" />
-      <circle cx="15.5" cy="11" r="0.9" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function HangingMedalIcon({ className = 'size-7' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path d="M8.2 1.5h3l2.3 8.2h-3z" fill="#CE4444" />
-      <path d="M15.8 1.5h-3l-2.3 8.2h3z" fill="#983535" />
-      <circle cx="12" cy="15.5" r="6.2" fill="#F7C325" />
-      <circle cx="12" cy="15.5" r="4.7" fill="#EDB01B" />
-      <path d="M12 12.4l1 2 2.2.3-1.6 1.6.4 2.2-2-1-2 1 .4-2.2-1.6-1.6 2.2-.3z" fill="#FFF3C4" />
-    </svg>
-  );
-}
+/* 활동 요약 카드 아이콘 3종(책·말풍선·메달)은 components/icons.tsx 공용 세트로 이동 —
+   완료 화면·배지 화면과 같은 글리프를 쓰기 위함 (수정사항 C1 / QA 4 아이콘 통일) */
 
 /* 설정 메뉴 아이콘 — 스토리보드 3.1: 웜그레이(#8A7A68) 아웃라인 글리프 3종 (이모지 대체 2026-08-13).
    말풍선은 활동 요약 ChatBubbleIcon 재사용, 문서는 GNB NoteIcon 형태 참조한 아웃라인 변형 */
@@ -145,7 +97,9 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
     <div className="flex min-h-dvh flex-col">
       <MyPageHeader />
       <main className="mx-auto flex w-full max-w-[848px] flex-1 flex-col px-6 pb-8 pt-5">
-        {/* 사용자 정보 카드 — 보호자 이미지는 하나로 고정(표시 전용) */}
+        {/* 사용자 정보 카드 — 보호자 이미지는 하나로 고정(표시 전용).
+            우측 '보호자 리포트' 버튼은 피그마 코멘트 #79/시안 353:4146(#FFEDE3 필 143×52) —
+            3.7 보호자 리포트(/my/report) 진입 (2026-08-16 구현 — 예시 데이터 리포트) */}
         <section className="flex items-center gap-4 rounded-3xl border border-[#F0E4D3] bg-white p-5 shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
           <Image
             src={assetUrl('profiles/select/guardian.png')}
@@ -158,6 +112,12 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
             <p className="text-base font-bold text-ink">보호자님</p>
             <p className="mt-1 text-sm text-[#8A7A68]">{loginMethodLabel}</p>
           </div>
+          <Link
+            href={withChild('/my/report', childId)}
+            className="ml-auto flex h-[52px] shrink-0 items-center rounded-2xl bg-[#FFEDE3] px-6 text-[15px] font-bold text-ink active:opacity-80"
+          >
+            보호자 리포트
+          </Link>
         </section>
 
         {/* 등록된 아이 카드 리스트 — 표시 전용·클릭 불가, 이름은 성 제외 (3.1) */}
@@ -227,8 +187,9 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
                 className="flex flex-col items-center gap-1 rounded-2xl bg-white/65 px-2 py-3.5 active:bg-white"
               >
                 <HangingMedalIcon className="size-7" />
-                {/* 시안의 Sunny 값 색상은 흰 바탕 대비 미달 — 동일 계열의 진한 색으로 보정 */}
-                <span className="text-xl font-bold text-[#B8860B]">{summary.badgeCount}개</span>
+                {/* 스토리보드 실측 Sunny(#FFC93C) 그대로 — 흰 바탕 대비 1.7:1 미달을 인지하고 채택
+                    (QA 13 "색상 기준은 스토리보드 기준으로") */}
+                <span className="text-xl font-bold text-sunny">{summary.badgeCount}개</span>
                 <span className="text-center text-xs text-[#8A7A68]">획득한 배지</span>
               </Link>
             </div>
@@ -237,7 +198,8 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
 
         {/* 설정 — 공지사항·고객센터·이용안내·로그아웃 */}
         <section className="mt-6 overflow-hidden rounded-3xl border border-[#F0E4D3] bg-white shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
-          <h2 className="flex h-[57px] items-center border-b border-[#F0E4D3] px-5 text-base font-bold text-ink">서비스 안내</h2>
+          {/* 카드 제목은 시안 원문 '설정' (353:4146) */}
+          <h2 className="flex h-[57px] items-center border-b border-[#F0E4D3] px-5 text-base font-bold text-ink">설정</h2>
           {MENU_ITEMS.map((item) => (
             <Link
               key={item.href}
@@ -246,9 +208,8 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
             >
               <item.Icon className="size-6 text-[#8A7A68]" />
               {item.label}
-              <span aria-hidden className="ml-auto text-[#8A7A68]">
-                ›
-              </span>
+              {/* 행 진입 표시 — 에셋 chevron_next (피그마 코멘트 #161, 원본 #8A7A68) */}
+              <ChevronNextIcon className="ml-auto h-3.5 w-2 text-[#8A7A68]" />
             </Link>
           ))}
           <div aria-hidden className="h-1 bg-background" />
@@ -258,7 +219,8 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
               setLogoutError(null);
               setLogoutOpen(true);
             }}
-            className="flex h-14 w-full items-center px-5 text-base font-bold text-berry active:bg-background"
+            // 로그아웃 글자색 Berry → Primary (피그마 코멘트 #80)
+            className="flex h-14 w-full items-center px-5 text-base font-bold text-primary active:bg-background"
           >
             로그아웃
           </button>
@@ -294,7 +256,9 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
                   setLoggingOut(true);
                   setLogoutError(null);
                   try {
-                    const { error } = await getSupabaseBrowser().auth.signOut();
+                    // scope: 'global' — 이 계정의 모든 기기 세션(리프레시 토큰) 폐기 (QA 32).
+                    // supabase-js 기본값과 같지만 의도를 코드에 남긴다.
+                    const { error } = await getSupabaseBrowser().auth.signOut({ scope: 'global' });
                     if (error) throw new Error(error.message);
                     router.replace('/login');
                   } catch {

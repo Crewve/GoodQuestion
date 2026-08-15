@@ -6,7 +6,9 @@
 // X 나가기: 저장 없이 종료 → 2.3 이야기 상세(2.4.4 화면 이동 — 재진입 라우팅은 서버 저장값 기준).
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { withChild } from '@/components/bottom-nav';
 import { CardOrdering, type PostActivityCard } from '@/components/card-ordering';
+import { CloseIcon } from '@/components/icons';
 import { Retelling } from '@/components/retelling';
 
 export type PostActivityStep = 'card-order' | 'retelling';
@@ -14,11 +16,13 @@ export type PostActivityStep = 'card-order' | 'retelling';
 type PostActivityFlowProps = {
   sessionId: string;
   storyId: string;
+  /** 세션의 아이 — 나가기 링크에 ?child=로 실어 보낸다 (없으면 홈 복귀 시 아이 선택으로 튕김, QA 17) */
+  childId: string | null;
   storyTitle: string;
-  /** 정답 순서로 정렬된 카드 4장 — 무작위 제시는 CardOrdering 내부 몫 */
+  /** 정답 순서로 정렬된 카드 N장(config.cards) — 무작위 제시는 CardOrdering 내부 몫 */
   cards: PostActivityCard[];
-  /** cards와 인덱스 쌍 핵심 단어 4개 (2.4.5 4세트) */
-  keywords: string[];
+  /** keywords[i] = cards[i] 장면의 핵심 단어 묶음 (2.4.5 카드 아래 칩들) */
+  keywords: string[][];
   /** 재진입 라우팅 결과 — is_order_correct=true면 2.4.5부터 (서버 판정) */
   initialStep: PostActivityStep;
 };
@@ -39,6 +43,7 @@ async function postActivity(body: Record<string, unknown>): Promise<Response> {
 export function PostActivityFlow({
   sessionId,
   storyId,
+  childId,
   storyTitle,
   cards,
   keywords,
@@ -49,8 +54,10 @@ export function PostActivityFlow({
   const n = step === 'card-order' ? 1 : 2;
 
   const exitToDetail = useCallback(() => {
-    router.push(`/stories/${storyId}`); // 저장 없이 화면만 종료 — 진행 값은 서버에 이미 반영된 만큼 유지
-  }, [router, storyId]);
+    // 저장 없이 화면만 종료 — 진행 값은 서버에 이미 반영된 만큼 유지.
+    // 아이 컨텍스트 유지는 진행 화면 나가기와 동일 규칙 (QA 17)
+    router.push(withChild(`/stories/${storyId}`, childId));
+  }, [childId, router, storyId]);
 
   const submitCardOrder = useCallback(
     async (submittedOrder: string[]) => {
@@ -80,9 +87,7 @@ export function PostActivityFlow({
           onClick={exitToDetail}
           className="flex h-14 items-center gap-2.5 rounded-full bg-white px-5 shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-ink active:text-white"
         >
-          <span aria-hidden className="text-2xl leading-none text-current">
-            ✕
-          </span>
+          <CloseIcon className="size-6 text-current" />
           <span className="font-display text-2xl text-current">나가기</span>
         </button>
         <span

@@ -3,6 +3,8 @@
 사용법:
   python scripts/upload_story_assets.py --dry-run   # 업로드 없이 fixtures/storage-assets.json만 생성
   python scripts/upload_story_assets.py             # 버킷 생성(없으면) + 전체 업로드 + json 갱신
+  python scripts/upload_story_assets.py --only stories/banggui/missions/mission-2.png
+                                                    # 해당 키만 업로드 (원본 개정 단건 반영용)
 
 인증: .env.local(또는 환경변수)의 SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY 사용.
 서비스 키는 서버 전용 — 이 스크립트는 로컬에서만 실행하고 키를 커밋하지 않는다.
@@ -58,6 +60,13 @@ ASSETS = [
     ("추천 이야기/추천 4_토끼와 거북이.png", "recommended/04-tokki-geobuki.png"),
     ("추천 이야기/추천 5_혹부리 영감.png", "recommended/05-hokburi-yeonggam.png"),
     ("추천 이야기/추천 6_개미와 베짱이.png", "recommended/06-gaemi-bejjangi.png"),
+    ("추천 이야기/추천 7_흥부와 놀부.png", "recommended/07-heungbu-nolbu.png"),
+    # 단어장 (2.6) — 「0_단어장 파일 전달드립니다._260815」 원본을 design/이미지/단어장/으로 복사해 관리
+    ("단어장/단어1_장대.png", "stories/banggui/wordbook/01-jangdae.png"),
+    ("단어장/단어2_갓.png", "stories/banggui/wordbook/02-gat.png"),
+    ("단어장/단어3_기왓장.png", "stories/banggui/wordbook/03-giwajang.png"),
+    ("단어장/단어4_어리둥절하다.png", "stories/banggui/wordbook/04-eoridungjeol.png"),
+    ("단어장/단어5_탐스럽다.png", "stories/banggui/wordbook/05-tamseureopda.png"),
 ]
 
 
@@ -79,6 +88,8 @@ def request(method, url, key, body=None, content_type="application/json"):
         "Authorization": f"Bearer {key}",
         "apikey": key,
         "Content-Type": content_type,
+        # 재업로드 시 덮어쓰기 — 쿼리 ?upsert=true는 무시되고 409가 난다(헤더가 정식 방법)
+        "x-upsert": "true",
     })
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
@@ -90,12 +101,18 @@ def request(method, url, key, body=None, content_type="application/json"):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="업로드 없이 매핑 json만 생성")
+    ap.add_argument("--only", metavar="KEY", help="이 스토리지 키 하나만 업로드 (매핑 json은 전체 재생성)")
     args = ap.parse_args()
+
+    if args.only and args.only not in {key for _, key in ASSETS}:
+        sys.exit(f"--only 키가 매핑에 없습니다: {args.only}")
+    targets = [(src, key) for src, key in ASSETS if not args.only or key == args.only]
 
     env = load_env()
     base = env.get("SUPABASE_URL", "https://lpiqyaqajlxhnvumvjvb.supabase.co").rstrip("/")
 
-    missing = [src for src, _ in ASSETS if not (IMG / src).exists()]
+    # --only일 때는 대상만 검사 — 무관한 원본 결손이 단건 반영을 막지 않게 한다
+    missing = [src for src, _ in targets if not (IMG / src).exists()]
     if missing:
         sys.exit(f"원본 파일 누락 {len(missing)}건: " + ", ".join(missing[:5]))
 
@@ -123,17 +140,21 @@ def main():
     print(f"버킷 확인: {BUCKET}")
 
     ok = 0
-    for src, key_path in ASSETS:
+    for src, key_path in targets:
         data = (IMG / src).read_bytes()
-        status, body = request("POST", f"{base}/storage/v1/object/{BUCKET}/{key_path}?upsert=true",
+        # 1KB 미만은 플레이스홀더 스텁(대표 썸네일 등 로컬 미보유) — 업로드하면 스토리지의 정상본을 덮어쓴다
+        if len(data) < 1024:
+            print(f"  - {key_path} 건너뜀 (로컬 파일 {len(data)}B — 스텁 의심)")
+            continue
+        status, body = request("POST", f"{base}/storage/v1/object/{BUCKET}/{key_path}",
                                key, data, "image/png")
         if status in (200, 201):
             ok += 1
             print(f"  ↑ {key_path} ({len(data) // 1024}KB)")
         else:
             print(f"  ✗ {key_path} [{status}]: {body[:120]}")
-    print(f"완료: {ok}/{len(ASSETS)} 업로드")
-    if ok < len(ASSETS):
+    print(f"완료: {ok}/{len(targets)} 업로드")
+    if ok < len(targets):
         sys.exit(1)
 
 

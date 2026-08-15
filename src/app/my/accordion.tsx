@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
+import { ChevronDownIcon, ChevronLeftThinIcon, UserIcon } from '@/components/icons';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { koreanAge } from '@/lib/profile-display';
 
@@ -21,19 +22,8 @@ export function MyPageHeader({ backHref }: { backHref?: string }) {
             aria-label="뒤로 가기"
             className="flex size-12 shrink-0 items-center justify-center text-ink active:opacity-70"
           >
-            {/* 피그마 CaretLeft 채움형 글리프(9×16.5/48 탭 영역) — 텍스트 ‹ 는 획이 얇아 교체 (2026-08-14) */}
-            <svg
-              viewBox="0 0 24 24"
-              className="size-5"
-              aria-hidden
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M14.5 4.5 7 12l7.5 7.5" />
-            </svg>
+            {/* 보호자 화면 뒤로가기 — 에셋 chevron_left_thin (피그마 코멘트 #162) */}
+            <ChevronLeftThinIcon className="h-[17px] w-[9px]" />
           </Link>
         ) : (
           // 시안 공통: 뒤로가기 없는 화면도 타이틀은 좌측 72px 정렬 (빈 슬롯 유지)
@@ -77,14 +67,8 @@ export function AccordionItem({ title, meta, icon, tone = 'muted', separated = f
           <span className="block text-[15px] font-bold text-[#1E1A14]">{title}</span>
           {meta && <span className="mt-1 block text-[13px] text-[#7A7268]">{meta}</span>}
         </span>
-        <svg
-          aria-hidden
-          viewBox="0 0 16 16"
-          fill="none"
-          className="size-4 shrink-0 text-[#7A7268] transition-transform group-open:rotate-180"
-        >
-          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        {/* 접기/펼치기 — 에셋 chevron_down(닫힘)·회전 시 chevron_up과 동일 (피그마 코멘트 #163·#164, 원본 #7A7268) */}
+        <ChevronDownIcon className="h-[7px] w-[11px] shrink-0 text-[#7A7268] transition-transform group-open:rotate-180" />
       </summary>
       <div
         className={`whitespace-pre-line border-t border-[#E8E2DA] px-5 py-4 ${
@@ -106,7 +90,8 @@ export function AccordionList({ children, separated = false }: { children: React
 const AVATAR_KEYS = new Set<string>(['boy-1', 'boy-2', 'girl-1', 'girl-2']);
 
 // 3.1 Case B 카드 팔레트 순환 — 피치(Primary)→핑크(Berry)→옐로(Sunny).
-// Sunny 배지만 텍스트를 ink로 — 시안의 흰 글자는 대비 미달(하한선 4.5:1 보정).
+// 배지 글자는 스토리보드 실측 흰색으로 통일 (QA 13 "색상 기준은 스토리보드 기준으로") — Sunny 위 흰 글자는
+// 대비 1.7:1 미달임을 인지하고 시안 확정값 채택.
 const CARD_PALETTES = [
   {
     bg: 'bg-[#FFEDE3]',
@@ -122,7 +107,7 @@ const CARD_PALETTES = [
   },
   {
     bg: 'bg-[#FFF5D4]',
-    badge: 'bg-sunny text-ink',
+    badge: 'bg-sunny text-white',
     circleShadow: 'shadow-[0_6px_20px_rgba(255,201,60,0.25)]',
     sparkle: 'text-sunny',
   },
@@ -158,9 +143,7 @@ export function ChildProfileCard({ profile, displayName, index, showAge = true, 
             className="size-[82px] object-contain"
           />
         ) : (
-          <span aria-hidden className="text-4xl">
-            🙂
-          </span>
+          <UserIcon className="size-11 text-primary/70" />
         )}
         <span aria-hidden className="absolute -top-1.5 right-0 text-sm text-sunny">
           ★
@@ -170,7 +153,8 @@ export function ChildProfileCard({ profile, displayName, index, showAge = true, 
         </span>
       </span>
       <span className="flex max-w-full items-center gap-2">
-        <span className="min-w-0 truncate text-2xl font-bold text-ink">{displayName}</span>
+        {/* 스토리보드 3.1 아이 카드 이름은 라운드체(Jua) — 앱은 동일 역할의 Cafe24(font-display) 사용 (C6 / QA 15) */}
+        <span className="min-w-0 truncate font-display text-2xl text-ink">{displayName}</span>
         {showAge && age !== null && (
           <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${palette.badge}`}>만 {age}세</span>
         )}

@@ -31,7 +31,32 @@
   --font-display: var(--font-cafe24-ssurround), var(--font-pretendard-gov), system-ui, sans-serif;
 }
 
+/* 캐릭터 발화 중 이퀄라이저 바 (dialogue-scene SpeakingBars, 피그마 코멘트 #112) */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.eq-bar {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+  transform-origin: center;
+}
+
+html {
+  /* 화면을 드래그해도 문서가 따라 움직이지 않게 (QA 31) — 고무줄 오버스크롤·당겨서 새로고침 차단.
+     아이 화면은 h-dvh 무스크롤이라 드래그가 곧 오버스크롤로 보인다. */
+  overscroll-behavior: none;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
+  overscroll-behavior: none;
+  /* 가로 드래그·더블탭 확대 차단, 세로 스크롤(보호자 화면)은 허용.
+     장면 카드 드래그(card-ordering)는 자체 touch-action:none으로 이 값을 덮어쓴다. */
+  touch-action: pan-y;
 }

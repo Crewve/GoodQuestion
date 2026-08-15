@@ -2,17 +2,20 @@
 // 홈 화면 본체 (T048, 기능명세서 2.0) — 인사말(성 제외 이름)·이어하기 카드·추천 3×2·GNB.
 // 이어하기: 진행 중 세션이 있을 때만 섹션 노출(서버 판정), 진행률 n/N·%는 T031 /api/sessions 응답 재사용
 // (멱등 재개라 세션이 있을 때만 호출 — 없는데 호출하면 세션이 생성되므로 금지).
-// 추천 6개: 진행 중 이야기가 없을 때만 1번 카드 '방귀 뀌는 며느리' 고정·유일 클릭 가능(→ 이야기 상세),
-// 있으면 더미 6종으로 채운다(2.0 예외 처리 — 더미 썸네일이 6종인 이유). 더미는 클릭 이벤트 미부여.
+// 추천 3개(QA 22): 진행 중 이야기가 없을 때만 1번 카드 '방귀 뀌는 며느리' 고정·유일 클릭 가능(→ 이야기 상세),
+// 있으면 더미 3종으로 채운다(2.0 예외 처리). 더미는 클릭 이벤트 미부여·흐린 '준비 중' 표시.
 // Header·GNB는 상하단 고정(핸드오프 §2.1), GNB는 파트2 T049의 BottomNav 공용(단어장 이동 없음,
 // 아이 컨텍스트 child 쿼리 전파) — 팀원 브랜치 파일을 동일 내용으로 선반영해 합류 시 충돌 없음.
-// UI 리뉴얼: 피그마 「개발 배포용」 2.0 Case A/B 대조 — h-dvh 한 화면 수납(세로 스크롤 금지, T071·T077 유지).
-// Case A는 이어하기 카드+추천 1행만 보이는 시안 그대로, 초과 행은 overflow-hidden으로 클립(더미 6종 DOM 유지).
+// UI 리뉴얼: 피그마 「개발 배포용」 2.0 Case A/B 대조 — h-dvh, Header·GNB 고정.
+// 스크롤: Case B는 추천 그리드 내부 스크롤(타이틀 고정, 시안 7카드). Case A는 본문(main) 전체
+// 세로 스크롤 — 기존 minmax 축소 방식(#104)은 화면이 낮으면 추천 카드가 찌그러져 철회(2026-08-15
+// QA). 카드 행은 220px 고정, 공간 부족 시 이어하기 카드째 스크롤된다.
 import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
+import { ArrowNextIcon, PlayIcon, UserIcon } from '@/components/icons';
 import { avatarUrl, recommendedThumbnailUrls, storyThumbnailUrl, type AvatarKey } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
 import { difficultyLabel } from '@/lib/stories-view';
@@ -30,29 +33,50 @@ type SessionProgress = {
   progress: { n: number; N: number; percent: number };
 };
 
-/** 추천 더미 5~6종 메타 — 클릭 불가(MVP), 썸네일 recommended/01~06과 순서 일치. 표시용 임시 값 */
+/** 추천 더미 7종 메타 — 클릭 불가(MVP), 썸네일 recommended/01~07과 순서 일치.
+    주제·난이도·시간은 피그마 「개발 배포용」 2.0 Case B 카드 값 그대로 (프레임 간 값이 다른 경우 Case B 기준).
+    흥부와 놀부는 피그마 코멘트 #170으로 추가. */
 const DUMMY_STORIES = [
-  { title: '선녀와 나무꾼', keywords: ['약속', '배려'], difficulty: '보통', minutes: 15 },
-  { title: '해와 달이 된 오누이', keywords: ['용기', '지혜'], difficulty: '보통', minutes: 20 },
-  { title: '금도끼 은도끼', keywords: ['정직', '욕심'], difficulty: '쉬움', minutes: 15 },
-  { title: '토끼와 거북이', keywords: ['끈기', '겸손'], difficulty: '쉬움', minutes: 15 },
-  { title: '혹부리 영감', keywords: ['욕심', '재치'], difficulty: '보통', minutes: 20 },
-  { title: '개미와 베짱이', keywords: ['성실', '준비'], difficulty: '쉬움', minutes: 15 },
+  { title: '선녀와 나무꾼', keywords: ['다름'], difficulty: '새싹 이야기', minutes: 15 },
+  { title: '해와 달이 된 오누이', keywords: ['친절', '용기'], difficulty: '도전 이야기', minutes: 18 },
+  { title: '금도끼 은도끼', keywords: ['나눔', '다름'], difficulty: '튼튼 이야기', minutes: 16 },
+  { title: '토끼와 거북이', keywords: ['다름', '용기'], difficulty: '새싹 이야기', minutes: 13 },
+  { title: '혹부리 영감', keywords: ['다름', '용기'], difficulty: '도전 이야기', minutes: 20 },
+  { title: '개미와 베짱이', keywords: ['나눔', '친절'], difficulty: '새싹 이야기', minutes: 10 },
+  { title: '흥부와 놀부', keywords: ['나눔', '친절'], difficulty: '새싹 이야기', minutes: 16 },
 ];
 
-/* 칩 팔레트 (피그마 2.0/2.2/2.3 공통) — 파스텔 배경은 시안 그대로,
-   글자색은 같은 색상 계열에서 명도만 낮춰 대비 4.5:1 하한을 맞춘 값(시안 원색은 2.1~2.5:1 미달). */
-const TOPIC_CHIP_TINTS = ['bg-primary/15 text-[#B33D0D]', 'bg-sunny/15 text-[#92400E]'] as const;
-const CARD_TOPIC_CHIP = 'bg-[#F7F1E8] text-[#B33D0D]';
-const DIFFICULTY_CHIP_TINT: Record<string, string> = {
-  '새싹 이야기': 'bg-sage/15 text-[#047857]',
-  '튼튼 이야기': 'bg-sky/15 text-[#075985]',
-  '도전 이야기': 'bg-berry/15 text-[#9F1239]',
+/* 칩 팔레트 — 피그마 「개발 배포용」 '주제'·'난이도' 심볼 실측: 배경 = 해당 색 13% 틴트, 글자 = 같은 색 원색
+   (다름 Primary · 용기 Sunny · 친절 Berry · 나눔 Sage / 새싹 Sage · 튼튼 Sky · 도전 Berry).
+   기존 명도 보정값은 QA 13("색상 기준은 스토리보드 기준으로")에 따라 철회 — 원색 대비 2.1~2.5:1 미달 인지하고 채택. */
+const TOPIC_CHIP_BY_NAME: Record<string, string> = {
+  다름: 'bg-primary/15 text-primary',
+  용기: 'bg-sunny/15 text-sunny',
+  친절: 'bg-berry/15 text-berry',
+  나눔: 'bg-sage/15 text-sage',
 };
+/** 시안에 없는 주제어는 같은 4색을 순환 적용 */
+const TOPIC_CHIP_CYCLE = [
+  'bg-primary/15 text-primary',
+  'bg-sunny/15 text-sunny',
+  'bg-berry/15 text-berry',
+  'bg-sage/15 text-sage',
+] as const;
+
+function topicChip(topic: string, index = 0): string {
+  return TOPIC_CHIP_BY_NAME[topic] ?? TOPIC_CHIP_CYCLE[index % TOPIC_CHIP_CYCLE.length];
+}
+
+const DIFFICULTY_CHIP_TINT: Record<string, string> = {
+  '새싹 이야기': 'bg-sage/15 text-sage',
+  '튼튼 이야기': 'bg-sky/15 text-sky',
+  '도전 이야기': 'bg-berry/15 text-berry',
+};
+const DIFFICULTY_CHIP_FALLBACK = 'bg-sky/15 text-sky';
 
 function difficultyChip(raw: string): { label: string; tint: string } {
   const label = difficultyLabel(raw);
-  return { label, tint: DIFFICULTY_CHIP_TINT[label] ?? 'bg-sky/15 text-[#075985]' };
+  return { label, tint: DIFFICULTY_CHIP_TINT[label] ?? DIFFICULTY_CHIP_FALLBACK };
 }
 
 function Chip({ tint, rounded = 'rounded-md', children }: { tint: string; rounded?: string; children: ReactNode }) {
@@ -104,8 +128,8 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
   }, [childId, hasSession, story.id]);
 
   const dummies = recommendedThumbnailUrls().map((url, i) => ({ url, ...DUMMY_STORIES[i] }));
-  // 진행 중인 이야기가 없을 때만 1번 카드 '방귀 뀌는 며느리' 고정 — 있으면 더미 6개 (2.0 예외 처리)
-  const dummySlots = hasSession ? dummies : dummies.slice(0, 5);
+  // 피그마 2.0 Case A: 더미 3개 1행(선녀·해와 달·금도끼) / Case B: '방귀 뀌는 며느리' 고정 + 더미 6개(해와 달~흥부와 놀부)
+  const dummySlots = hasSession ? dummies.slice(0, 3) : dummies.slice(1);
   const percent = resume ? Math.min(100, Math.max(0, Math.round(resume.progress.percent))) : 0;
   const storyDifficulty = difficultyChip(story.difficulty);
 
@@ -114,7 +138,7 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
       {/* Header — 상단 고정 (핸드오프 §2.1, 피그마 h104·하단 보더 #F0E4D3) */}
       <header className="flex h-[104px] shrink-0 items-center justify-between gap-4 border-b border-[#F0E4D3] bg-background/90 px-10">
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="font-display text-lg font-bold text-[#75664F]">반가워요!</p>
+          <p className="font-display text-lg font-bold text-[#8A7A68]">반가워요!</p>
           <h1 className="truncate font-display text-[32px] leading-none text-ink">
             {givenName(childName)} 어린이
           </h1>
@@ -127,12 +151,17 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
           {avatarSrc ? (
             <Image src={avatarSrc} alt="" width={59} height={57} className="size-[59px] object-contain" />
           ) : (
-            <span aria-hidden>👤</span>
+            <UserIcon className="size-9 text-primary" />
           )}
         </Link>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1194px] min-h-0 flex-1 flex-col overflow-hidden px-6 pt-5 pb-2">
+      {/* Case A는 main 자체가 스크롤 컨테이너(카드 찌그러짐 방지), Case B는 추천 그리드가 내부 스크롤 */}
+      <main
+        className={`mx-auto flex w-full max-w-[1194px] min-h-0 flex-1 flex-col px-6 pt-5 pb-2 ${
+          hasSession ? 'overflow-y-auto' : 'overflow-hidden'
+        }`}
+      >
         {/* 이어하기 — 진행 중인 이야기가 있는 경우에만 노출 (2.0 Case A, 카드 1146×340 bg #FFE8C9 r24) */}
         {hasSession && (
           <section
@@ -152,12 +181,12 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
               />
             </div>
             <div className="flex min-w-0 flex-1 flex-col">
-              <h2 className="flex items-center gap-1.5 font-display text-xl text-[#B33D0D]">
-                <span aria-hidden>📖</span> 이어하기
+              <h2 className="flex items-center gap-1.5 font-display text-xl text-primary">
+                <PlayIcon className="size-6 text-primary" /> 이어하기
               </h2>
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                 {story.topics.map((topic, i) => (
-                  <Chip key={topic} tint={TOPIC_CHIP_TINTS[i % TOPIC_CHIP_TINTS.length]}>
+                  <Chip key={topic} tint={topicChip(topic, i)}>
                     {topic}
                   </Chip>
                 ))}
@@ -168,12 +197,12 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
               <p className="mt-3 truncate font-display text-[32px] leading-tight text-ink">{story.title}</p>
               {resume ? (
                 <>
-                  <p className="mt-1.5 font-display text-xl text-[#75664F]">
+                  <p className="mt-1.5 font-display text-xl text-[#8A7A68]">
                     장면 {resume.progress.n}/{resume.progress.N} 진행 중 ⋯
                   </p>
                   <div className="mt-auto flex items-center justify-between pt-2">
-                    <span className="font-display text-lg text-[#75664F]">진행률</span>
-                    <span className="font-display text-lg text-[#B33D0D]">{percent}%</span>
+                    <span className="font-display text-lg text-[#8A7A68]">진행률</span>
+                    <span className="font-display text-lg text-primary">{percent}%</span>
                   </div>
                   <div
                     className="mt-2 h-[11px] overflow-hidden rounded bg-ink/10"
@@ -186,7 +215,7 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   </div>
                 </>
               ) : (
-                <p className="mt-auto pt-2 text-lg text-[#75664F]">
+                <p className="mt-auto pt-2 text-lg text-[#8A7A68]">
                   {resumeError ? '이어하기 정보를 불러오지 못했어요.' : '진행 정보를 불러오는 중…'}
                 </p>
               )}
@@ -197,8 +226,8 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   resume &&
                   router.push(`/play/${resume.sessionId}?child=${childId}&story=${story.id}`)
                 }
-                // primary 위 흰 글자는 대비 2.6:1 미달 — 학습완료 화면과 동일한 text-ink 패턴 (B1)
-                className="mt-5 h-[55px] w-full shrink-0 rounded-full bg-primary font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
+                // 스토리보드 Button 심볼 실측: primary 필 + 흰 글자 (대비 2.6:1 미달 인지, QA 13 지시로 시안값 채택)
+                className="mt-5 h-[55px] w-full shrink-0 rounded-full bg-primary font-display text-xl font-bold text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
               >
                 이야기 계속하기
               </button>
@@ -206,54 +235,69 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
           </section>
         )}
 
-        {/* 추천 이야기 3×2 고정 6개 (2.0) — Case A는 1행만 노출(초과분 클립), Case B는 2행 전체 */}
+        {/* 추천 이야기 3개 1행 (QA 22 — 기존 3×2 6개에서 축소) */}
         <section
           aria-label="추천 이야기"
-          className={`flex min-h-0 flex-1 flex-col overflow-hidden ${hasSession ? 'mt-4' : 'mt-2'}`}
+          className={
+            hasSession
+              ? 'mt-4 flex shrink-0 flex-col' // Case A: 자연 높이 — 넘치면 main이 스크롤
+              : 'mt-2 flex min-h-0 flex-1 flex-col overflow-hidden' // Case B: 남은 높이 채우고 그리드만 스크롤
+          }
         >
           <div className="flex shrink-0 items-center justify-between px-2.5">
             <div className="flex min-w-0 flex-col">
               <h2 className="font-display text-2xl text-ink">추천 이야기</h2>
               {!hasSession && (
-                <p className="mt-1.5 font-display text-lg font-bold text-[#75664F]">
+                <p className="mt-1.5 font-display text-lg font-bold text-[#8A7A68]">
                   원하는 이야기를 골라 동화 속 인물과 대화해보세요.
                 </p>
               )}
             </div>
             <Link
               href={`/stories?child=${childId}`}
-              className="flex h-12 shrink-0 items-center gap-1 font-display text-lg font-bold text-[#B33D0D] active:opacity-70"
+              className="flex h-12 shrink-0 items-center gap-1 font-display text-lg font-bold text-primary active:opacity-70"
             >
-              모두 보기 <span aria-hidden>›</span>
+              모두 보기 <ArrowNextIcon className="size-4" />
             </Link>
           </div>
-          <div className="mt-4 grid shrink-0 grid-cols-3 gap-5">
+          {/* Case A: 1행 3개, 220px 고정 행 — 축소 없음, 부족분은 main 스크롤(#104 minmax 축소 철회)
+              Case B: 219px 행 그리드 + 내부 세로 스크롤(헤더·GNB 고정 유지, 시안 7카드) */}
+          <div
+            className={`mt-4 grid grid-cols-3 gap-5 ${
+              hasSession
+                ? 'auto-rows-[220px] shrink-0 pb-3'
+                : 'min-h-0 flex-1 auto-rows-[219px] content-start overflow-y-auto pb-3'
+            }`}
+          >
             {!hasSession && (
               <Link
                 href={`/stories/${story.id}?child=${childId}`}
-                className="flex flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] transition-transform active:scale-95"
+                className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] transition-transform active:scale-95"
               >
-                <Image
-                  src={storyThumbnailUrl(true)}
-                  alt=""
-                  width={1448}
-                  height={1086}
-                  sizes="370px"
-                  loading="eager"
-                  className="aspect-[5/2] w-full object-cover"
-                />
-                <div className="flex flex-col gap-2 p-3.5">
+                {/* 이미지 130px 고정 — 피그마 「이야기 카드」 실측(이미지 130 + 텍스트 90 = 219).
+                    flex-1이면 칩 줄 수에 따라 이미지 높이가 카드마다 달라진다 (2026-08-15 QA) */}
+                <div className="relative h-[130px] shrink-0 overflow-hidden">
+                  <Image
+                    src={storyThumbnailUrl(true)}
+                    alt=""
+                    fill
+                    sizes="370px"
+                    loading="eager"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3.5">
                   <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {story.topics.slice(0, 2).map((topic) => (
-                      <Chip key={topic} tint={CARD_TOPIC_CHIP}>
+                    {story.topics.slice(0, 2).map((topic, i) => (
+                      <Chip key={topic} tint={topicChip(topic, i)}>
                         {topic}
                       </Chip>
                     ))}
                     <Chip rounded="rounded-lg" tint={storyDifficulty.tint}>
                       {storyDifficulty.label}
                     </Chip>
-                    <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#75664F]">
+                    <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#8A7A68]">
                       {story.estimatedMinutes}분
                     </Chip>
                   </div>
@@ -263,34 +307,33 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
             {dummySlots.map((dummy) => {
               const dummyDifficulty = difficultyChip(dummy.difficulty);
               return (
-                // 미공개 이야기 — 클릭 이벤트 미부여(커서 default·무반응), 별도 에러 없음 (2.0 예외 처리)
+                // 미공개 이야기 — 클릭 이벤트 미부여(커서 default·무반응), 별도 에러 없음 (2.0 예외 처리).
+                // 비활성임이 보이도록 흐리게 + '준비 중' 칩 (QA 3 — 이야기 목록 카드와 동일 처리)
                 <div
                   key={dummy.title}
                   aria-disabled
-                  className="flex flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
+                  className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white opacity-50 shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
                 >
-                  <Image
-                    src={dummy.url}
-                    alt=""
-                    width={400}
-                    height={400}
-                    sizes="370px"
-                    loading="eager"
-                    className="aspect-[5/2] w-full object-cover"
-                  />
-                  <div className="flex flex-col gap-2 p-3.5">
+                  {/* 이미지 130px 고정 — 위 실제 카드와 동일 (피그마 실측) */}
+                  <div className="relative h-[130px] shrink-0 overflow-hidden">
+                    <Image src={dummy.url} alt="" fill sizes="370px" loading="eager" className="object-cover" />
+                  </div>
+                  <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3.5">
                     <p className="truncate font-display text-[22px] leading-tight text-ink">{dummy.title}</p>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {dummy.keywords.map((keyword) => (
-                        <Chip key={keyword} tint={CARD_TOPIC_CHIP}>
+                      {dummy.keywords.map((keyword, i) => (
+                        <Chip key={keyword} tint={topicChip(keyword, i)}>
                           {keyword}
                         </Chip>
                       ))}
                       <Chip rounded="rounded-lg" tint={dummyDifficulty.tint}>
                         {dummyDifficulty.label}
                       </Chip>
-                      <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#75664F]">
+                      <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#8A7A68]">
                         {dummy.minutes}분
+                      </Chip>
+                      <Chip rounded="rounded-lg" tint="bg-[#EFE7DA] text-[#75664F]">
+                        준비 중
                       </Chip>
                     </div>
                   </div>

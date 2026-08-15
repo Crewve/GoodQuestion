@@ -3,8 +3,11 @@
 // 시안: 이메일 폼 + 구분선("또는") + 소셜 버튼이 한 카드에 동시 노출 → 기존 탭 전환(표시 전용)을 제거.
 // 이메일: Supabase Auth signInWithPassword(브라우저 클라이언트 T010 재사용) → 성공 시 2.1 프로필 선택 이동.
 // 에러 문구 3종(1.1.1 원문): 형식 오류는 클라이언트 검사, 미가입/비밀번호 오류는 Supabase가 같은
-// invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오+구글(T078 — R-10 대체 플랜 실행,
-// 시안의 네이버는 미구현이라 미배치), PKCE 콜백(/auth/callback)에서 세션 교환 후 복귀. 보호자 화면 — 스크롤 허용.
+// invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오·구글 연동(T078 — R-10),
+// 네이버는 Supabase 미지원이라 자체 OAuth 라우트(/auth/naver, T082)로 연동 — 버튼 배치는 피그마
+// 코멘트 #115(카카오→네이버→구글 순). 키 미설정 배포에선 naverEnabled=false로 준비 중 안내 폴백.
+// 카카오·구글은 PKCE 콜백(/auth/callback), 네이버는 /auth/naver/callback에서 세션 발급 후 복귀.
+// 보호자 화면 — 스크롤 허용.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -18,17 +21,25 @@ const ERROR_EMAIL_NOT_FOUND = '가입하지 않은 이메일입니다';
 const ERROR_WRONG_PASSWORD = '비밀번호를 다시 확인해주세요';
 const ERROR_EMAIL_FORMAT = '올바른 이메일 형식을 입력해주세요';
 const ERROR_SOCIAL = '소셜 로그인에 실패했습니다';
+const NAVER_PENDING = '네이버 로그인은 아직 준비 중이에요';
 
 // 시안 입력 필드: h50 · r14 · bg Base · border #F0E4D3, 포커스 시 primary
 const inputClass =
   'h-[50px] w-full rounded-[14px] border border-[#F0E4D3] bg-background px-4 text-base text-ink outline-none placeholder:text-ink/50 focus:border-primary';
 
-export function LoginScreen({ initialSocialError }: { initialSocialError: boolean }) {
+export function LoginScreen({
+  initialSocialError,
+  naverEnabled,
+}: {
+  initialSocialError: boolean;
+  naverEnabled: boolean;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
   const [socialError, setSocialError] = useState<boolean>(initialSocialError);
+  const [naverPending, setNaverPending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleEmailLogin = async () => {
@@ -69,6 +80,7 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
 
   const handleSocialLogin = async (provider: 'kakao' | 'google') => {
     setSocialError(false);
+    setNaverPending(false);
     const supabase = getSupabaseBrowser();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -156,6 +168,11 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
             {ERROR_SOCIAL}
           </p>
         )}
+        {naverPending && (
+          <p className="mb-3 text-sm font-semibold text-berry" role="alert">
+            {NAVER_PENDING}
+          </p>
+        )}
         <button
           type="button"
           onClick={() => void handleSocialLogin('kakao')}
@@ -165,6 +182,26 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
             <path d="M9 1C4.58 1 1 3.83 1 7.32c0 2.24 1.47 4.2 3.69 5.32l-.94 3.5c-.08.31.27.56.54.38l4.13-2.76c.19.01.38.02.58.02 4.42 0 8-2.83 8-6.32S13.42 1 9 1Z" />
           </svg>
           카카오 로그인
+        </button>
+        {/* 네이버 — 자체 OAuth 라우트(T082)로 전체 페이지 이동. 키 미설정이면 준비 중 안내 폴백 */}
+        <button
+          type="button"
+          onClick={() => {
+            setSocialError(false);
+            if (!naverEnabled) {
+              setNaverPending(true);
+              return;
+            }
+            setNaverPending(false);
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- 페이지가 아닌 라우트 핸들러 → 네이버 외부 이동, 전체 페이지 내비게이션 필수
+            window.location.assign('/auth/naver?next=/profiles');
+          }}
+          className="mt-3 flex h-13 w-full items-center justify-center gap-2 rounded-[14px] bg-[#03C75A] text-[15px] font-bold text-white active:opacity-80"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M16.3 0v10.9L7.7 0H0v24h7.7V13.1L16.3 24H24V0z" />
+          </svg>
+          네이버 로그인
         </button>
         <button
           type="button"
@@ -183,7 +220,9 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
 
         <p className="mt-6 flex items-center justify-center gap-1.5 text-sm font-bold text-[#8A7A68]">
           아직 계정이 없으신가요?
-          <Link href="/signup" className="font-bold text-primary">
+          {/* 히트 영역을 글자 박스 전체(48px)로 — 여백 클릭이 먹지 않던 문제 (수정사항 C7 / QA 34).
+              음수 마진으로 시각 위치는 그대로 두고 탭 영역만 넓힌다 */}
+          <Link href="/signup" className="-my-3 flex min-h-12 items-center px-1 font-bold text-primary active:opacity-70">
             회원가입
           </Link>
         </p>

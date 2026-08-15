@@ -5,6 +5,7 @@
 // 파스텔 칩·'이런 것을 배워요' 하늘색 박스(#DDF0FB r16)·주황 CTA r48. h-dvh 한 화면 수납(세로 스크롤 금지).
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { BookIcon, CheckIcon, ChevronLeftIcon } from '@/components/icons';
 import { StoryStartButton } from '@/components/story-start-button';
 import { storyThumbnailUrl } from '@/lib/assets';
 import {
@@ -21,14 +22,33 @@ import { StoryHero } from './story-hero';
 
 export const dynamic = 'force-dynamic';
 
-/* 칩 팔레트 (피그마 2.3) — 파스텔 배경은 시안 그대로,
-   글자색은 같은 색상 계열에서 명도만 낮춰 대비 4.5:1 하한을 맞춘 값(시안 원색은 2.1~2.5:1 미달). */
-const TOPIC_CHIP_TINTS = ['bg-primary/15 text-[#B33D0D]', 'bg-sunny/15 text-[#92400E]'] as const;
-const DIFFICULTY_CHIP_TINT: Record<string, string> = {
-  '새싹 이야기': 'bg-sage/15 text-[#047857]',
-  '튼튼 이야기': 'bg-sky/15 text-[#075985]',
-  '도전 이야기': 'bg-berry/15 text-[#9F1239]',
+/* 칩 팔레트 — 피그마 「개발 배포용」 '주제'·'난이도' 심볼 실측: 배경 = 해당 색 13% 틴트, 글자 = 같은 색 원색
+   (다름 Primary · 용기 Sunny · 친절 Berry · 나눔 Sage / 새싹 Sage · 튼튼 Sky · 도전 Berry).
+   기존 명도 보정값은 QA 13("색상 기준은 스토리보드 기준으로")에 따라 철회 — 원색 대비 2.1~2.5:1 미달 인지하고 채택. */
+const TOPIC_CHIP_BY_NAME: Record<string, string> = {
+  다름: 'bg-primary/15 text-primary',
+  용기: 'bg-sunny/15 text-sunny',
+  친절: 'bg-berry/15 text-berry',
+  나눔: 'bg-sage/15 text-sage',
 };
+/** 시안에 없는 주제어는 같은 4색을 순환 적용 */
+const TOPIC_CHIP_CYCLE = [
+  'bg-primary/15 text-primary',
+  'bg-sunny/15 text-sunny',
+  'bg-berry/15 text-berry',
+  'bg-sage/15 text-sage',
+] as const;
+
+function topicChip(topic: string, index = 0): string {
+  return TOPIC_CHIP_BY_NAME[topic] ?? TOPIC_CHIP_CYCLE[index % TOPIC_CHIP_CYCLE.length];
+}
+
+const DIFFICULTY_CHIP_TINT: Record<string, string> = {
+  '새싹 이야기': 'bg-sage/15 text-sage',
+  '튼튼 이야기': 'bg-sky/15 text-sky',
+  '도전 이야기': 'bg-berry/15 text-berry',
+};
+const DIFFICULTY_CHIP_FALLBACK = 'bg-sky/15 text-sky';
 
 /**
  * 아이 컨텍스트 — child 쿼리 파라미터(프로필 선택 T047→홈 T048 전파 예정)가 우선.
@@ -75,13 +95,14 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
           href={backHref}
           className="flex h-12 items-center gap-2 rounded-full bg-white px-5 font-display text-2xl text-ink shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:opacity-70"
         >
-          <span aria-hidden>‹</span> 이야기 모음
+          <ChevronLeftIcon className="size-5" /> 이야기 모음
         </Link>
       </div>
 
       {story.id === BANGGUI_STORY_ID ? (
         // 로드 실패 폴백은 클라이언트 컴포넌트(story-hero)가 담당 (A5, 2.3 예외)
-        <StoryHero src={storyThumbnailUrl(false)} />
+        // 타이틀 있는 썸네일 사용 — 피그마 코멘트 #175 (기존 제목X 버전에서 교체)
+        <StoryHero src={storyThumbnailUrl(true)} />
       ) : (
         <div className="h-[41dvh] w-full shrink-0 bg-sunny/15" aria-hidden />
       )}
@@ -92,7 +113,7 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
             <span
               key={topic}
               className={`rounded-md px-2.5 py-1 font-display text-lg font-bold leading-none ${
-                TOPIC_CHIP_TINTS[i % TOPIC_CHIP_TINTS.length]
+                topicChip(topic, i)
               }`}
             >
               {topic}
@@ -100,31 +121,32 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
           ))}
           <span
             className={`rounded-lg px-2.5 py-1 font-display text-lg font-bold leading-none ${
-              DIFFICULTY_CHIP_TINT[levelLabel] ?? 'bg-sky/15 text-[#075985]'
+              DIFFICULTY_CHIP_TINT[levelLabel] ?? DIFFICULTY_CHIP_FALLBACK
             }`}
           >
             {levelLabel}
           </span>
           {story.estimated_minutes != null && (
-            <span className="rounded-lg bg-[#F5EDE0] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#75664F]">
+            <span className="rounded-lg bg-[#F5EDE0] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#8A7A68]">
               {story.estimated_minutes}분
             </span>
           )}
         </div>
 
         <h1 className="mt-3 font-display text-[32px] leading-tight text-ink">{story.title}</h1>
-        <p className="mt-2 font-display text-lg font-bold leading-relaxed text-[#75664F]">
+        <p className="mt-2 font-display text-lg font-bold leading-relaxed text-[#8A7A68]">
           {summaryWithTagline(story.summary)}
         </p>
 
         <section className="mt-4 min-h-0 shrink overflow-hidden rounded-2xl border border-sky/25 bg-[#DDF0FB] p-4">
-          <h2 className="font-display text-[22px] text-[#075985]">{LEARN_SECTION_TITLE}</h2>
+          <h2 className="flex items-center gap-2.5 font-display text-[22px] text-sky">
+            {LEARN_SECTION_TITLE}
+            <BookIcon className="size-6" />
+          </h2>
           <ul className="mt-2.5 flex flex-col gap-2">
             {LEARN_POINTS.map((point) => (
-              <li key={point} className="flex items-center gap-2 font-display text-lg font-bold text-[#75664F]">
-                <span aria-hidden className="text-[#047857]">
-                  ✓
-                </span>
+              <li key={point} className="flex items-center gap-2.5 font-display text-lg font-bold text-[#8A7A68]">
+                <CheckIcon className="w-3.5 shrink-0 text-sage" />
                 {point}
               </li>
             ))}

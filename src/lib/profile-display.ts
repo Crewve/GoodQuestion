@@ -1,4 +1,17 @@
 // 프로필 표시 규칙 헬퍼 (T047·T048 공용, 파트1) — 순수 함수라 클라이언트/서버 모두 사용 가능.
+import { MAX_CHILDREN_PER_PARENT } from './auth/profiles-payload'; // 상대 경로 — vitest에 @ 별칭 설정이 없다
+
+/**
+ * 서버 목록 + 이번 화면에서 방금 등록한 아이 병합 (기능명세서 2.1.1 → 2.1 복귀).
+ * router.refresh()는 await할 수 없어 목록 복귀 시점에는 아직 이전 서버 props가 렌더된다 —
+ * 그 사이 신규 카드가 비어 보이는 문제(QA 2)를 없애려고 응답으로 받은 아이를 즉시 이어 붙인다.
+ * refresh가 도착하면 같은 id가 서버 목록에 들어오므로 서버 값이 이기고 중복도 생기지 않는다.
+ */
+export function mergeAddedProfiles<T extends { id: string }>(serverProfiles: T[], added: T[]): T[] {
+  const known = new Set(serverProfiles.map((profile) => profile.id));
+  const pending = added.filter((profile) => !known.has(profile.id));
+  return [...serverProfiles, ...pending].slice(0, MAX_CHILDREN_PER_PARENT); // 표시 상한도 서버 제한과 동일
+}
 
 /**
  * 인사말·홈 표시용 이름 — "name의 첫 글자(성) 제외 후 나머지 표시" (기능명세서 2.0, 예: 김민지→민지).

@@ -8,6 +8,7 @@
 // 클릭 시에만 판정한다. 생년월일은 숫자 외 입력 즉시 필터링(별도 에러 없음 — 2.1.1 예외 처리).
 import { useState } from 'react';
 import Image from 'next/image';
+import { LockIcon } from '@/components/icons';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { isValidBirthDate } from '@/lib/profile-display';
 
@@ -61,6 +62,8 @@ export function ChildProfileForm({
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // 완료 시도 후에만 필드별 안내 문구 노출 (피그마 코멘트 #89·#90 — 1.2.2 회원가입 폼과 동일한 인라인 방식)
+  const [showFieldErrors, setShowFieldErrors] = useState(false);
 
   // 완료하기 활성 조건 — 필수 필드·동의 채움 (2.1.1 구성요소 표). 날짜 유효성은 클릭 시 판정.
   const filled =
@@ -75,13 +78,29 @@ export function ChildProfileForm({
     return null;
   };
 
+  const fieldErrors = showFieldErrors
+    ? {
+        avatar: !avatarKey ? ERROR_NO_AVATAR : null,
+        name: name.trim().length < 1 ? ERROR_NO_NAME : null,
+        birth:
+          birthDigits.length !== 8
+            ? ERROR_BIRTH_LENGTH
+            : !isValidBirthDate(birthDigits)
+              ? ERROR_BIRTH_INVALID
+              : null,
+      }
+    : { avatar: null, name: null, birth: null };
+
   const handleSubmit = async () => {
     if (submitting) return;
     const message = validate();
     if (message) {
-      setError(message);
+      setShowFieldErrors(true);
+      // 필드 문구는 인라인으로 노출되므로 하단에는 동의 에러만 남긴다 (중복 방지)
+      setError(message === ERROR_NO_CONSENT ? message : null);
       return;
     }
+    setShowFieldErrors(false);
     setError(null);
     setSubmitting(true);
     try {
@@ -131,6 +150,11 @@ export function ChildProfileForm({
             </button>
           ))}
         </div>
+        {fieldErrors.avatar && (
+          <p role="alert" className="text-[13px] text-berry">
+            {fieldErrors.avatar}
+          </p>
+        )}
       </fieldset>
 
       <label className="flex flex-col gap-1.5 text-sm font-bold text-ink">
@@ -142,6 +166,11 @@ export function ChildProfileForm({
           placeholder="아이 이름을 입력해주세요 (예: 홍길동)"
           className={inputClass}
         />
+        {fieldErrors.name && (
+          <p role="alert" className="text-[13px] font-normal text-berry">
+            {fieldErrors.name}
+          </p>
+        )}
       </label>
 
       <label className="flex flex-col gap-1.5 text-sm font-bold text-ink">
@@ -155,6 +184,11 @@ export function ChildProfileForm({
           onChange={(event) => setBirthDigits(event.target.value.replace(/\D/g, ''))} // 숫자 외 즉시 필터링
           className={inputClass}
         />
+        {fieldErrors.birth && (
+          <p role="alert" className="text-[13px] font-normal text-berry">
+            {fieldErrors.birth}
+          </p>
+        )}
       </label>
 
       {showConsent && (
@@ -164,7 +198,7 @@ export function ChildProfileForm({
           {/* 시안 민감정보 수집 동의 박스 (옐로) */}
           <div className="rounded-2xl border border-[#FFE580] bg-[#FFF5D4] p-4">
             <p className="flex items-center gap-1.5 text-xs font-bold text-[#B8763F]">
-              <span aria-hidden>🔒</span>
+              <LockIcon className="size-4" />
               민감정보 수집 동의
             </p>
             <label className="mt-2.5 flex cursor-pointer items-start gap-2.5">

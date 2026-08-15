@@ -2,20 +2,24 @@
 // 대화 장면 (T037, 기능명세서 2.4.3) — 턴 사이클 UI. 상태 전이는 turn 스토어(T033)가 소유하고
 // 이 컴포넌트는 오디오·녹음·API 이벤트만 배선한다:
 // 캐릭터 대사 자동 재생 → 재생 종료 시 녹음 자동 시작 → 마이크 버튼으로 종료 → 사전 게이트 → /api/stt
-// → REVIEW(수정 불가 미리보기) → 보내기 클릭 시에만 /api/turn → 응답 재생 → 반복.
+// → 전사 성공 시 곧바로 /api/turn 자동 전송(QA8 — 보내기 버튼 없음) → 응답 재생 → 반복.
+// REVIEW는 남아 있되 스스로 지나가는 단계다: 전사 결과가 곧 확정 발화이며 대화 내역 카드로 바로 표시된다.
 // CLOSING(sceneEnd) 응답은 고정 오디오 재생을 마친 뒤 onSceneEnd 호출 — 장면 전환은 컨테이너(T038) 몫.
 // 폴백(contracts 매트릭스): 게이트/STT 실패 = "다시 한번 말해줄래?" + 마이크 재클릭, 턴 실패 = 다시 보내기,
 // audioUrl 없음(TTS 장애) = 텍스트만 표시하고 즉시 다음 단계, 자동재생 차단 = 다시 듣기 탭이 복구 경로.
+// 다시 듣기와 녹음은 상호 배타(QA28) — 캐릭터 음성이 녹음에 섞이지 않도록 서로를 잠근다.
 // 마크업은 피그마 「개발 배포용」 2.4.2 대화 프레임 대조: 좌 장면 일러스트 / 우 라운드 패널
 // (캐릭터 상단 → 대화 내역 리스트(시간순·최신이 맨 아래, 현재 대사 카드에 다시 듣기 칩) → 상태 카드(대화 영역)
-// → 마이크(원형 76px)·보내기). 상태 카드 색: 듣는 중 #F5EDE0 / 녹음 primary / 변환 sunny.
+// → 마이크(원형 76px) 단독). 상태 카드 색: 듣는 중 #F5EDE0 / 녹음 primary / 변환 sunny.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MicIcon, SpeakerIcon, SpinnerIcon } from '@/components/icons';
 import { MissionPopup } from '@/components/mission-popup';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { substituteChildName } from '@/lib/child-name';
 import type { SttResult, ThinkingElement } from '@/lib/contracts';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
+import { WAVE_BAR_MIN_PX, micLevelIntensity, waveBarHeight } from '@/lib/mic-level';
 import type { MissionId } from '@/lib/missions';
 import { PHASE_LABELS, useTurnStore } from '@/store/turn';
 import story from '../../fixtures/story.banggui.json';
@@ -68,59 +72,46 @@ const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
 /** 클로징 대사 종료 → 장면 전환 사이 여운 — 즉시 전환이 너무 급하다는 피드백 반영 (2026-08-13) */
 const SCENE_END_DELAY_MS = 1500;
 
-/**
- * 아이 격려 고정 문구 — 시안 상태 카드(대화 영역) 하단 공통 표기.
- * fixture mission_2.examples와 같은 문장이지만 미션 예시 유출 버그가 아니라 확정된 최종 카피(2026-08-13 기획 확인).
- * 미션 팝업 쪽 동일 문구는 A1 버그였고 미션별 fixture 콘텐츠로 교체됨 — 이 상수는 수정 대상 아님.
- */
-const ENCOURAGEMENT = '질문이 많은 친구는 새로운 생각을 찾을 수 있어요.';
+// '질문이 많은 친구는 ~' 격려 고정 문구는 피그마 코멘트 #109(2026-08-14) 지시로 삭제 —
+// 2026-08-13의 "확정 카피" 판단을 뒤집는 최신 지시다 (관련 맥락: QA27·A1).
 
-function SpeakerIcon({ className = 'size-5' }: { className?: string }) {
+/** 캐릭터 발화 중 이퀄라이저 — 스피커 아이콘만으로는 '재생 중'이 안 보인다는 지적(#112)의 보강 */
+function SpeakingBars({ className = 'h-5' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
-      <path d="M4 9v6h4l5 4.5v-15L8 9H4z" />
-      <path d="M15.8 8.6a4.6 4.6 0 0 1 0 6.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M18 6.2a8 8 0 0 1 0 11.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
+    <span aria-hidden className={`flex items-center gap-[3px] ${className}`}>
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className="eq-bar w-1 rounded-full bg-current"
+          style={{ height: '100%', animationDelay: `${i * 0.15}s` }}
+        />
+      ))}
+    </span>
   );
 }
 
-/** 녹음 중 웨이브 아이콘 — 시안 WaveIcon (6개 세로 바) */
-function WaveBarsIcon({ className = 'h-[26px] w-8' }: { className?: string }) {
+/**
+ * 녹음 중 웨이브 아이콘 — 시안 WaveIcon (6개 세로 바).
+ * intensity(0~1)를 주면 바 높이가 실시간 입력을 따라 움직인다 (QA29 — 소리가 들어가는 게 보이게).
+ */
+function WaveBarsIcon({ className = 'h-[26px] w-8', intensity = 0 }: { className?: string; intensity?: number }) {
   const bars = [8, 20, 26, 14, 22, 10];
   return (
     <svg viewBox="0 0 34 26" className={className} aria-hidden>
-      {bars.map((h, i) => (
-        <rect key={i} x={i * 6} y={(26 - h) / 2} width="4" height={h} rx="2" fill="currentColor" />
-      ))}
-    </svg>
-  );
-}
-
-/** 변환 중 스피너 — 시안 SpinIcon (원호 스트로크) */
-function SpinnerIcon({ className = 'size-[26px]' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={`animate-spin ${className}`} aria-hidden fill="none">
-      <circle
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="2.7"
-        strokeLinecap="round"
-        strokeDasharray="46"
-        strokeDashoffset="18"
-      />
-    </svg>
-  );
-}
-
-function MicIcon({ className = 'size-[26px]' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
-      <rect x="9" y="1.5" width="6" height="12.5" rx="3" />
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M12 18v4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      {bars.map((h, i) => {
+        const barHeight = waveBarHeight(h, intensity, i);
+        return (
+          <rect
+            key={i}
+            x={i * 6}
+            y={(26 - barHeight) / 2}
+            width="4"
+            height={barHeight}
+            rx={WAVE_BAR_MIN_PX / 2}
+            fill="currentColor"
+          />
+        );
+      })}
     </svg>
   );
 }
@@ -131,7 +122,6 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
       ? avatarUrl(childAvatarKey as AvatarKey, 'select') // 선택 화면과 같은 select/ 세트 (T068 — avatar/ 세트는 화풍이 달라 미사용)
       : null;
   const phase = useTurnStore((s) => s.phase);
-  const sttText = useTurnStore((s) => s.sttText);
 
   const [history, setHistory] = useState<Bubble[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -141,8 +131,10 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   const [activeMission, setActiveMission] = useState<MissionId | null>(null);
   /** 미션 응답의 캐릭터 대사 — 팝업 [성공 완료]가 닫힐 때 재생 (기능명세서 ⓕ→⑦) */
   const heldReplyRef = useRef<CharacterReply | null>(null);
-  /** 최근 턴 진행 상황 — max_turns 도달 시 마이크·보내기 비활성 가드 (기능명세서 2.4.3 유효성) */
+  /** 최근 턴 진행 상황 — max_turns 도달 시 마이크 비활성 가드 (기능명세서 2.4.3 유효성) */
   const [turnProgress, setTurnProgress] = useState<TurnResponse['progress'] | null>(null);
+  /** 캐릭터 오디오 재생 중 여부 — 재생 중 녹음 잠금(QA28). audio 엘리먼트 이벤트가 단일 출처 */
+  const [audioPlaying, setAudioPlaying] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hintAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -153,6 +145,8 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   const queuedClosingRef = useRef<{ text: string; audioUrl: string | null; nextSceneId: string | null } | null>(null);
   /** afterCharacterAudio → playCharacterAudio 역참조 (useCallback 순환 의존 회피 — recorderStartRef 패턴) */
   const playAudioRef = useRef<(url: string | null | undefined) => void>(() => undefined);
+  /** 전사 완료 → 자동 전송 역참조 (handleSubmit이 아래에 정의됨 — recorderStartRef와 같은 패턴, QA8) */
+  const submitRef = useRef<() => void>(() => undefined);
   /** 클로징 후 지연 전환 타이머 — 장면 전환·이탈 시 해제 */
   const sceneEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const historyEndRef = useRef<HTMLDivElement | null>(null);
@@ -196,7 +190,10 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
         const stt = (await res.json()) as SttResult;
         useTurnStore.getState().sttSucceeded(stt); // failed=true → RECORDING 복귀
         if (stt.failed) showRetryHint();
-        else setStatusMessage(null);
+        else {
+          setStatusMessage(null);
+          submitRef.current(); // QA8 — 보내기 버튼 없이 전사 직후 자동 전송 (REVIEW는 통과 단계)
+        }
       } catch {
         useTurnStore.getState().sttFailed(); // 네트워크 등 — RECORDING 복귀
         showRetryHint();
@@ -272,13 +269,17 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
     playAudioRef.current = playCharacterAudio; // 렌더 중 ref 쓰기 금지(react-hooks/refs) — effect에서 최신 유지
   }, [playCharacterAudio]);
 
+  /** 녹음 중(권한 요청 포함)에는 다시 듣기 금지 — 캐릭터 음성이 마이크에 섞이는 것을 막는다 (QA28) */
+  const replayLocked = recorder.isRecording || recorder.status === 'requesting';
+
   const replayAudio = useCallback(() => {
     // 반복 가능 — 턴 진행·상태에는 영향 없음 (재생 종료 콜백은 phase 가드로 무시됨)
+    if (replayLocked) return; // 버튼도 비활성이지만 자동재생 복구 경로 등 우회 호출까지 잠근다
     if (lastAudioUrl) {
       setStatusMessage(null);
       playCharacterAudio(lastAudioUrl);
     }
-  }, [lastAudioUrl, playCharacterAudio]);
+  }, [lastAudioUrl, playCharacterAudio, replayLocked]);
 
   // --- 턴 제출 ---
 
@@ -347,22 +348,27 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
     if (store.phase !== 'REVIEW' || !store.sttText?.trim()) return;
     const text = store.sttText;
     const raw = store.sttRawText ?? text;
-    store.submit(); // → SUBMITTED (보내기 시점에만 저장·분석 — 계약)
+    store.submit(); // → SUBMITTED (전송 시점에만 저장·분석 — 계약. 전송은 전사 성공 직후 자동, QA8)
     setHistory((h) => [...h, { speaker: 'child', text }]);
     void requestTurn(text, raw);
   }, [requestTurn]);
 
+  useEffect(() => {
+    submitRef.current = handleSubmit; // 렌더 중 ref 쓰기 금지(react-hooks/refs) — effect에서 최신 유지
+  }, [handleSubmit]);
+
   const handleMicClick = useCallback(() => {
     if (recorder.isRecording) {
-      recorder.stop(); // 녹음 종료 → onComplete
+      recorder.stop(); // 녹음 종료 → onComplete → 전사 → 자동 전송 (QA8)
       return;
     }
-    // REVIEW에서 재클릭 = 재녹음 (T072) — 보내기 전까지 아무것도 저장되지 않으므로 STT 결과만 버린다
+    if (audioPlaying) return; // 다시 듣기 재생 중에는 녹음 시작 금지 (QA28) — 버튼도 비활성
+    // REVIEW가 남아 있는 예외 상황(자동 전송 가드에 걸린 경우)의 복구 — STT 결과를 버리고 다시 녹음 (T072)
     useTurnStore.getState().rerecord();
     // 게이트/STT 실패 후 재입력 — 마이크 재클릭으로 재시작 (권한 거부 시 시스템 팝업 재노출 경로 겸용)
     setStatusMessage(null);
     void recorder.start();
-  }, [recorder]);
+  }, [audioPlaying, recorder]);
 
   // --- 미션 팝업 배선 (T042 합류) ---
 
@@ -427,19 +433,25 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene.id]);
 
-  // REVIEW 미리보기 카드가 리스트 맨 아래 등장할 때도 최하단이 보이도록 phase·sttText 포함
+  // 새 말풍선·상태 전환 때 리스트 최하단이 보이도록 phase도 포함
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [history, phase, sttText]);
+  }, [history, phase]);
 
   // 현재(마지막) 캐릭터 대사 — 리스트 맨 아래 카드에만 다시 듣기 칩을 붙인다
   const lastCharacterIndex = history.findLastIndex((b) => b.speaker === 'character');
   const badgeLabel = PHASE_LABELS[phase];
-  // 기능명세서 2.4.3 유효성 — max_turns 도달 후 마이크·보내기 비활성 (서버 CLOSING 강제 종료의 UI 이중 방어)
+  // 기능명세서 2.4.3 유효성 — max_turns 도달 후 마이크 비활성 (서버 CLOSING 강제 종료의 UI 이중 방어)
   const turnsExhausted = turnProgress !== null && turnProgress.maxTurns > 0 && turnProgress.turn >= turnProgress.maxTurns;
-  // REVIEW에서도 마이크 활성 — 보내기 전 재녹음 허용 (T072, E2E 항목 13)
-  const micEnabled = (phase === 'RECORDING' || phase === 'REVIEW') && recorder.status !== 'requesting' && !turnsExhausted;
-  const sendEnabled = phase === 'REVIEW' && !!sttText?.trim() && !turnsExhausted;
+  // REVIEW는 자동 전송으로 지나가는 단계지만, 남아 있을 때의 복구(재녹음) 경로로 활성 유지 (T072, E2E 항목 13).
+  // 다시 듣기 재생 중에는 비활성 — 캐릭터 음성이 녹음에 섞이지 않게 (QA28)
+  const micEnabled =
+    (phase === 'RECORDING' || phase === 'REVIEW') &&
+    recorder.status !== 'requesting' &&
+    !turnsExhausted &&
+    !audioPlaying;
+  /** 녹음 입력 강도 — 웨이브 바·마이크 펄스 공통 (QA29) */
+  const micIntensity = recorder.isRecording ? micLevelIntensity(recorder.level) : 0;
 
   // 상태 카드(대화 영역) 톤 — 시안: 듣는 중 #F5EDE0/#8A7A68, 녹음 primary/white, 변환 sunny/ink
   // (듣는 중 #8A7A68은 대비 3.6:1 — 아동 하한 4.5:1 충족 위해 ink/70로 상향)
@@ -453,7 +465,15 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
   return (
     // 시안 StoryDialogueScreen: 좌 장면 일러스트 / 우 라운드 대화 패널 (좁은 화면은 세로 스택, 내부 스크롤만 허용)
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] bg-[#ffe8c9] lg:flex-row lg:gap-1.5">
-      <audio ref={audioRef} hidden />
+      {/* 재생 상태는 이 엘리먼트의 이벤트가 단일 출처 — 재생 중 녹음 잠금(QA28)에 쓰인다 */}
+      <audio
+        ref={audioRef}
+        hidden
+        onPlaying={() => setAudioPlaying(true)}
+        onPause={() => setAudioPlaying(false)}
+        onEnded={() => setAudioPlaying(false)}
+        onError={() => setAudioPlaying(false)}
+      />
       <audio ref={hintAudioRef} hidden />
 
       {/* 미션 오버레이 (T042) — 화면 전환 없는 단일 팝업, 서버 exposeMission으로만 열림 */}
@@ -506,13 +526,15 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
               >
                 <p className="text-lg font-bold text-primary">{scene.characterName ?? '캐릭터'}의 말</p>
                 <p className="mt-1 font-display text-[22px] leading-normal text-ink">{bubble.text}</p>
-                {/* 다시 듣기 칩 — 현재 대사(마지막 캐릭터 카드)에만. 자동재생 차단 복구 경로 겸용 */}
+                {/* 다시 듣기 칩 — 현재 대사(마지막 캐릭터 카드)에만. 자동재생 차단 복구 경로 겸용.
+                    녹음 중에는 비활성 — 녹음과 상호 배타 (QA28) */}
                 {i === lastCharacterIndex && (
                   <div className="mt-1.5 flex justify-end">
                     <button
                       type="button"
                       onClick={replayAudio}
-                      disabled={!lastAudioUrl}
+                      disabled={!lastAudioUrl || replayLocked}
+                      aria-label={lastAudioUrl && replayLocked ? '녹음 중에는 다시 들을 수 없어요' : undefined}
                       className="flex h-12 items-center gap-1.5 rounded-lg bg-[#fff5d4] px-3 text-lg font-bold text-ink active:bg-sunny disabled:opacity-40"
                     >
                       <SpeakerIcon />
@@ -524,13 +546,7 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
             ),
           )}
 
-          {/* STT 미리보기 — 수정 불가, '내가 한 말' 카드 표기 (시안 대화 내역 리스트), 표시 완료 시 보내기 활성 */}
-          {phase === 'REVIEW' && sttText && (
-            <div className="rounded-[20px] rounded-tr-none border-2 border-sky bg-[#ddf0fb] px-5 py-3.5">
-              <p className="text-lg font-bold text-sky">내가 한 말</p>
-              <p className="mt-1 font-display text-[22px] leading-normal text-ink">“{sttText}”</p>
-            </div>
-          )}
+          {/* 별도 STT 미리보기 카드는 없다 — 전사 직후 자동 전송(QA8)이라 확정 발화가 곧바로 '내가 한 말'로 쌓인다 */}
           <div ref={historyEndRef} />
         </div>
 
@@ -549,11 +565,16 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                 <>
                   <span aria-hidden>
                     {phase === 'RECORDING' ? (
-                      <WaveBarsIcon />
+                      // 녹음 중 표시 강화(QA29) — 아이콘을 키우고 바 높이가 실시간 입력을 따라간다
+                      <WaveBarsIcon className="h-[34px] w-[42px]" intensity={micIntensity} />
                     ) : phase === 'TRANSCRIBING' ? (
-                      <SpinnerIcon />
+                      <SpinnerIcon className="size-[26px] animate-spin" />
                     ) : (
-                      <SpeakerIcon className="size-6" />
+                      // 재생 중임이 눈에 보이게 스피커 + 움직이는 이퀄라이저 병행 (#112)
+                      <span className="flex items-center gap-2">
+                        <SpeakerIcon className="size-6" />
+                        <SpeakingBars className="h-5" />
+                      </span>
                     )}
                   </span>
                   <p className="font-display text-lg">{badgeLabel}</p>
@@ -571,45 +592,47 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                   <button
                     type="button"
                     onClick={() => void requestTurn(turnRetry.text, turnRetry.sttRawText)}
-                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-ink active:bg-ink active:text-white"
+                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-white active:bg-ink"
                   >
                     다시 보내기
                   </button>
                 </>
               )}
             </div>
-            {/* opacity를 얹으면 카드 톤(ink/70)과 곱해져 대비 하한 미달 — 톤 상속 그대로 표시 */}
-            {!turnRetry && !statusMessage && !recorder.error && (
-              <p className="mt-0.5 font-display text-lg">{ENCOURAGEMENT}</p>
-            )}
+            {/* 격려 고정 문구('질문이 많은 친구는~')는 피그마 코멘트 #109 지시로 삭제 */}
           </div>
         </div>
 
-        {/* 마이크(원형 76px)·보내기 — 터치 48px+, 상태는 색+아이콘+상태 카드 텍스트 병행 */}
-        <div className="flex min-h-[76px] shrink-0 items-center justify-center gap-6 pt-3">
-          <button
-            type="button"
-            onClick={handleMicClick}
-            disabled={!micEnabled}
-            aria-label={recorder.isRecording ? '말 끝났어요 — 녹음 끝내기' : phase === 'REVIEW' ? '다시 말하기' : '눌러서 말하기'}
-            style={recorder.isRecording ? { transform: `scale(${1 + Math.min(recorder.level * 2, 0.15)})` } : undefined}
-            className={`flex size-[76px] shrink-0 items-center justify-center rounded-full text-white transition-transform ${
-              phase === 'TRANSCRIBING' ? 'bg-sunny shadow-[0_8px_28px_rgba(255,201,60,0.33)]' : 'bg-primary shadow-[0_8px_28px_rgba(255,122,61,0.33)]'
-            } disabled:opacity-40`}
-          >
-            {recorder.isRecording ? <WaveBarsIcon /> : phase === 'TRANSCRIBING' ? <SpinnerIcon /> : <MicIcon />}
-          </button>
-          {/* 시안: 녹음·변환 중에는 마이크 단독 센터 — 그 외에는 보내기 병행 */}
-          {phase !== 'RECORDING' && phase !== 'TRANSCRIBING' && (
+        {/* 마이크(원형 76px) 단독 — 보내기 버튼 없음(QA8, 녹음 종료 = 전송). 상태는 색+아이콘+상태 카드 텍스트 병행 */}
+        <div className="flex min-h-[76px] shrink-0 items-center justify-center pt-3">
+          <div className="relative flex size-[76px] shrink-0 items-center justify-center">
+            {/* 입력 링 — 소리가 들어갈수록 크고 진해진다 (QA29). 장식이라 포인터 이벤트 없음 */}
+            {recorder.isRecording && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-full bg-primary transition-transform duration-75"
+                style={{ transform: `scale(${1 + micIntensity * 0.45})`, opacity: 0.18 + micIntensity * 0.42 }}
+              />
+            )}
             <button
               type="button"
-              onClick={handleSubmit}
-              disabled={!sendEnabled}
-              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-ink active:bg-ink active:text-white disabled:opacity-40"
+              onClick={handleMicClick}
+              disabled={!micEnabled}
+              aria-label={recorder.isRecording ? '말 끝났어요 — 녹음 끝내기' : phase === 'REVIEW' ? '다시 말하기' : '눌러서 말하기'}
+              style={recorder.isRecording ? { transform: `scale(${1 + micIntensity * 0.18})` } : undefined}
+              className={`relative flex size-[76px] shrink-0 items-center justify-center rounded-full text-white transition-transform duration-75 ${
+                phase === 'TRANSCRIBING' ? 'bg-sunny shadow-[0_8px_28px_rgba(255,201,60,0.33)]' : 'bg-primary shadow-[0_8px_28px_rgba(255,122,61,0.33)]'
+              } disabled:opacity-40`}
             >
-              보내기 →
+              {recorder.isRecording ? (
+                <WaveBarsIcon className="h-[34px] w-[42px]" intensity={micIntensity} />
+              ) : phase === 'TRANSCRIBING' ? (
+                <SpinnerIcon className="size-[26px] animate-spin" />
+              ) : (
+                <MicIcon className="size-[26px]" />
+              )}
             </button>
-          )}
+          </div>
         </div>
       </div>
     </section>
