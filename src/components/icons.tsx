@@ -79,54 +79,61 @@ export function LockIcon({ className = 'size-5' }: IconProps) {
   );
 }
 
-/** 마이크(스탠드형) — 이용 가이드 '말하기' 타일 [시안 재현] */
-export function MicStandIcon({ className = 'size-7' }: IconProps) {
+/* 이용 가이드 타일 4종 — 2026-08-15 시안 개정(650:5860)으로 전용 에셋 지정 (기존 시안 재현 벡터 대체) */
+const GUIDE_OUTLINE = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+} as const;
+
+/** 마이크 — 이용 가이드 '말하기' 타일 [에셋 user_guide/Micophone, 원본 #FF7A3D] */
+export function MicrophoneIcon({ className = 'size-7' }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden {...OUTLINE}>
-      <rect x="9" y="2.5" width="6" height="11" rx="3" />
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
-      <path d="M12 17.5V21" />
-      <path d="M8.5 21h7" />
+    <svg viewBox="0 0 32 32" className={className} aria-hidden {...GUIDE_OUTLINE}>
+      <path d="M21 8C21 5.23858 18.7614 3 16 3C13.2386 3 11 5.23858 11 8V16C11 18.7614 13.2386 21 16 21C18.7614 21 21 18.7614 21 16V8Z" />
+      <path d="M16 25V30" />
+      <path d="M25 16C25 18.3869 24.0518 20.6761 22.364 22.364C20.6761 24.0518 18.3869 25 16 25C13.6131 25 11.3239 24.0518 9.63604 22.364C7.94821 20.6761 7 18.3869 7 16" />
     </svg>
   );
 }
 
-/** 과녁 — 이용 가이드 '미션' 타일 [시안 재현] */
-export function TargetIcon({ className = 'size-7' }: IconProps) {
+/** 퍼즐 조각 — 이용 가이드 '미션' 타일 [에셋 user_guide/puzzle, 원본 #FF7A3D] */
+export function PuzzleIcon({ className = 'size-7' }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden {...OUTLINE}>
-      <circle cx="12" cy="12" r="8.5" />
-      <circle cx="12" cy="12" r="4.5" />
-      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+    <svg viewBox="0 0 32 32" className={className} aria-hidden {...GUIDE_OUTLINE}>
+      <path d="M7.99982 27.0002C7.73461 27.0002 7.48025 26.8948 7.29272 26.7073C7.10518 26.5197 6.99982 26.2654 6.99982 26.0002V20.6639C6.46636 20.9163 5.87773 21.0297 5.28868 20.9936C4.69962 20.9575 4.12927 20.773 3.63065 20.4573C3.13203 20.1416 2.72133 19.7049 2.43674 19.1879C2.15216 18.6709 2.00293 18.0903 2.00293 17.5002C2.00293 16.91 2.15216 16.3294 2.43674 15.8124C2.72133 15.2954 3.13203 14.8587 3.63065 14.543C4.12927 14.2273 4.69962 14.0429 5.28868 14.0067C5.87773 13.9706 6.46636 14.084 6.99982 14.3364V9.00017C6.99982 8.73495 7.10518 8.4806 7.29272 8.29306C7.48025 8.10552 7.73461 8.00017 7.99982 8.00017H13.8361C13.5834 7.4667 13.4697 6.87798 13.5057 6.2888C13.5416 5.69961 13.726 5.12908 14.0417 4.63029C14.3573 4.1315 14.794 3.72064 15.3111 3.43594C15.8282 3.15125 16.4089 3.00195 16.9992 3.00195C17.5895 3.00195 18.1702 3.15125 18.6873 3.43594C19.2044 3.72064 19.641 4.1315 19.9567 4.63029C20.2724 5.12908 20.4567 5.69961 20.4927 6.2888C20.5286 6.87798 20.415 7.4667 20.1623 8.00017H25.9998C26.265 8.00017 26.5194 8.10552 26.7069 8.29306C26.8945 8.4806 26.9998 8.73495 26.9998 9.00017V14.3364C26.4664 14.084 25.8777 13.9706 25.2887 14.0067C24.6996 14.0429 24.1293 14.2273 23.6306 14.543C23.132 14.8587 22.7213 15.2954 22.4367 15.8124C22.1522 16.3294 22.0029 16.91 22.0029 17.5002C22.0029 18.0903 22.1522 18.6709 22.4367 19.1879C22.7213 19.7049 23.132 20.1416 23.6306 20.4573C24.1293 20.773 24.6996 20.9575 25.2887 20.9936C25.8777 21.0297 26.4664 20.9163 26.9998 20.6639V26.0002C26.9998 26.2654 26.8945 26.5197 26.7069 26.7073C26.5194 26.8948 26.265 27.0002 25.9998 27.0002H7.99982Z" />
     </svg>
   );
 }
 
-/** 메모 — 이용 가이드 '기록' 타일 [시안 재현] */
-export function NoteIcon({ className = 'size-7' }: IconProps) {
+/** 문서와 연필 — 이용 가이드 '단어장' 타일 [에셋 user_guide/word, 원본 #FF7A3D] */
+export function WordIcon({ className = 'size-7' }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden {...OUTLINE}>
-      <path d="M6 3.5h9L19 8v12.5H6z" />
-      <path d="M14.5 3.7V8.2H19" />
-      <path d="M9 12.5h6M9 16h4" />
+    <svg viewBox="0 0 32 32" className={className} aria-hidden {...GUIDE_OUTLINE}>
+      <path d="M14.667 5.33301H5.33366C4.62641 5.33301 3.94814 5.61396 3.44804 6.11406C2.94794 6.61415 2.66699 7.29243 2.66699 7.99967V26.6663C2.66699 27.3736 2.94794 28.0519 3.44804 28.552C3.94814 29.0521 4.62641 29.333 5.33366 29.333H24.0003C24.7076 29.333 25.3858 29.0521 25.8859 28.552C26.386 28.0519 26.667 27.3736 26.667 26.6663V17.333" />
+      <path d="M24.667 3.33331C25.1974 2.80288 25.9168 2.50488 26.667 2.50488C27.4171 2.50488 28.1366 2.80288 28.667 3.33331C29.1974 3.86374 29.4954 4.58316 29.4954 5.33331C29.4954 6.08346 29.1974 6.80288 28.667 7.33331L16.0003 20L10.667 21.3333L12.0003 16L24.667 3.33331Z" />
     </svg>
   );
 }
 
-/** 막대 그래프 — 이용 가이드 '리포트' 타일 [시안 재현] */
-export function ChartIcon({ className = 'size-7' }: IconProps) {
+/** 계단식 막대 그래프 — 이용 가이드 '리포트' 타일 [에셋 user_guide/report, 원본 #FF7A3D] */
+export function ReportIcon({ className = 'size-7' }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden {...OUTLINE}>
-      <path d="M4 20.5h16" />
-      <path d="M7.5 20V13M12 20V6.5M16.5 20v-4.5" />
+    <svg viewBox="0 0 32 32" className={className} aria-hidden {...GUIDE_OUTLINE}>
+      <path d="M6 26V17H12" />
+      <path d="M28 26H4" />
+      <path d="M12 26V11H19" />
+      <path d="M19 26V5H26V26" />
     </svg>
   );
 }
 
-/** 전구 — 이용 가이드 팁 줄머리 [시안 재현] */
+/** 전구 — 이용 가이드 팁 줄머리 [시안 재현] (650:5860 실측: 10px에 스트로크 1 → 24뷰박스 환산 2.4) */
 export function BulbIcon({ className = 'size-5' }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden {...OUTLINE}>
+    <svg viewBox="0 0 24 24" className={className} aria-hidden {...OUTLINE} strokeWidth={2.4}>
       <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.45 1 1.15 1 1.9v.7h5v-.7c0-.75.4-1.45 1-1.9A6 6 0 0 0 12 3Z" />
       <path d="M10 19.5h4" />
     </svg>
