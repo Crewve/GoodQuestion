@@ -58,6 +58,7 @@ ASSETS = [
     ("추천 이야기/추천 4_토끼와 거북이.png", "recommended/04-tokki-geobuki.png"),
     ("추천 이야기/추천 5_혹부리 영감.png", "recommended/05-hokburi-yeonggam.png"),
     ("추천 이야기/추천 6_개미와 베짱이.png", "recommended/06-gaemi-bejjangi.png"),
+    ("추천 이야기/추천 7_흥부와 놀부.png", "recommended/07-heungbu-nolbu.png"),
 ]
 
 
@@ -79,6 +80,8 @@ def request(method, url, key, body=None, content_type="application/json"):
         "Authorization": f"Bearer {key}",
         "apikey": key,
         "Content-Type": content_type,
+        # 재업로드 시 덮어쓰기 — 쿼리 ?upsert=true는 무시되고 409가 난다(헤더가 정식 방법)
+        "x-upsert": "true",
     })
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
@@ -125,7 +128,11 @@ def main():
     ok = 0
     for src, key_path in ASSETS:
         data = (IMG / src).read_bytes()
-        status, body = request("POST", f"{base}/storage/v1/object/{BUCKET}/{key_path}?upsert=true",
+        # 1KB 미만은 플레이스홀더 스텁(대표 썸네일 등 로컬 미보유) — 업로드하면 스토리지의 정상본을 덮어쓴다
+        if len(data) < 1024:
+            print(f"  - {key_path} 건너뜀 (로컬 파일 {len(data)}B — 스텁 의심)")
+            continue
+        status, body = request("POST", f"{base}/storage/v1/object/{BUCKET}/{key_path}",
                                key, data, "image/png")
         if status in (200, 201):
             ok += 1

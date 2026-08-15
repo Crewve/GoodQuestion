@@ -121,7 +121,7 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
       {/* 헤더 69px — 타이틀 32px Cafe24 + 하단 보더 #F0E4D3 (2.2) */}
       <header className="flex h-[69px] shrink-0 items-center gap-3 border-b border-[#F0E4D3] px-6">
         <h1 className="font-display text-[32px] leading-none text-ink">이야기 모음</h1>
-        <StoryBookIcon className="h-[26px] w-[29px] text-ink" />
+        <StoryBookIcon className="size-7 text-ink" />
       </header>
 
       <div className="shrink-0">

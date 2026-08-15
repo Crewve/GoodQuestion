@@ -5,6 +5,7 @@
 // 인증은 Supabase 세션 미들웨어(T010, 파트2) 계층 담당 — 여기서 중복 검사하지 않는다.
 import { toFile } from 'openai';
 import { speechToText, buildSttHint } from '@/lib/stt';
+import { retellingVocabulary } from '@/lib/stt/hints';
 import { devSttFallbackText } from '@/lib/stt/dev-fallback';
 import type { SttResult } from '@/lib/contracts';
 
@@ -50,8 +51,13 @@ export async function POST(request: Request): Promise<Response> {
   const replyRaw = form.get('characterReply');
   const characterReply = typeof replyRaw === 'string' && replyRaw.trim() ? replyRaw.trim() : undefined;
 
-  // 장면 external_id(sc_*)는 fixtures에서 직접 해석. uuid는 시드(T008) 매핑 연동 전까지 기본 어휘로 폴백
-  const hint = buildSttHint(sceneId?.startsWith('sc_') ? sceneId : undefined, characterReply);
+  // 장면 external_id(sc_*)는 fixtures에서 직접 해석. uuid는 시드(T008) 매핑 연동 전까지 기본 어휘로 폴백.
+  // 재구성 발화(2.4.5)는 장면별 핵심 단어(QA 12 — 2~4개)를 어휘 힌트로 주입해 인식률을 높인다 (#84)
+  const hint = buildSttHint(
+    sceneId?.startsWith('sc_') ? sceneId : undefined,
+    characterReply,
+    context === 'retelling' ? retellingVocabulary() : undefined,
+  );
 
   const mime = (audio.type || 'audio/webm').split(';')[0];
   const file = await toFile(audio, `recording.${MIME_EXT[mime] ?? 'webm'}`, { type: mime });

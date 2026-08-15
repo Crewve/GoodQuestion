@@ -61,6 +61,8 @@ export function useRecorder(options: UseRecorderOptions = {}) {
   const [error, setError] = useState<string | null>(null);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
+  /** getUserMedia 진행 중 가드 — 마이크 연타 시 스트림·레코더가 이중 생성되는 문제 차단 (피그마 코멘트 #114) */
+  const startingRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -89,13 +91,15 @@ export function useRecorder(options: UseRecorderOptions = {}) {
   useEffect(() => cleanup, [cleanup]); // 언마운트 시 마이크 해제
 
   const start = useCallback(async () => {
-    if (recorderRef.current) return; // 이미 녹음 중
+    if (recorderRef.current || startingRef.current) return; // 이미 녹음 중·시작 중 (#114 다중 터치 중복 방지)
+    startingRef.current = true;
     setError(null);
     setStatus('requesting');
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
+      startingRef.current = false;
       setStatus('error');
       setError('마이크 접근 권한이 필요해요'); // 기능명세서 2.4.3 예외 원문 (대화·미션 공용, 2.4.5는 retelling 자체 문구)
       return;
@@ -156,6 +160,7 @@ export function useRecorder(options: UseRecorderOptions = {}) {
     };
 
     recorder.start();
+    startingRef.current = false;
     setStatus('recording');
     timeoutRef.current = setTimeout(() => {
       if (recorderRef.current?.state === 'recording') recorderRef.current.stop();

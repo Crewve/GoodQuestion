@@ -16,6 +16,8 @@ type Scene = {
   character_opening?: string;
 };
 
+type PostActivityConfig = { cards?: { label?: string }[]; keywords?: string[][] };
+
 type Character = { external_id: string; name: string; display_name: string };
 
 const scenes = (story as { scenes: Scene[] }).scenes;
@@ -32,16 +34,36 @@ function baseVocabulary(): string[] {
 }
 
 /**
+ * 2.4.5 재구성 발화 전용 어휘 — post_activity_config의 장면별 핵심 단어 + 카드 라벨.
+ * 아이 발화가 이 단어들을 담도록 유도되는 화면이라(QA 12 — 장면당 2~4개) 인식 정확도에 직결된다 (#84).
+ */
+export function retellingVocabulary(): string[] {
+  const config = (story as { story: { post_activity_config?: PostActivityConfig } }).story
+    .post_activity_config;
+  if (!config) return [];
+  return [
+    ...(config.cards ?? []).map((c) => c.label ?? "").filter(Boolean),
+    ...(config.keywords ?? []).flat(),
+  ];
+}
+
+/**
  * 장면별 STT 힌트 생성.
  * @param sceneExternalId 예: 'sc_banggui_03' — 미지정 시 기본 어휘만
  * @param characterReply  직전 캐릭터 대사(GUIDED 추가 질문 등) — 있으면 장면 오프닝 대신 사용.
  *                        아이 발화는 항상 캐릭터 대사에 대한 응답이므로 가장 강한 문맥 힌트가 된다.
+ * @param extraVocabulary 문맥별 추가 어휘(재구성 발화의 핵심 단어 등) — Whisper가 prompt의 끝부분을
+ *                        조건으로 쓰므로 가장 뒤(=가장 강한 위치)에 배치한다.
  */
-export function buildSttHint(sceneExternalId?: string, characterReply?: string): string {
+export function buildSttHint(
+  sceneExternalId?: string,
+  characterReply?: string,
+  extraVocabulary?: string[],
+): string {
   const scene = sceneExternalId ? scenes.find((s) => s.external_id === sceneExternalId) : undefined;
   const context = characterReply ?? scene?.character_opening ?? scene?.narration ?? "";
 
-  // Whisper는 prompt 끝부분을 조건으로 쓰므로 [문맥 → 기본 어휘] 순서로 배치
-  const hint = [context, ...baseVocabulary()].filter(Boolean).join(", ");
+  // Whisper는 prompt 끝부분을 조건으로 쓰므로 [문맥 → 기본 어휘 → 추가 어휘] 순서로 배치
+  const hint = [context, ...baseVocabulary(), ...(extraVocabulary ?? [])].filter(Boolean).join(", ");
   return hint.length > MAX_HINT_CHARS ? hint.slice(hint.length - MAX_HINT_CHARS) : hint;
 }

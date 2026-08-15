@@ -16,6 +16,7 @@ import { CheckIcon, PencilIcon } from '@/components/icons';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import type { SttResult } from '@/lib/contracts';
 import { fixedAudioUrl } from '@/lib/fixed-audio';
+import { keywordIncluded } from '@/lib/retelling-keywords';
 
 export type { PostActivityCard } from '@/components/card-ordering';
 
@@ -183,7 +184,8 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
               {sceneKeywords.length > 0 && (
                 <figcaption className="grid shrink-0 grid-cols-2 gap-1.5">
                   {sceneKeywords.map((keyword) => {
-                    const included = !!stt?.text.includes(keyword); // 포함 여부 시각 피드백 (비차단)
+                    // 포함 여부 시각 피드백 (비차단) — 활용형(미안함→미안해요 등)까지 인식 (#84 검증)
+                    const included = !!stt && keywordIncluded(stt.text, keyword);
                     return (
                       <span
                         key={keyword}
@@ -242,7 +244,7 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
             <button
               type="button"
               onClick={() => void requestSubmit(stt.text)}
-              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-ink active:bg-ink active:text-white"
+              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-white active:bg-ink"
             >
               다시 보내기
             </button>

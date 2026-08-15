@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
-import { ChevronLeftIcon, UserIcon } from '@/components/icons';
+import { ChevronDownIcon, ChevronLeftThinIcon, UserIcon } from '@/components/icons';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
 import { koreanAge } from '@/lib/profile-display';
 
@@ -22,8 +22,8 @@ export function MyPageHeader({ backHref }: { backHref?: string }) {
             aria-label="뒤로 가기"
             className="flex size-12 shrink-0 items-center justify-center text-ink active:opacity-70"
           >
-            {/* 피그마 CaretLeft 글리프 — 텍스트 ‹ 는 획이 얇아 교체, 공용 아이콘 세트로 통일 (C1) */}
-            <ChevronLeftIcon />
+            {/* 보호자 화면 뒤로가기 — 에셋 chevron_left_thin (피그마 코멘트 #162) */}
+            <ChevronLeftThinIcon className="h-[17px] w-[9px]" />
           </Link>
         ) : (
           // 시안 공통: 뒤로가기 없는 화면도 타이틀은 좌측 72px 정렬 (빈 슬롯 유지)
@@ -67,14 +67,8 @@ export function AccordionItem({ title, meta, icon, tone = 'muted', separated = f
           <span className="block text-[15px] font-bold text-[#1E1A14]">{title}</span>
           {meta && <span className="mt-1 block text-[13px] text-[#7A7268]">{meta}</span>}
         </span>
-        <svg
-          aria-hidden
-          viewBox="0 0 16 16"
-          fill="none"
-          className="size-4 shrink-0 text-[#7A7268] transition-transform group-open:rotate-180"
-        >
-          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        {/* 접기/펼치기 — 에셋 chevron_down(닫힘)·회전 시 chevron_up과 동일 (피그마 코멘트 #163·#164, 원본 #7A7268) */}
+        <ChevronDownIcon className="h-[7px] w-[11px] shrink-0 text-[#7A7268] transition-transform group-open:rotate-180" />
       </summary>
       <div
         className={`whitespace-pre-line border-t border-[#E8E2DA] px-5 py-4 ${

@@ -2,9 +2,8 @@
 // 데이터 연동·카드 클릭 없음(MVP 명시). 마이페이지 계열이라 세로 스크롤 유지(T077 팀 결정).
 // 구성(시안): 중앙 제목 "전래동화 이야기 여행"·완주 안내 문구·수행 현황 진행바·동화 카드 8종·다른 이야기 보기.
 // 수치(3/7권)는 명세 예시 원문 그대로의 고정값 유지 — 완료 3종 배치로 진행바와 정합(기존 데이터 규칙).
-// 카드 8종 중 이미지가 있는 7종은 기존 에셋(방귀 썸네일+추천 6종) 재사용. 8종째(흥부와 놀부)는 원본 에셋이
-// 어디에도 없어(design/이미지·피그마 내장 116장 모두 미보유) 임의 대체 이미지를 만들지 않고 '준비 중' 타일로 명시한다
-// — design/README.md 규칙(에셋 부재 시 임의 대체물 금지, 팀 전달 대기). 수정사항 C4 / QA 14.
+// 카드 8종 전부 실제 에셋 사용 — 흥부와 놀부 원본(추천 7)이 2026-08-15 입고되어 '준비 중' 타일을 교체했다
+// (피그마 코멘트 #102·#170, recommended/07-heungbu-nolbu.png). 수정사항 C4 / QA 14 이력 참조.
 // 시안 금메달은 벡터(fig 내장 PNG 아님)라 SVG로 재현 — 공용 아이콘(components/icons.tsx MedalIcon)으로 통일.
 // 하단 GNB는 스토리보드에 없어 제거(뒤로가기로 복귀).
 // 색·폰트는 스토리보드 실측값 그대로 적용(수정사항 C5·C6 / QA 13·15) — 기존 대비 보정치는 팀 지시("색상 기준은
@@ -39,7 +38,7 @@ export default async function BadgesPage(props: PageProps<'/my/badges'>) {
     { title: '토끼와 거북이', imageUrl: recommended[3], state: '읽기 완료' },
     { title: '혹부리 영감', imageUrl: recommended[4], state: '읽기 전' },
     { title: '개미와 베짱이', imageUrl: recommended[5], state: '읽기 전' },
-    { title: '흥부와 놀부', imageUrl: null, state: '읽기 전' },
+    { title: '흥부와 놀부', imageUrl: recommended[6] ?? null, state: '읽기 전' },
   ];
 
   return (
@@ -129,8 +128,9 @@ export default async function BadgesPage(props: PageProps<'/my/badges'>) {
                   </div>
                   <div className="flex flex-col items-center gap-1.5 px-2 pb-2.5 pt-2">
                     <p className="max-w-full truncate font-display text-xl text-ink">{card.title}</p>
+                    {/* 상태 칩 폰트: Pretendard GOV → Cafe24 Ssurround (피그마 코멘트 #103) */}
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-lg font-bold ${STATE_CHIP[card.state]}`}
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 font-display text-lg font-bold ${STATE_CHIP[card.state]}`}
                     >
                       {card.state}
                     </span>

@@ -12,7 +12,7 @@
 // 성공 화면 아이콘은 시안이 이모지(🏆✨⭐🎖️)로 그려져 있으나 기기별 컬러 폰트 차이로 시안과 다르게 렌더돼
 // 공용 SVG 세트로 교체(수정사항 C1 / QA 4·10) — 메달은 배지 화면·내정보와 같은 MedalIcon으로 통일.
 import { useCallback, useRef, useState } from 'react';
-import { MedalIcon, SparkleIcon, StarIcon } from '@/components/icons';
+import { MedalIcon, MicIcon, SparkleIcon, SpeakerIcon, SpinnerIcon, StarIcon, TrophyIcon } from '@/components/icons';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import { missionImageUrl } from '@/lib/assets';
 import type { SttResult } from '@/lib/contracts';
@@ -57,17 +57,12 @@ const MISSION_GUIDE_LEAD: Record<string, string> = {
   mission_1: '이런 것들을 말해줄래요?',
 };
 
-const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
+/** 안내 스트립 맺음말 — 미션2 예시 뒤에 붙는 확정 카피 (피그마 코멘트 #116) */
+const MISSION_GUIDE_TAIL: Record<string, string> = {
+  mission_2: '이 친구들처럼, 부족한 점도 멋진 점으로 바꿔서 말해볼까요?',
+};
 
-function SpeakerIcon({ className = 'size-6' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
-      <path d="M4 9v6h4l5 4.5v-15L8 9H4z" />
-      <path d="M15.8 8.6a4.6 4.6 0 0 1 0 6.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M18 6.2a8 8 0 0 1 0 11.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
+const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
 
 function WaveBarsIcon({ className = 'h-[26px] w-8' }: { className?: string }) {
   const bars = [8, 20, 26, 14, 22, 10];
@@ -76,33 +71,6 @@ function WaveBarsIcon({ className = 'h-[26px] w-8' }: { className?: string }) {
       {bars.map((h, i) => (
         <rect key={i} x={i * 6} y={(26 - h) / 2} width="4" height={h} rx="2" fill="currentColor" />
       ))}
-    </svg>
-  );
-}
-
-function SpinnerIcon({ className = 'size-6' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={`animate-spin ${className}`} aria-hidden fill="none">
-      <circle
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="2.7"
-        strokeLinecap="round"
-        strokeDasharray="46"
-        strokeDashoffset="18"
-      />
-    </svg>
-  );
-}
-
-function MicIcon({ className = 'size-6' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
-      <rect x="9" y="1.5" width="6" height="12.5" rx="3" />
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M12 18v4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -133,6 +101,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
   const missionItems = [...mission.examples, ...mission.guidePoints];
   const guideItems = missionItems.length > 0 ? missionItems : [mission.goal];
   const guideLead = MISSION_GUIDE_LEAD[missionId];
+  const guideTail = MISSION_GUIDE_TAIL[missionId];
 
   const [phase, setPhase] = useState<MissionPhase>(devInitialPhase ?? 'IDLE');
   const [stt, setStt] = useState<{ text: string; sttRawText: string } | null>(null);
@@ -257,7 +226,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
                 <button
                   type="button"
                   onClick={() => void requestSubmit(stt.text, stt.sttRawText)}
-                  className="h-12 rounded-full bg-primary px-5 font-display text-lg text-ink active:bg-ink active:text-white"
+                  className="h-12 rounded-full bg-primary px-5 font-display text-lg text-white active:bg-ink"
                 >
                   다시 보내기
                 </button>
@@ -295,6 +264,7 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
                       {item}
                     </span>
                   ))}
+                  {guideTail && <span className="ml-1.5 font-bold text-ink">{guideTail}</span>}
                 </span>
               </span>
             )}
@@ -318,13 +288,20 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
                 phase === 'TRANSCRIBING' ? 'bg-sunny shadow-[0_6px_20px_rgba(255,201,60,0.33)]' : 'bg-primary shadow-[0_6px_20px_rgba(255,122,61,0.33)]'
               } disabled:opacity-40`}
             >
-              {recorder.isRecording ? <WaveBarsIcon /> : phase === 'TRANSCRIBING' ? <SpinnerIcon /> : <MicIcon />}
+              {recorder.isRecording ? (
+                <WaveBarsIcon />
+              ) : phase === 'TRANSCRIBING' ? (
+                <SpinnerIcon className="size-6 animate-spin" />
+              ) : (
+                <MicIcon className="size-6" />
+              )}
             </button>
             <button
               type="button"
               onClick={handleSubmit}
               disabled={!sendEnabled}
-              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-ink active:bg-ink active:text-white disabled:opacity-40"
+              // 보내기 글자색 — 시안 흰색(2.4.5 보내기와 동일, #107 버튼 폰트 컬러 일괄)
+              className="h-12 rounded-full bg-sage px-5 font-display text-xl text-white active:bg-ink disabled:opacity-40"
             >
               보내기 →
             </button>
@@ -334,7 +311,8 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
         /* [미션 성공 완료] — 같은 팝업 안에서 전환, 이야기 계속하기로만 복귀 */
         <section className="flex max-h-full w-full max-w-[700px] flex-col overflow-y-auto rounded-[32px] bg-white px-5 pb-5 shadow-[0_4px_16px_rgba(58,44,30,0.10),0_24px_64px_rgba(58,44,30,0.18)]">
           <div className="relative shrink-0 rounded-b-[50%] bg-gradient-to-b from-[#fff5d4] to-[#ffede3] pt-2.5 pb-8 text-center">
-            <MedalIcon className="mx-auto h-14 w-[52px] drop-shadow-[0_8px_16px_rgba(255,201,60,0.45)]" />
+            {/* 시안 🏆 자리 — 전달 에셋 trophy.svg로 교체 (피그마 코멘트 #96·#97, 원본 #FF7A3D) */}
+            <TrophyIcon className="mx-auto size-14 text-primary drop-shadow-[0_8px_16px_rgba(255,201,60,0.45)]" />
             <SparkleIcon className="absolute top-4 left-[38%] size-[22px] text-sunny" />
             <StarIcon className="absolute top-9 right-[38%] size-[22px]" />
             <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full bg-primary px-4 py-1.5 font-display text-lg whitespace-nowrap text-white shadow-[0_3px_10px_rgba(255,122,61,0.35)]">

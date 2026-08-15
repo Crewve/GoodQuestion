@@ -8,7 +8,7 @@ export default function CompleteError({ reset }: { reset: () => void }) {
       <button
         type="button"
         onClick={reset}
-        className="h-[55px] rounded-full bg-primary px-8 font-display text-xl font-bold text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90"
+        className="h-[55px] rounded-full bg-primary px-8 font-display text-xl font-bold text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90"
       >
         다시 시도
       </button>

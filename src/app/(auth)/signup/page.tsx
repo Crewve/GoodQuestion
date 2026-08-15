@@ -197,9 +197,10 @@ export default function SignupPage() {
               <li
                 key={label}
                 aria-current={active ? 'step' : undefined}
+                // 활성 탭: 피치 배경 + 하단 라인(피그마 코멘트 #93 — 테두리 전체가 아니라 밑줄 강조)
                 className={`flex h-13 flex-1 items-center justify-center text-center text-sm ${
                   active
-                    ? 'border border-primary bg-[#FFEDE3] font-bold text-primary'
+                    ? 'border-b-[3px] border-primary bg-[#FFEDE3] font-bold text-primary'
                     : 'border-b border-[#F0E4D3] bg-[#F7F6F3] text-[#8A7A68]'
                 }`}
               >

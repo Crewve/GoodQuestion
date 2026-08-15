@@ -153,7 +153,7 @@ export default function PlayPage(props: PageProps<'/play/[sessionId]'>) {
         <button
           type="button"
           onClick={exitToDetail}
-          className="h-14 rounded-full bg-primary px-8 font-display text-xl text-ink shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:bg-ink active:text-white"
+          className="h-14 rounded-full bg-primary px-8 font-display text-xl text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:bg-ink"
         >
           돌아가기
         </button>

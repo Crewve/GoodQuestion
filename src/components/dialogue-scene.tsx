@@ -12,6 +12,7 @@
 // (캐릭터 상단 → 대화 내역 리스트(시간순·최신이 맨 아래, 현재 대사 카드에 다시 듣기 칩) → 상태 카드(대화 영역)
 // → 마이크(원형 76px) 단독). 상태 카드 색: 듣는 중 #F5EDE0 / 녹음 primary / 변환 sunny.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MicIcon, SpeakerIcon, SpinnerIcon } from '@/components/icons';
 import { MissionPopup } from '@/components/mission-popup';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import { avatarUrl, type AvatarKey } from '@/lib/assets';
@@ -71,21 +72,21 @@ const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
 /** 클로징 대사 종료 → 장면 전환 사이 여운 — 즉시 전환이 너무 급하다는 피드백 반영 (2026-08-13) */
 const SCENE_END_DELAY_MS = 1500;
 
-/**
- * 아이 격려 고정 문구(가이드라인) — 시안 상태 카드(대화 영역) 하단 표기.
- * fixture mission_2.examples와 같은 문장이지만 미션 예시 유출 버그가 아니라 확정된 최종 카피(2026-08-13 기획 확인).
- * 미션 팝업 쪽 동일 문구는 A1 버그였고 미션별 fixture 콘텐츠로 교체됨 — 이 상수는 수정 대상 아님.
- * 노출은 대화의 첫 채팅에만 — 아이가 한 번이라도 말하면 감춘다 (QA27, 매 턴 반복 노출이 소음이라는 지적).
- */
-const ENCOURAGEMENT = '질문이 많은 친구는 새로운 생각을 찾을 수 있어요.';
+// '질문이 많은 친구는 ~' 격려 고정 문구는 피그마 코멘트 #109(2026-08-14) 지시로 삭제 —
+// 2026-08-13의 "확정 카피" 판단을 뒤집는 최신 지시다 (관련 맥락: QA27·A1).
 
-function SpeakerIcon({ className = 'size-5' }: { className?: string }) {
+/** 캐릭터 발화 중 이퀄라이저 — 스피커 아이콘만으로는 '재생 중'이 안 보인다는 지적(#112)의 보강 */
+function SpeakingBars({ className = 'h-5' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
-      <path d="M4 9v6h4l5 4.5v-15L8 9H4z" />
-      <path d="M15.8 8.6a4.6 4.6 0 0 1 0 6.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M18 6.2a8 8 0 0 1 0 11.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
+    <span aria-hidden className={`flex items-center gap-[3px] ${className}`}>
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className="eq-bar w-1 rounded-full bg-current"
+          style={{ height: '100%', animationDelay: `${i * 0.15}s` }}
+        />
+      ))}
+    </span>
   );
 }
 
@@ -111,34 +112,6 @@ function WaveBarsIcon({ className = 'h-[26px] w-8', intensity = 0 }: { className
           />
         );
       })}
-    </svg>
-  );
-}
-
-/** 변환 중 스피너 — 시안 SpinIcon (원호 스트로크) */
-function SpinnerIcon({ className = 'size-[26px]' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={`animate-spin ${className}`} aria-hidden fill="none">
-      <circle
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="2.7"
-        strokeLinecap="round"
-        strokeDasharray="46"
-        strokeDashoffset="18"
-      />
-    </svg>
-  );
-}
-
-function MicIcon({ className = 'size-[26px]' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
-      <rect x="9" y="1.5" width="6" height="12.5" rx="3" />
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M12 18v4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -477,8 +450,6 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
     recorder.status !== 'requesting' &&
     !turnsExhausted &&
     !audioPlaying;
-  /** 가이드라인(격려 문구)은 대화의 첫 채팅에만 — 아이 발화가 하나라도 있으면 감춘다 (QA27) */
-  const isFirstChat = !history.some((b) => b.speaker === 'child');
   /** 녹음 입력 강도 — 웨이브 바·마이크 펄스 공통 (QA29) */
   const micIntensity = recorder.isRecording ? micLevelIntensity(recorder.level) : 0;
 
@@ -597,9 +568,13 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                       // 녹음 중 표시 강화(QA29) — 아이콘을 키우고 바 높이가 실시간 입력을 따라간다
                       <WaveBarsIcon className="h-[34px] w-[42px]" intensity={micIntensity} />
                     ) : phase === 'TRANSCRIBING' ? (
-                      <SpinnerIcon />
+                      <SpinnerIcon className="size-[26px] animate-spin" />
                     ) : (
-                      <SpeakerIcon className="size-6" />
+                      // 재생 중임이 눈에 보이게 스피커 + 움직이는 이퀄라이저 병행 (#112)
+                      <span className="flex items-center gap-2">
+                        <SpeakerIcon className="size-6" />
+                        <SpeakingBars className="h-5" />
+                      </span>
                     )}
                   </span>
                   <p className="font-display text-lg">{badgeLabel}</p>
@@ -617,17 +592,14 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
                   <button
                     type="button"
                     onClick={() => void requestTurn(turnRetry.text, turnRetry.sttRawText)}
-                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-ink active:bg-ink active:text-white"
+                    className="h-12 rounded-full bg-primary px-5 font-display text-lg text-white active:bg-ink"
                   >
                     다시 보내기
                   </button>
                 </>
               )}
             </div>
-            {/* 가이드라인 — 첫 채팅에만(QA27). opacity를 얹으면 카드 톤(ink/70)과 곱해져 대비 하한 미달이라 톤 상속 그대로 */}
-            {isFirstChat && !turnRetry && !statusMessage && !recorder.error && (
-              <p className="mt-0.5 font-display text-lg">{ENCOURAGEMENT}</p>
-            )}
+            {/* 격려 고정 문구('질문이 많은 친구는~')는 피그마 코멘트 #109 지시로 삭제 */}
           </div>
         </div>
 
@@ -655,9 +627,9 @@ export function DialogueScene({ sessionId, scene, childName, childAvatarKey, onS
               {recorder.isRecording ? (
                 <WaveBarsIcon className="h-[34px] w-[42px]" intensity={micIntensity} />
               ) : phase === 'TRANSCRIBING' ? (
-                <SpinnerIcon />
+                <SpinnerIcon className="size-[26px] animate-spin" />
               ) : (
-                <MicIcon />
+                <MicIcon className="size-[26px]" />
               )}
             </button>
           </div>
