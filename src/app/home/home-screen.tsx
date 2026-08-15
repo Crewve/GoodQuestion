@@ -6,8 +6,10 @@
 // 있으면 더미 3종으로 채운다(2.0 예외 처리). 더미는 클릭 이벤트 미부여·흐린 '준비 중' 표시.
 // Header·GNB는 상하단 고정(핸드오프 §2.1), GNB는 파트2 T049의 BottomNav 공용(단어장 이동 없음,
 // 아이 컨텍스트 child 쿼리 전파) — 팀원 브랜치 파일을 동일 내용으로 선반영해 합류 시 충돌 없음.
-// UI 리뉴얼: 피그마 「개발 배포용」 2.0 Case A/B 대조 — h-dvh 한 화면 수납(세로 스크롤 금지, T071·T077 유지).
-// 추천은 1행 3개 고정이라 Case A(이어하기 카드 포함)에서도 클립 없이 들어간다.
+// UI 리뉴얼: 피그마 「개발 배포용」 2.0 Case A/B 대조 — h-dvh, Header·GNB 고정.
+// 스크롤: Case B는 추천 그리드 내부 스크롤(타이틀 고정, 시안 7카드). Case A는 본문(main) 전체
+// 세로 스크롤 — 기존 minmax 축소 방식(#104)은 화면이 낮으면 추천 카드가 찌그러져 철회(2026-08-15
+// QA). 카드 행은 220px 고정, 공간 부족 시 이어하기 카드째 스크롤된다.
 import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -154,7 +156,12 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
         </Link>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1194px] min-h-0 flex-1 flex-col overflow-hidden px-6 pt-5 pb-2">
+      {/* Case A는 main 자체가 스크롤 컨테이너(카드 찌그러짐 방지), Case B는 추천 그리드가 내부 스크롤 */}
+      <main
+        className={`mx-auto flex w-full max-w-[1194px] min-h-0 flex-1 flex-col px-6 pt-5 pb-2 ${
+          hasSession ? 'overflow-y-auto' : 'overflow-hidden'
+        }`}
+      >
         {/* 이어하기 — 진행 중인 이야기가 있는 경우에만 노출 (2.0 Case A, 카드 1146×340 bg #FFE8C9 r24) */}
         {hasSession && (
           <section
@@ -231,7 +238,11 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
         {/* 추천 이야기 3개 1행 (QA 22 — 기존 3×2 6개에서 축소) */}
         <section
           aria-label="추천 이야기"
-          className={`flex min-h-0 flex-1 flex-col overflow-hidden ${hasSession ? 'mt-4' : 'mt-2'}`}
+          className={
+            hasSession
+              ? 'mt-4 flex shrink-0 flex-col' // Case A: 자연 높이 — 넘치면 main이 스크롤
+              : 'mt-2 flex min-h-0 flex-1 flex-col overflow-hidden' // Case B: 남은 높이 채우고 그리드만 스크롤
+          }
         >
           <div className="flex shrink-0 items-center justify-between px-2.5">
             <div className="flex min-w-0 flex-col">
@@ -249,11 +260,13 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
               모두 보기 <ArrowNextIcon className="size-4" />
             </Link>
           </div>
-          {/* Case A: 1행 3개 고정(minmax 행 — 화면이 낮으면 카드가 줄어들며 짤림 방지, #104)
+          {/* Case A: 1행 3개, 220px 고정 행 — 축소 없음, 부족분은 main 스크롤(#104 minmax 축소 철회)
               Case B: 219px 행 그리드 + 내부 세로 스크롤(헤더·GNB 고정 유지, 시안 7카드) */}
           <div
-            className={`mt-4 grid min-h-0 flex-1 grid-cols-3 gap-5 ${
-              hasSession ? 'grid-rows-[minmax(0,220px)]' : 'auto-rows-[219px] content-start overflow-y-auto pb-3'
+            className={`mt-4 grid grid-cols-3 gap-5 ${
+              hasSession
+                ? 'auto-rows-[220px] shrink-0 pb-3'
+                : 'min-h-0 flex-1 auto-rows-[219px] content-start overflow-y-auto pb-3'
             }`}
           >
             {!hasSession && (
