@@ -274,7 +274,9 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                 href={`/stories/${story.id}?child=${childId}`}
                 className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] transition-transform active:scale-95"
               >
-                <div className="relative min-h-0 flex-1 overflow-hidden">
+                {/* 이미지 130px 고정 — 피그마 「이야기 카드」 실측(이미지 130 + 텍스트 90 = 219).
+                    flex-1이면 칩 줄 수에 따라 이미지 높이가 카드마다 달라진다 (2026-08-15 QA) */}
+                <div className="relative h-[130px] shrink-0 overflow-hidden">
                   <Image
                     src={storyThumbnailUrl(true)}
                     alt=""
@@ -284,7 +286,7 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                     className="object-cover"
                   />
                 </div>
-                <div className="flex shrink-0 flex-col gap-2 p-3.5">
+                <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3.5">
                   <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
                   <div className="flex flex-wrap items-center gap-1.5">
                     {story.topics.slice(0, 2).map((topic, i) => (
@@ -312,10 +314,11 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   aria-disabled
                   className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white opacity-50 shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
                 >
-                  <div className="relative min-h-0 flex-1 overflow-hidden">
+                  {/* 이미지 130px 고정 — 위 실제 카드와 동일 (피그마 실측) */}
+                  <div className="relative h-[130px] shrink-0 overflow-hidden">
                     <Image src={dummy.url} alt="" fill sizes="370px" loading="eager" className="object-cover" />
                   </div>
-                  <div className="flex shrink-0 flex-col gap-2 p-3.5">
+                  <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3.5">
                     <p className="truncate font-display text-[22px] leading-tight text-ink">{dummy.title}</p>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {dummy.keywords.map((keyword, i) => (
