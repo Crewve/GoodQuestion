@@ -4,9 +4,10 @@
 // 이메일: Supabase Auth signInWithPassword(브라우저 클라이언트 T010 재사용) → 성공 시 2.1 프로필 선택 이동.
 // 에러 문구 3종(1.1.1 원문): 형식 오류는 클라이언트 검사, 미가입/비밀번호 오류는 Supabase가 같은
 // invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오·구글 연동(T078 — R-10),
-// 네이버는 피그마 코멘트 #115로 버튼만 시안대로 배치(카카오→네이버→구글 순) — Supabase Auth가 네이버
-// 프로바이더를 지원하지 않고 네이버 앱 키도 없어 클릭 시 준비 중 안내로 대응, 연동은 별도 백엔드 작업 필요.
-// PKCE 콜백(/auth/callback)에서 세션 교환 후 복귀. 보호자 화면 — 스크롤 허용.
+// 네이버는 Supabase 미지원이라 자체 OAuth 라우트(/auth/naver, T082)로 연동 — 버튼 배치는 피그마
+// 코멘트 #115(카카오→네이버→구글 순). 키 미설정 배포에선 naverEnabled=false로 준비 중 안내 폴백.
+// 카카오·구글은 PKCE 콜백(/auth/callback), 네이버는 /auth/naver/callback에서 세션 발급 후 복귀.
+// 보호자 화면 — 스크롤 허용.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -26,7 +27,13 @@ const NAVER_PENDING = '네이버 로그인은 아직 준비 중이에요';
 const inputClass =
   'h-[50px] w-full rounded-[14px] border border-[#F0E4D3] bg-background px-4 text-base text-ink outline-none placeholder:text-ink/50 focus:border-primary';
 
-export function LoginScreen({ initialSocialError }: { initialSocialError: boolean }) {
+export function LoginScreen({
+  initialSocialError,
+  naverEnabled,
+}: {
+  initialSocialError: boolean;
+  naverEnabled: boolean;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -176,12 +183,18 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
           </svg>
           카카오 로그인
         </button>
-        {/* 네이버 — 시안 1.1(#115) 배치. Supabase 미지원이라 클릭 시 준비 중 안내 (파일 상단 주석 참고) */}
+        {/* 네이버 — 자체 OAuth 라우트(T082)로 전체 페이지 이동. 키 미설정이면 준비 중 안내 폴백 */}
         <button
           type="button"
           onClick={() => {
             setSocialError(false);
-            setNaverPending(true);
+            if (!naverEnabled) {
+              setNaverPending(true);
+              return;
+            }
+            setNaverPending(false);
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- 페이지가 아닌 라우트 핸들러 → 네이버 외부 이동, 전체 페이지 내비게이션 필수
+            window.location.assign('/auth/naver?next=/profiles');
           }}
           className="mt-3 flex h-13 w-full items-center justify-center gap-2 rounded-[14px] bg-[#03C75A] text-[15px] font-bold text-white active:opacity-80"
         >
