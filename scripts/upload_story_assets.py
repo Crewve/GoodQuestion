@@ -3,6 +3,8 @@
 사용법:
   python scripts/upload_story_assets.py --dry-run   # 업로드 없이 fixtures/storage-assets.json만 생성
   python scripts/upload_story_assets.py             # 버킷 생성(없으면) + 전체 업로드 + json 갱신
+  python scripts/upload_story_assets.py --only stories/banggui/missions/mission-2.png
+                                                    # 해당 키만 업로드 (원본 개정 단건 반영용)
 
 인증: .env.local(또는 환경변수)의 SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY 사용.
 서비스 키는 서버 전용 — 이 스크립트는 로컬에서만 실행하고 키를 커밋하지 않는다.
@@ -99,12 +101,18 @@ def request(method, url, key, body=None, content_type="application/json"):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="업로드 없이 매핑 json만 생성")
+    ap.add_argument("--only", metavar="KEY", help="이 스토리지 키 하나만 업로드 (매핑 json은 전체 재생성)")
     args = ap.parse_args()
+
+    if args.only and args.only not in {key for _, key in ASSETS}:
+        sys.exit(f"--only 키가 매핑에 없습니다: {args.only}")
+    targets = [(src, key) for src, key in ASSETS if not args.only or key == args.only]
 
     env = load_env()
     base = env.get("SUPABASE_URL", "https://lpiqyaqajlxhnvumvjvb.supabase.co").rstrip("/")
 
-    missing = [src for src, _ in ASSETS if not (IMG / src).exists()]
+    # --only일 때는 대상만 검사 — 무관한 원본 결손이 단건 반영을 막지 않게 한다
+    missing = [src for src, _ in targets if not (IMG / src).exists()]
     if missing:
         sys.exit(f"원본 파일 누락 {len(missing)}건: " + ", ".join(missing[:5]))
 
@@ -132,7 +140,7 @@ def main():
     print(f"버킷 확인: {BUCKET}")
 
     ok = 0
-    for src, key_path in ASSETS:
+    for src, key_path in targets:
         data = (IMG / src).read_bytes()
         # 1KB 미만은 플레이스홀더 스텁(대표 썸네일 등 로컬 미보유) — 업로드하면 스토리지의 정상본을 덮어쓴다
         if len(data) < 1024:
@@ -145,8 +153,8 @@ def main():
             print(f"  ↑ {key_path} ({len(data) // 1024}KB)")
         else:
             print(f"  ✗ {key_path} [{status}]: {body[:120]}")
-    print(f"완료: {ok}/{len(ASSETS)} 업로드")
-    if ok < len(ASSETS):
+    print(f"완료: {ok}/{len(targets)} 업로드")
+    if ok < len(targets):
         sys.exit(1)
 
 

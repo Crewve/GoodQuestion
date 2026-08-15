@@ -6,13 +6,13 @@
 // tasks.md T042가 버튼 시작으로 확정(미션 안내를 읽을 시간이 필요 — 대화 턴의 자동 시작과 구분).
 // 노출 판정(T040)·저장/분석(/api/turn isMission, T041)은 파트2 소유 — 이 컴포넌트의 접점은 onSubmit/onContinue 콜백뿐이며
 // 상태도 전역 turn 스토어(T033)와 무관한 팝업 로컬 상태만 쓴다(뒤의 대화 턴 사이클을 건드리지 않음).
-// 마크업은 피그마 「개발 배포용」 .4.2 대화_미션1/미션2/Mission2Overlay·미션n_성공화면 대조:
-// [진행 중] 그라데이션 헤더(미션 칩+안내) → 미션 일러스트(안내 포인트 포함 이미지) → 안내/미리보기 스트립 → 마이크·보내기.
+// 마크업은 피그마 「개발 배포용」 .4.2 대화_미션1/미션2(2026-08-15 개정 665:6727·665:6777)·미션n_성공화면 대조:
+// [진행 중] 그라데이션 헤더(미션 칩+안내) → 미션 일러스트 → 안내/미리보기 스트립(고정 카피+마이크 아이콘) → 마이크·보내기.
 // [성공 완료] 아치형 헤더(메달·미션 n단계 칩) → 잘했어요! → 성과 문구 → 별 3종 → 배지 카드 → 이야기 계속하기.
 // 성공 화면 아이콘은 시안이 이모지(🏆✨⭐🎖️)로 그려져 있으나 기기별 컬러 폰트 차이로 시안과 다르게 렌더돼
 // 공용 SVG 세트로 교체(수정사항 C1 / QA 4·10) — 메달은 배지 화면·내정보와 같은 MedalIcon으로 통일.
 import { useCallback, useRef, useState } from 'react';
-import { MedalIcon, MicIcon, SparkleIcon, SpeakerIcon, SpinnerIcon, StarIcon, TrophyIcon } from '@/components/icons';
+import { MedalIcon, MicIcon, SparkleIcon, SpinnerIcon, StarIcon, TrophyIcon } from '@/components/icons';
 import { useRecorder, type RecordingResult } from '@/hooks/useRecorder';
 import { missionImageUrl } from '@/lib/assets';
 import type { SttResult } from '@/lib/contracts';
@@ -47,19 +47,14 @@ const SUCCESS_CONTENT: Record<
 };
 
 /**
- * 안내 스트립 앞머리 (수정사항 C2 / QA 9 "미션 1 도움말 변경").
- * 미션2 fixture는 그대로 읽히는 완성 예시 문장("목소리가 큰 친구는 …")이지만,
- * 미션1 fixture는 답에 담을 요소를 나열한 조각글("무엇을 사용할 것인지")이라 그대로 늘어놓으면
- * 도움말이 아니라 채점표처럼 읽힌다. 원문(SoT: fixtures story.banggui.json)은 건드리지 않고
- * 앞에 안내 한 줄만 붙여 말로 이어지게 한다.
+ * 안내 스트립 고정 카피 — 2026-08-15 시안 개정(665:6727·665:6777)으로 fixture 나열 방식
+ * (미션1 guide_points 가공 C2/QA 9·미션2 examples+맺음말 #116)을 대체. 미션2는 예시 문장이
+ * 이미지(친구 카드 4장 빈칸 문장) 안으로 들어가 스트립에는 안내 한 줄만 남는다.
+ * fixture 원문(story.banggui.json guide_points·examples)은 SoT로 유지 — 표시만 중단.
  */
-const MISSION_GUIDE_LEAD: Record<string, string> = {
-  mission_1: '이런 것들을 말해줄래요?',
-};
-
-/** 안내 스트립 맺음말 — 미션2 예시 뒤에 붙는 확정 카피 (피그마 코멘트 #116) */
-const MISSION_GUIDE_TAIL: Record<string, string> = {
-  mission_2: '이 친구들처럼, 부족한 점도 멋진 점으로 바꿔서 말해볼까요?',
+const MISSION_PROMPTS: Record<string, string> = {
+  mission_1: '내가 주인공이라면 어떻게 할지 생각해서 말해볼까요?',
+  mission_2: '위 문장의 빈칸을 채워 친구의 모습을 멋진 점으로 바꿔서 말해볼까요?',
 };
 
 const RETRY_AUDIO_URL = fixedAudioUrl('system__stt_retry');
@@ -96,12 +91,8 @@ export type MissionPopupProps = {
 
 export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, onContinue }: MissionPopupProps) {
   const mission = loadMission(missionId);
-  // 하단 스트립 안내는 공통 고정 문구가 아니라 미션별 fixture 콘텐츠 — 미션2 examples·미션1 guide_points.
-  // 고정 문구를 쓰면 미션1 팝업에 미션2 예시 문장이 노출된다 (수정사항 A1). 둘 다 비면 goal로 폴백.
-  const missionItems = [...mission.examples, ...mission.guidePoints];
-  const guideItems = missionItems.length > 0 ? missionItems : [mission.goal];
-  const guideLead = MISSION_GUIDE_LEAD[missionId];
-  const guideTail = MISSION_GUIDE_TAIL[missionId];
+  // 하단 스트립은 미션별 고정 안내 한 줄 — 미션 간 혼선 방지 규칙(A1)은 Record 키 분리로 유지. 없으면 goal 폴백.
+  const prompt = MISSION_PROMPTS[missionId] ?? mission.goal;
 
   const [phase, setPhase] = useState<MissionPhase>(devInitialPhase ?? 'IDLE');
   const [stt, setStt] = useState<{ text: string; sttRawText: string } | null>(null);
@@ -201,8 +192,13 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
     >
       <audio ref={hintAudioRef} hidden />
       {phase !== 'SUCCESS' ? (
-        /* [미션 진행 중] — 그라데이션 헤더 + 미션 일러스트(안내 포인트 포함) + 안내/미리보기 스트립 + 마이크·보내기 */
-        <section className="flex max-h-full w-full max-w-[770px] flex-col overflow-hidden rounded-[32px] bg-background shadow-[0_24px_64px_rgba(58,44,30,0.45)]">
+        /* [미션 진행 중] — 그라데이션 헤더 + 미션 일러스트 + 안내/미리보기 스트립 + 마이크·보내기.
+           컨테이너 폭은 개정 시안 실측 — 미션1 770(일러스트 4:3) / 미션2 700(친구 카드 이미지 비율) */
+        <section
+          className={`flex max-h-full w-full flex-col overflow-hidden rounded-[32px] bg-background shadow-[0_24px_64px_rgba(58,44,30,0.45)] ${
+            missionNumber === 2 ? 'max-w-[700px]' : 'max-w-[770px]'
+          }`}
+        >
           <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 bg-gradient-to-b from-primary to-berry px-6 py-2">
             <span className="shrink-0 rounded-xl bg-white px-3 py-1 font-display text-lg text-primary">
               미션 {missionNumber}
@@ -253,19 +249,10 @@ export function MissionPopup({ devInitialPhase, missionId, sceneId, onSubmit, on
                 )}
               </>
             ) : (
-              /* 스토리보드 안내 스트립 실측 #8A7A68 (대비 3.6:1 — QA 13 "색상 기준은 스토리보드 기준으로"로 B2 보정 철회) */
+              /* 안내 스트립 실측(개정 시안): 마이크 26px #3A2C1E + 18px #8A7A68 (대비 3.6:1 — QA 13 "색상 기준은 스토리보드 기준으로"로 B2 보정 철회) */
               <span className="flex min-w-0 items-center gap-2.5 font-display text-lg text-[#8A7A68]">
-                <SpeakerIcon className="size-6 shrink-0" />
-                <span className="min-w-0 leading-normal">
-                  {guideLead && <span className="mr-1.5 font-bold text-ink">{guideLead}</span>}
-                  {guideItems.map((item, i) => (
-                    <span key={i}>
-                      {i > 0 && <span aria-hidden className="mx-1.5 text-ink/40">·</span>}
-                      {item}
-                    </span>
-                  ))}
-                  {guideTail && <span className="ml-1.5 font-bold text-ink">{guideTail}</span>}
-                </span>
+                <MicIcon className="size-[26px] shrink-0 text-ink" />
+                <span className="min-w-0 leading-normal">{prompt}</span>
               </span>
             )}
             {statusMessage && <span className="text-lg font-bold text-primary">{statusMessage}</span>}
