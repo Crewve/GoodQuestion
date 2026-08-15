@@ -1,0 +1,84 @@
+{
+  "story_external_id": "s_banggui_daughter_in_law_001",
+  "note": "단어장 콘텐츠 (2.6) — 원문: 「0_단어장 파일 전달드립니다._260815」(개별단어장_단어 설명.txt · 단어장_퀴즈 문제.txt). 문구는 전달 자료 원문 유지. 이미지 키는 fixtures/storage-assets.json 참조 — 단어는 wordbook/, 퀴즈는 이야기 장면(scene_external_id + scene_variant, sceneImageUrl 규약: 대화3만 2컷).",
+  "words": [
+    {
+      "external_id": "wd_banggui_01",
+      "word": "장대",
+      "definition": "아주 길고 가는 막대예요",
+      "story_quote": "아무리 긴 장대를 가져와도 닿지 않았고, 나무에 올라가려 해도 가지가 너무 높았습니다.",
+      "image_key": "stories/banggui/wordbook/01-jangdae.png"
+    },
+    {
+      "external_id": "wd_banggui_02",
+      "word": "갓",
+      "definition": "옛날 어른들이 쓰던 모자예요",
+      "story_quote": "마당의 먼지가 휘리릭 날아가고, 기왓장이 달그락거리고, 시아버지의 갓까지 휙 날아가 버렸습니다.",
+      "image_key": "stories/banggui/wordbook/02-gat.png"
+    },
+    {
+      "external_id": "wd_banggui_03",
+      "word": "기왓장",
+      "definition": "옛날 집 지붕에 얹던 판이에요",
+      "story_quote": "마당의 먼지가 휘리릭 날아가고, 기왓장이 달그락거리고, 시아버지의 갓까지 휙 날아가 버렸습니다.",
+      "image_key": "stories/banggui/wordbook/03-giwajang.png"
+    },
+    {
+      "external_id": "wd_banggui_04",
+      "word": "어리둥절하다",
+      "definition": "무슨 일인지 몰라 당황해요",
+      "story_quote": "마을 사람들은 처음에는 어리둥절했습니다.",
+      "image_key": "stories/banggui/wordbook/04-eoridungjeol.png"
+    },
+    {
+      "external_id": "wd_banggui_05",
+      "word": "탐스럽다",
+      "definition": "보기 좋고 먹음직스러워요",
+      "story_quote": "나무 꼭대기에는 노랗고 탐스러운 배들이 주렁주렁 매달려 있었습니다.",
+      "image_key": "stories/banggui/wordbook/05-tamseureopda.png"
+    }
+  ],
+  "quiz": [
+    {
+      "external_id": "wq_banggui_01",
+      "scene_external_id": "sc_banggui_06",
+      "question": "긴 □□를 가져와도 닿지 않았고, 나무에 올라가려 해도 가지가 너무 높았습니다.",
+      "choices": ["장대", "두건", "지붕", "나무"],
+      "answer_index": 0,
+      "explanation": "장대는 아주 길고 가는 막대예요"
+    },
+    {
+      "external_id": "wq_banggui_02",
+      "scene_external_id": "sc_banggui_07",
+      "scene_variant": 2,
+      "question": "시아버지는 맛있어 보이는 배를 보자 □□이 돌았습니다.",
+      "choices": ["눈물", "군침", "웃음", "한숨"],
+      "answer_index": 1,
+      "explanation": "군침은 있는 것을 보고 먹고 싶을 때 입에 고이는 침이에요"
+    },
+    {
+      "external_id": "wq_banggui_03",
+      "scene_external_id": "sc_banggui_03",
+      "question": "며느리의 방귀가 터지자 마당의 먼지가 날리고, 지붕의 □□□이 달그락거렸습니다.",
+      "choices": ["배나무", "돌담장", "기왓장", "나뭇잎"],
+      "answer_index": 2,
+      "explanation": "기왓장은 옛날 집 지붕을 덮는 데 쓰던 판이에요"
+    },
+    {
+      "external_id": "wq_banggui_04",
+      "scene_external_id": "sc_banggui_05",
+      "question": "시아버지는 며느리의 방귀가 너무 □□□며 함께 살 수 없다고 말했습니다.",
+      "choices": ["재밌다", "귀엽다", "무섭다", "별나다"],
+      "answer_index": 3,
+      "explanation": "별나다는 보통과 달라 눈에 띄는 모습을 말해요"
+    },
+    {
+      "external_id": "wq_banggui_05",
+      "scene_external_id": "sc_banggui_08",
+      "question": "시아버지는 며느리에게 '내가 너무 □□□□ 생각했다.'라고 사과했습니다.",
+      "choices": ["성급하게", "씩씩하게", "차분하게", "신중하게"],
+      "answer_index": 0,
+      "explanation": "성급하게는 서두르고 급하다는 뜻이에요"
+    }
+  ]
+}

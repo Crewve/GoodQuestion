@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /** 로그인 없이 접근 불가한 페이지 프리픽스 — 미인증 시 /login으로 리다이렉트 */
-const PROTECTED_PREFIXES = ['/home', '/profiles', '/stories', '/play', '/complete', '/my'];
+const PROTECTED_PREFIXES = ['/home', '/profiles', '/stories', '/play', '/complete', '/my', '/wordbook'];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

@@ -59,6 +59,12 @@ ASSETS = [
     ("추천 이야기/추천 5_혹부리 영감.png", "recommended/05-hokburi-yeonggam.png"),
     ("추천 이야기/추천 6_개미와 베짱이.png", "recommended/06-gaemi-bejjangi.png"),
     ("추천 이야기/추천 7_흥부와 놀부.png", "recommended/07-heungbu-nolbu.png"),
+    # 단어장 (2.6) — 「0_단어장 파일 전달드립니다._260815」 원본을 design/이미지/단어장/으로 복사해 관리
+    ("단어장/단어1_장대.png", "stories/banggui/wordbook/01-jangdae.png"),
+    ("단어장/단어2_갓.png", "stories/banggui/wordbook/02-gat.png"),
+    ("단어장/단어3_기왓장.png", "stories/banggui/wordbook/03-giwajang.png"),
+    ("단어장/단어4_어리둥절하다.png", "stories/banggui/wordbook/04-eoridungjeol.png"),
+    ("단어장/단어5_탐스럽다.png", "stories/banggui/wordbook/05-tamseureopda.png"),
 ]
 
 

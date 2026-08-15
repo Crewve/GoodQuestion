@@ -1,5 +1,6 @@
 // 하단 GNB (기능명세서 2.0/2.2/3.1 공통) — 홈·이야기·단어장·마이페이지.
-// 단어장은 MVP 이동 없음(기능명세서 명시). 아이 컨텍스트(child 쿼리)는 링크에 그대로 전파한다.
+// 단어장은 기능명세서상 "이동 없음"이었으나 2.6 단어장 시안 추가로 /wordbook 이동 활성 (T083,
+// 2026-08-15 — 기능명세서 개정 필요, tasks.md 충돌 기록 참조). 아이 컨텍스트(child 쿼리) 전파.
 // Server Component — 눌림 효과는 CSS active로 충분해 클라이언트 코드 불필요.
 // 아이콘은 피그마 BottomGNB 단색 글리프를 인라인 SVG로 재현 — currentColor라
 // 활성 primary/비활성 #C4B49F 틴트가 라벨과 함께 아이콘에도 적용된다.
@@ -55,7 +56,7 @@ function PersonIcon({ className = 'size-6' }: IconProps) {
 const TABS: { key: Tab; label: string; Icon: ComponentType<IconProps>; href: (child: string | null) => string | null }[] = [
   { key: 'home', label: '홈', Icon: HomeIcon, href: (c) => withChild('/home', c) },
   { key: 'stories', label: '이야기', Icon: BookIcon, href: (c) => withChild('/stories', c) },
-  { key: 'wordbook', label: '단어장', Icon: NoteIcon, href: () => null }, // 이동 없음 (MVP)
+  { key: 'wordbook', label: '단어장', Icon: NoteIcon, href: (c) => withChild('/wordbook', c) }, // 2.6 (T083)
   { key: 'my', label: '마이페이지', Icon: PersonIcon, href: (c) => withChild('/my', c) },
 ];
 
@@ -82,7 +83,7 @@ export function BottomNav({ active, childId }: { active: Tab; childId: string | 
               {tab.label}
             </>
           );
-          // 현재 탭·단어장은 이동 없음 — 버튼으로 렌더
+          // 현재 탭은 이동 없음 — 버튼으로 렌더
           if (isActive || !href) {
             return (
               <button key={tab.key} type="button" aria-current={isActive ? 'page' : undefined} className={className}>

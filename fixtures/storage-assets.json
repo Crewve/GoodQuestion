@@ -150,6 +150,26 @@
     {
       "key": "recommended/07-heungbu-nolbu.png",
       "source": "design/이미지/추천 이야기/추천 7_흥부와 놀부.png"
+    },
+    {
+      "key": "stories/banggui/wordbook/01-jangdae.png",
+      "source": "design/이미지/단어장/단어1_장대.png"
+    },
+    {
+      "key": "stories/banggui/wordbook/02-gat.png",
+      "source": "design/이미지/단어장/단어2_갓.png"
+    },
+    {
+      "key": "stories/banggui/wordbook/03-giwajang.png",
+      "source": "design/이미지/단어장/단어3_기왓장.png"
+    },
+    {
+      "key": "stories/banggui/wordbook/04-eoridungjeol.png",
+      "source": "design/이미지/단어장/단어4_어리둥절하다.png"
+    },
+    {
+      "key": "stories/banggui/wordbook/05-tamseureopda.png",
+      "source": "design/이미지/단어장/단어5_탐스럽다.png"
     }
   ]
 }
