@@ -10,6 +10,8 @@
 // 2026-08-14 피그마 코멘트 반영: 자막 카드가 일러스트를 덮지 않게 분리(#105), 화살표는
 // arrow_prev_black/arrow_next_white 에셋(#128·#129), 파형 audio_wave(#130)·반복 repeat(#131),
 // 다시 듣기 흰 글자(#91), 마지막 문장에서 '진행하기'(primary·흰 글자) 복원(#91·#106 — 시안 유지 확인).
+// 2026-08-15 시안 개정(도입 프레임 245:11060 주석): '진행하기' → '다음 장면 보기'(+화살표 아이콘),
+// 다음 화살표 배경 잉크 → primary(#FF7A3D).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowNextHeavyIcon, ArrowPrevIcon, AudioWaveIcon, RepeatIcon } from '@/components/icons';
 import { narrationSentenceAudioUrl, splitNarrationSentences } from '@/lib/narration';
@@ -136,14 +138,14 @@ export function NarrationScene({
           aria-label={isLast ? '다음 장면' : '다음 문장'}
           disabled={locked}
           onClick={() => (isLast ? onProceed() : setIndex(index + 1))}
-          className="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink text-white shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-primary disabled:opacity-40"
+          className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-ink disabled:opacity-40"
         >
           <ArrowNextHeavyIcon className="size-6" />
         </button>
       </div>
 
-      {/* 하단 버튼 — 다시 듣기(sage·흰 글자, #91). 마지막 문장에서는 '진행하기'(primary·흰 글자)가
-          함께 노출되어 장면 진행을 담당 (#91·#106 — 시안 복원, 화살표 진행도 유지) */}
+      {/* 하단 버튼 — 다시 듣기(sage·흰 글자, #91). 마지막 문장에서는 '다음 장면 보기'(primary·흰 글자
+          +화살표, 08/15 개정 — 구 '진행하기')가 함께 노출되어 장면 진행을 담당 (화살표 진행도 유지) */}
       <div className="flex h-[88px] shrink-0 items-center justify-center gap-6 px-5 pb-4">
         {/* 자동재생 차단 안내 — 버튼 줄 위에 겹쳐 띄워 레이아웃(88px 고정)을 흔들지 않는다 */}
         {blocked && (
@@ -169,9 +171,10 @@ export function NarrationScene({
             type="button"
             disabled={locked}
             onClick={onProceed}
-            className="flex h-14 items-center rounded-full bg-primary px-7 font-display text-2xl text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
+            className="flex h-14 items-center gap-1.5 rounded-full border border-background bg-primary px-6 font-display text-2xl text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
           >
-            진행하기
+            다음 장면 보기
+            <ArrowNextHeavyIcon className="size-6" />
           </button>
         )}
       </div>
