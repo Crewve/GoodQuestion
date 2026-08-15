@@ -16,7 +16,7 @@
 // 판정 표시는 색+아이콘+텍스트 병행. 필 텍스트는 시안 원색 흰색 채택(2026-08-14 "피그마와 동일하게" 지시,
 // sage/primary 배경 대비 하한 미달 인지).
 import { useCallback, useRef, useState } from 'react';
-import { CheckIcon, CloseIcon } from '@/components/icons';
+import { CheckBoldIcon, WrongCircleIcon } from '@/components/icons';
 
 /** post_activity_config.cards 항목 (R-09 스키마) — 이미지 URL은 컨테이너가 T011 헬퍼로 조합해 내려준다 */
 export type PostActivityCard = { id: string; imageUrl: string; label: string };
@@ -314,7 +314,8 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
             onClick={onProceed}
             className="flex h-[52px] items-center gap-3 rounded-full bg-sage px-10 font-display text-[22px] text-white shadow-[0_6px_20px_rgba(61,190,139,0.33)] active:bg-ink"
           >
-            <CheckIcon className="w-6" /> {MESSAGE_CORRECT}
+            {/* 정답 체크 — 에셋 check_white (피그마 코멘트 #140) */}
+            <CheckBoldIcon className="w-6" /> {MESSAGE_CORRECT}
           </button>
         )}
         {verdict === 'wrong' && (
@@ -323,7 +324,8 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
             role="status"
             className="flex h-[52px] items-center gap-3 rounded-full bg-primary px-10 font-display text-[22px] text-white shadow-[0_6px_20px_rgba(255,122,61,0.33)]"
           >
-            <CloseIcon className="size-6" /> {MESSAGE_WRONG}
+            {/* 오답 표시 — 에셋 wrong_circle (피그마 코멘트 #141) */}
+            <WrongCircleIcon className="size-6" /> {MESSAGE_WRONG}
           </span>
         )}
         {submitError && (
@@ -332,7 +334,7 @@ export function CardOrdering({ cards, onSubmit, onProceed }: CardOrderingProps) 
             <button
               type="button"
               onClick={() => slots.every((id) => id !== null) && void submitOrder(slots as string[])}
-              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-ink active:bg-ink active:text-white"
+              className="h-12 rounded-full bg-primary px-5 text-lg font-bold text-white active:bg-ink"
             >
               다시 보내기
             </button>

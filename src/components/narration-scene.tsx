@@ -6,8 +6,12 @@
 // 마지막 문장에서는 장면 진행. 오디오는 문장별 사전 생성본(pregenerate-audio `_s{i}` 파일).
 // 재생 실패 시 별도 에러 없이 텍스트만 노출하고 '다시 듣기'가 재시도를 겸한다 (TTS 폴백 매트릭스).
 // 마크업은 피그마 「개발 배포용」 2.4.1 도입/전개 프레임 대조: 장면 일러스트(라운드 20)
-// → 자막 카드(웨이브 배지+문장, 좌 흰 화살표/우 잉크 화살표) → 하단 다시 듣기(sage).
+// → 자막 카드(웨이브 배지+문장, 좌 흰 화살표/우 잉크 화살표) → 하단 다시 듣기(sage)·진행하기(primary).
+// 2026-08-14 피그마 코멘트 반영: 자막 카드가 일러스트를 덮지 않게 분리(#105), 화살표는
+// arrow_prev_black/arrow_next_white 에셋(#128·#129), 파형 audio_wave(#130)·반복 repeat(#131),
+// 다시 듣기 흰 글자(#91), 마지막 문장에서 '진행하기'(primary·흰 글자) 복원(#91·#106 — 시안 유지 확인).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowNextHeavyIcon, ArrowPrevIcon, AudioWaveIcon, RepeatIcon } from '@/components/icons';
 import { narrationSentenceAudioUrl, splitNarrationSentences } from '@/lib/narration';
 
 type NarrationSceneProps = {
@@ -18,46 +22,15 @@ type NarrationSceneProps = {
   onProceed: () => void;
 };
 
-function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
-  return (
-    <svg viewBox="0 0 24 24" className="size-6" aria-hidden fill="none">
-      <path
-        d={direction === 'left' ? 'M14.5 5.5L8 12l6.5 6.5' : 'M9.5 5.5L16 12l-6.5 6.5'}
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/** 자막 카드 스피커 배지 — 시안 WaveIcon (6개 세로 바, #FF651E) */
+/** 자막 카드 스피커 배지 — audio_wave 에셋(#FF651E Burning Orange) [피그마 코멘트 #130] */
 function WaveBadge() {
-  const bars = [6, 12, 16, 9, 13, 6];
   return (
     <span
       aria-hidden
-      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 shadow-[0_0_0_6px_rgba(255,122,61,0.15)]"
+      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[#FF651E] shadow-[0_0_0_6px_rgba(255,122,61,0.15)]"
     >
-      <svg viewBox="0 0 20 16" className="h-4 w-5">
-        {bars.map((h, i) => (
-          <rect key={i} x={i * 3.6} y={(16 - h) / 2} width="2.2" height={h} rx="1.1" fill="#ff651e" />
-        ))}
-      </svg>
+      <AudioWaveIcon className="h-4 w-5" />
     </span>
-  );
-}
-
-/** 다시 듣기 반복 화살표 아이콘 — 시안 repeat (흰 스트로크) */
-function RepeatIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-6" aria-hidden fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 2l4 4-4 4" />
-      <path d="M3 12v-2a4 4 0 0 1 4-4h14" />
-      <path d="M7 22l-4-4 4-4" />
-      <path d="M21 12v2a4 4 0 0 1-4 4H3" />
-    </svg>
   );
 }
 
@@ -131,9 +104,9 @@ export function NarrationScene({
         )}
       </div>
 
-      {/* 자막 행 — 이전(흰)/다음(잉크) 화살표 + 문장 카드 */}
-      {/* 자막 카드 — 피그마는 일러스트 하단에 60px 겹쳐 떠 있음 (이미지 631px 확보) */}
-      <div className="relative z-10 -mt-[60px] flex min-h-24 shrink-0 items-center gap-3 px-5 py-2.5">
+      {/* 자막 행 — 이전(흰)/다음(잉크) 화살표 + 문장 카드.
+          일러스트와 겹치지 않게 아래로 분리 (피그마 코멘트 #105 — 최신 시안도 비겹침) */}
+      <div className="flex min-h-24 shrink-0 items-center gap-3 px-5 py-2.5">
         {/* 첫 문장에서는 이전 화살표 자체를 노출하지 않는다 (2.4.1) — 자리는 유지해 레이아웃 고정 */}
         {index > 0 ? (
           <button
@@ -143,7 +116,7 @@ export function NarrationScene({
             onClick={() => setIndex(index - 1)}
             className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-ink shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-ink active:text-white disabled:opacity-40"
           >
-            <ChevronIcon direction="left" />
+            <ArrowPrevIcon className="size-6" />
           </button>
         ) : (
           <span className="size-12 shrink-0" aria-hidden />
@@ -165,12 +138,13 @@ export function NarrationScene({
           onClick={() => (isLast ? onProceed() : setIndex(index + 1))}
           className="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink text-white shadow-[0_3px_10px_rgba(0,0,0,0.25)] active:bg-primary disabled:opacity-40"
         >
-          <ChevronIcon direction="right" />
+          <ArrowNextHeavyIcon className="size-6" />
         </button>
       </div>
 
-      {/* 하단 버튼 — 다시 듣기(sage) 단독. '진행하기'는 삭제하고 진행은 화살표로 일원화 (QA 7) */}
-      <div className="flex h-[88px] shrink-0 items-center justify-center px-5 pb-4">
+      {/* 하단 버튼 — 다시 듣기(sage·흰 글자, #91). 마지막 문장에서는 '진행하기'(primary·흰 글자)가
+          함께 노출되어 장면 진행을 담당 (#91·#106 — 시안 복원, 화살표 진행도 유지) */}
+      <div className="flex h-[88px] shrink-0 items-center justify-center gap-6 px-5 pb-4">
         {/* 자동재생 차단 안내 — 버튼 줄 위에 겹쳐 띄워 레이아웃(88px 고정)을 흔들지 않는다 */}
         {blocked && (
           <p
@@ -183,13 +157,23 @@ export function NarrationScene({
         <button
           type="button"
           onClick={playCurrent}
-          className={`flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-ink shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink active:text-white ${
+          className={`flex h-14 items-center gap-1.5 rounded-full border border-background bg-sage px-5 font-display text-2xl text-white shadow-[0_1px_4px_rgba(0,0,0,0.07)] active:bg-ink ${
             blocked ? 'ring-4 ring-primary' : '' // 차단 시 복구 버튼을 눈에 띄게
           }`}
         >
-          <RepeatIcon />
+          <RepeatIcon className="size-6" />
           다시 듣기
         </button>
+        {isLast && (
+          <button
+            type="button"
+            disabled={locked}
+            onClick={onProceed}
+            className="flex h-14 items-center rounded-full bg-primary px-7 font-display text-2xl text-white shadow-[0_5px_10px_rgba(255,122,61,0.33)] active:opacity-90 disabled:opacity-40"
+          >
+            진행하기
+          </button>
+        )}
       </div>
     </section>
   );

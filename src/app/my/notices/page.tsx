@@ -4,6 +4,7 @@
 // 목록이 비면 3.3 예외 원문 "등록된 공지사항이 없습니다" 노출 (데이터 연동 시 교체 지점).
 import Link from 'next/link';
 import { BottomNav, withChild } from '@/components/bottom-nav';
+import { ChevronNextIcon } from '@/components/icons';
 import { MyPageHeader } from '../accordion';
 import { NOTICES } from './notices-data';
 
@@ -34,9 +35,8 @@ export default async function NoticesPage(props: PageProps<'/my/notices'>) {
                   <span className="block text-[15px] font-bold text-[#1E1A14]">{notice.title}</span>
                   <span className="mt-1 block text-[13px] text-[#7A7268]">{notice.date}</span>
                 </span>
-                <span aria-hidden className="shrink-0 text-[#7A7268]">
-                  ›
-                </span>
+                {/* 행 진입 표시 — 텍스트 › 대신 에셋 chevron_next (내정보 목록과 통일, #161 계열) */}
+                <ChevronNextIcon className="h-3.5 w-2 shrink-0 text-[#7A7268]" />
               </Link>
             ))}
           </section>

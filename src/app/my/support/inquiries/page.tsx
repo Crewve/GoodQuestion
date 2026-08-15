@@ -52,7 +52,8 @@ export default async function InquiriesPage(props: PageProps<'/my/support/inquir
             </span>
             새 문의하기
           </summary>
-          <p className="mt-2 text-right text-[13px] text-[#7A7268]">
+          {/* 안내문 폭 제한 — 문구 길이만큼 details가 옆으로 늘어나 버튼까지 길어 보이던 문제 (피그마 코멘트 #113) */}
+          <p className="mt-2 max-w-[300px] text-right text-[13px] text-[#7A7268]">
             새 문의 작성은 준비 중이에요. 곧 이곳에서 바로 남길 수 있어요.
           </p>
         </details>

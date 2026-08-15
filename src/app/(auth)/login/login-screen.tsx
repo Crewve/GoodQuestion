@@ -3,8 +3,10 @@
 // 시안: 이메일 폼 + 구분선("또는") + 소셜 버튼이 한 카드에 동시 노출 → 기존 탭 전환(표시 전용)을 제거.
 // 이메일: Supabase Auth signInWithPassword(브라우저 클라이언트 T010 재사용) → 성공 시 2.1 프로필 선택 이동.
 // 에러 문구 3종(1.1.1 원문): 형식 오류는 클라이언트 검사, 미가입/비밀번호 오류는 Supabase가 같은
-// invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오+구글(T078 — R-10 대체 플랜 실행,
-// 시안의 네이버는 미구현이라 미배치), PKCE 콜백(/auth/callback)에서 세션 교환 후 복귀. 보호자 화면 — 스크롤 허용.
+// invalid_credentials라 /auth/email-exists 프로브로 구분한다. 소셜은 카카오·구글 연동(T078 — R-10),
+// 네이버는 피그마 코멘트 #115로 버튼만 시안대로 배치(카카오→네이버→구글 순) — Supabase Auth가 네이버
+// 프로바이더를 지원하지 않고 네이버 앱 키도 없어 클릭 시 준비 중 안내로 대응, 연동은 별도 백엔드 작업 필요.
+// PKCE 콜백(/auth/callback)에서 세션 교환 후 복귀. 보호자 화면 — 스크롤 허용.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -18,6 +20,7 @@ const ERROR_EMAIL_NOT_FOUND = '가입하지 않은 이메일입니다';
 const ERROR_WRONG_PASSWORD = '비밀번호를 다시 확인해주세요';
 const ERROR_EMAIL_FORMAT = '올바른 이메일 형식을 입력해주세요';
 const ERROR_SOCIAL = '소셜 로그인에 실패했습니다';
+const NAVER_PENDING = '네이버 로그인은 아직 준비 중이에요';
 
 // 시안 입력 필드: h50 · r14 · bg Base · border #F0E4D3, 포커스 시 primary
 const inputClass =
@@ -29,6 +32,7 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
   const [socialError, setSocialError] = useState<boolean>(initialSocialError);
+  const [naverPending, setNaverPending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleEmailLogin = async () => {
@@ -69,6 +73,7 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
 
   const handleSocialLogin = async (provider: 'kakao' | 'google') => {
     setSocialError(false);
+    setNaverPending(false);
     const supabase = getSupabaseBrowser();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -156,6 +161,11 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
             {ERROR_SOCIAL}
           </p>
         )}
+        {naverPending && (
+          <p className="mb-3 text-sm font-semibold text-berry" role="alert">
+            {NAVER_PENDING}
+          </p>
+        )}
         <button
           type="button"
           onClick={() => void handleSocialLogin('kakao')}
@@ -165,6 +175,20 @@ export function LoginScreen({ initialSocialError }: { initialSocialError: boolea
             <path d="M9 1C4.58 1 1 3.83 1 7.32c0 2.24 1.47 4.2 3.69 5.32l-.94 3.5c-.08.31.27.56.54.38l4.13-2.76c.19.01.38.02.58.02 4.42 0 8-2.83 8-6.32S13.42 1 9 1Z" />
           </svg>
           카카오 로그인
+        </button>
+        {/* 네이버 — 시안 1.1(#115) 배치. Supabase 미지원이라 클릭 시 준비 중 안내 (파일 상단 주석 참고) */}
+        <button
+          type="button"
+          onClick={() => {
+            setSocialError(false);
+            setNaverPending(true);
+          }}
+          className="mt-3 flex h-13 w-full items-center justify-center gap-2 rounded-[14px] bg-[#03C75A] text-[15px] font-bold text-white active:opacity-80"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M16.3 0v10.9L7.7 0H0v24h7.7V13.1L16.3 24H24V0z" />
+          </svg>
+          네이버 로그인
         </button>
         <button
           type="button"

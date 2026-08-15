@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile } from '@/app/profiles/profiles-screen';
 import { BottomNav, withChild } from '@/components/bottom-nav';
-import { BookIcon, ChatBubbleIcon, ChevronRightIcon, HangingMedalIcon } from '@/components/icons';
+import { BookIcon, ChatBubbleIcon, ChevronNextIcon, HangingMedalIcon } from '@/components/icons';
 import { assetUrl } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
@@ -97,7 +97,9 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
     <div className="flex min-h-dvh flex-col">
       <MyPageHeader />
       <main className="mx-auto flex w-full max-w-[848px] flex-1 flex-col px-6 pb-8 pt-5">
-        {/* 사용자 정보 카드 — 보호자 이미지는 하나로 고정(표시 전용) */}
+        {/* 사용자 정보 카드 — 보호자 이미지는 하나로 고정(표시 전용).
+            우측 '보호자 리포트' 버튼은 피그마 코멘트 #79/시안 353:4146(#FFEDE3 필 143×52) —
+            리포트 화면은 미구현(디자인 초안 3.7 프로토타입 단계)이라 GNB 단어장과 같은 이동 없음 버튼 */}
         <section className="flex items-center gap-4 rounded-3xl border border-[#F0E4D3] bg-white p-5 shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
           <Image
             src={assetUrl('profiles/select/guardian.png')}
@@ -110,6 +112,12 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
             <p className="text-base font-bold text-ink">보호자님</p>
             <p className="mt-1 text-sm text-[#8A7A68]">{loginMethodLabel}</p>
           </div>
+          <button
+            type="button"
+            className="ml-auto h-[52px] shrink-0 rounded-2xl bg-[#FFEDE3] px-6 text-[15px] font-bold text-ink active:opacity-80"
+          >
+            보호자 리포트
+          </button>
         </section>
 
         {/* 등록된 아이 카드 리스트 — 표시 전용·클릭 불가, 이름은 성 제외 (3.1) */}
@@ -190,7 +198,8 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
 
         {/* 설정 — 공지사항·고객센터·이용안내·로그아웃 */}
         <section className="mt-6 overflow-hidden rounded-3xl border border-[#F0E4D3] bg-white shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
-          <h2 className="flex h-[57px] items-center border-b border-[#F0E4D3] px-5 text-base font-bold text-ink">서비스 안내</h2>
+          {/* 카드 제목은 시안 원문 '설정' (353:4146) */}
+          <h2 className="flex h-[57px] items-center border-b border-[#F0E4D3] px-5 text-base font-bold text-ink">설정</h2>
           {MENU_ITEMS.map((item) => (
             <Link
               key={item.href}
@@ -199,7 +208,8 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
             >
               <item.Icon className="size-6 text-[#8A7A68]" />
               {item.label}
-              <ChevronRightIcon className="ml-auto size-4 text-[#8A7A68]" />
+              {/* 행 진입 표시 — 에셋 chevron_next (피그마 코멘트 #161, 원본 #8A7A68) */}
+              <ChevronNextIcon className="ml-auto h-3.5 w-2 text-[#8A7A68]" />
             </Link>
           ))}
           <div aria-hidden className="h-1 bg-background" />
@@ -209,7 +219,8 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
               setLogoutError(null);
               setLogoutOpen(true);
             }}
-            className="flex h-14 w-full items-center px-5 text-base font-bold text-berry active:bg-background"
+            // 로그아웃 글자색 Berry → Primary (피그마 코멘트 #80)
+            className="flex h-14 w-full items-center px-5 text-base font-bold text-primary active:bg-background"
           >
             로그아웃
           </button>

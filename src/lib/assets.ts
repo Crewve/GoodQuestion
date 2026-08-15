@@ -58,7 +58,7 @@ export function avatarUrl(avatar: AvatarKey, variant: "avatar" | "select" | "sel
   return assetUrl(`profiles/${variant}/${avatar}.png`);
 }
 
-/** 추천 이야기 썸네일 6종 (홈 3×2 — '방귀 뀌는 며느리' 외 5종은 클릭 불가 더미) */
+/** 추천 이야기 썸네일 7종 (홈 2.0 — '방귀 뀌는 며느리' 외에는 클릭 불가 더미, 순서는 storage-assets.json) */
 export function recommendedThumbnailUrls(): string[] {
   return storageAssets.assets
     .filter((a) => a.key.startsWith("recommended/"))

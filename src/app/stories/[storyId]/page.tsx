@@ -101,7 +101,8 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
 
       {story.id === BANGGUI_STORY_ID ? (
         // 로드 실패 폴백은 클라이언트 컴포넌트(story-hero)가 담당 (A5, 2.3 예외)
-        <StoryHero src={storyThumbnailUrl(false)} />
+        // 타이틀 있는 썸네일 사용 — 피그마 코멘트 #175 (기존 제목X 버전에서 교체)
+        <StoryHero src={storyThumbnailUrl(true)} />
       ) : (
         <div className="h-[41dvh] w-full shrink-0 bg-sunny/15" aria-hidden />
       )}

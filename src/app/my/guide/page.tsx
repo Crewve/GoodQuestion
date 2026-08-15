@@ -52,12 +52,13 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
   // 아이 컨텍스트(?child=)는 GNB·뒤로가기·탭 링크로 그대로 전파만 한다 (A3 — 홈 복귀 시 유지)
   const sp = await props.searchParams;
   const childId = typeof sp.child === 'string' ? sp.child : null;
-  const showTerms = sp.tab === 'terms';
+  // 첫 진입(쿼리 없음) = 첫 번째 탭 '서비스 이용약관' 활성 (피그마 코멘트 #111 — QA 26의 가이드 기본 노출을 뒤집는 최신 지시)
+  const showTerms = sp.tab !== 'guide';
 
   // 탭 전환 링크 — child 쿼리를 함께 유지
   const tabHref = (terms: boolean) => {
     const params = new URLSearchParams();
-    if (terms) params.set('tab', 'terms');
+    if (!terms) params.set('tab', 'guide');
     if (childId) params.set('child', childId);
     const query = params.toString();
     return query ? `/my/guide?${query}` : '/my/guide';
@@ -75,19 +76,10 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
       <main className="mx-auto flex w-full max-w-[808px] flex-1 flex-col px-6 pb-10 pt-5">
         <h2 className="text-2xl font-bold text-[#1E1A14]">이용안내</h2>
 
-        {/* 상단 탭 — 같은 라우트에서 ?tab= 쿼리로 가이드/약관 전환 (스토리보드 3.5).
-            기본 진입 화면인 '이용 가이드'를 왼쪽에 둔다 (QA 26 — 예전 순서에서는 진입 즉시
-            오른쪽 탭이 활성이라 잘못 들어온 것처럼 보였다). 고객센터 탭바와 같은 규칙. */}
+        {/* 상단 탭 — 같은 라우트에서 ?tab= 쿼리로 약관/가이드 전환 (스토리보드 3.5).
+            시안 244:3862 순서 그대로 '서비스 이용약관'이 첫 탭이고 첫 진입 시 활성 (#111 —
+            진입 탭과 활성 탭이 항상 첫 칸이라 QA 26의 어긋남도 재발하지 않는다). */}
         <div className="mt-10 flex bg-white">
-          {showTerms ? (
-            <Link href={tabHref(false)} replace className={tabClass(false)}>
-              서비스 이용 가이드
-            </Link>
-          ) : (
-            <span aria-current="true" className={tabClass(true)}>
-              서비스 이용 가이드
-            </span>
-          )}
           {showTerms ? (
             <span aria-current="true" className={tabClass(true)}>
               서비스 이용약관
@@ -96,6 +88,15 @@ export default async function GuidePage(props: PageProps<'/my/guide'>) {
             <Link href={tabHref(true)} replace className={tabClass(false)}>
               서비스 이용약관
             </Link>
+          )}
+          {showTerms ? (
+            <Link href={tabHref(false)} replace className={tabClass(false)}>
+              서비스 이용 가이드
+            </Link>
+          ) : (
+            <span aria-current="true" className={tabClass(true)}>
+              서비스 이용 가이드
+            </span>
           )}
         </div>
 

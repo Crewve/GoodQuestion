@@ -13,7 +13,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
-import { ChevronRightIcon, PlayIcon, UserIcon } from '@/components/icons';
+import { ArrowNextIcon, PlayIcon, UserIcon } from '@/components/icons';
 import { avatarUrl, recommendedThumbnailUrls, storyThumbnailUrl, type AvatarKey } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
 import { difficultyLabel } from '@/lib/stories-view';
@@ -31,14 +31,17 @@ type SessionProgress = {
   progress: { n: number; N: number; percent: number };
 };
 
-/** 추천 더미 5~6종 메타 — 클릭 불가(MVP), 썸네일 recommended/01~06과 순서 일치. 표시용 임시 값 */
+/** 추천 더미 7종 메타 — 클릭 불가(MVP), 썸네일 recommended/01~07과 순서 일치.
+    주제·난이도·시간은 피그마 「개발 배포용」 2.0 Case B 카드 값 그대로 (프레임 간 값이 다른 경우 Case B 기준).
+    흥부와 놀부는 피그마 코멘트 #170으로 추가. */
 const DUMMY_STORIES = [
-  { title: '선녀와 나무꾼', keywords: ['약속', '배려'], difficulty: '보통', minutes: 15 },
-  { title: '해와 달이 된 오누이', keywords: ['용기', '지혜'], difficulty: '보통', minutes: 20 },
-  { title: '금도끼 은도끼', keywords: ['정직', '욕심'], difficulty: '쉬움', minutes: 15 },
-  { title: '토끼와 거북이', keywords: ['끈기', '겸손'], difficulty: '쉬움', minutes: 15 },
-  { title: '혹부리 영감', keywords: ['욕심', '재치'], difficulty: '보통', minutes: 20 },
-  { title: '개미와 베짱이', keywords: ['성실', '준비'], difficulty: '쉬움', minutes: 15 },
+  { title: '선녀와 나무꾼', keywords: ['다름'], difficulty: '새싹 이야기', minutes: 15 },
+  { title: '해와 달이 된 오누이', keywords: ['친절', '용기'], difficulty: '도전 이야기', minutes: 18 },
+  { title: '금도끼 은도끼', keywords: ['나눔', '다름'], difficulty: '튼튼 이야기', minutes: 16 },
+  { title: '토끼와 거북이', keywords: ['다름', '용기'], difficulty: '새싹 이야기', minutes: 13 },
+  { title: '혹부리 영감', keywords: ['다름', '용기'], difficulty: '도전 이야기', minutes: 20 },
+  { title: '개미와 베짱이', keywords: ['나눔', '친절'], difficulty: '새싹 이야기', minutes: 10 },
+  { title: '흥부와 놀부', keywords: ['나눔', '친절'], difficulty: '새싹 이야기', minutes: 16 },
 ];
 
 /* 칩 팔레트 — 피그마 「개발 배포용」 '주제'·'난이도' 심볼 실측: 배경 = 해당 색 13% 틴트, 글자 = 같은 색 원색
@@ -123,9 +126,8 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
   }, [childId, hasSession, story.id]);
 
   const dummies = recommendedThumbnailUrls().map((url, i) => ({ url, ...DUMMY_STORIES[i] }));
-  // 추천은 3개만 노출 (QA 22 — 기존 3×2 6개에서 축소).
-  // 진행 중인 이야기가 없을 때만 1번 카드 '방귀 뀌는 며느리' 고정 + 더미 2개, 있으면 더미 3개 (2.0 예외 처리)
-  const dummySlots = hasSession ? dummies.slice(0, 3) : dummies.slice(0, 2);
+  // 피그마 2.0 Case A: 더미 3개 1행(선녀·해와 달·금도끼) / Case B: '방귀 뀌는 며느리' 고정 + 더미 6개(해와 달~흥부와 놀부)
+  const dummySlots = hasSession ? dummies.slice(0, 3) : dummies.slice(1);
   const percent = resume ? Math.min(100, Math.max(0, Math.round(resume.progress.percent))) : 0;
   const storyDifficulty = difficultyChip(story.difficulty);
 
@@ -244,25 +246,32 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
               href={`/stories?child=${childId}`}
               className="flex h-12 shrink-0 items-center gap-1 font-display text-lg font-bold text-primary active:opacity-70"
             >
-              모두 보기 <ChevronRightIcon className="size-4" />
+              모두 보기 <ArrowNextIcon className="size-4" />
             </Link>
           </div>
-          <div className="mt-4 grid shrink-0 grid-cols-3 gap-5">
+          {/* Case A: 1행 3개 고정(minmax 행 — 화면이 낮으면 카드가 줄어들며 짤림 방지, #104)
+              Case B: 219px 행 그리드 + 내부 세로 스크롤(헤더·GNB 고정 유지, 시안 7카드) */}
+          <div
+            className={`mt-4 grid min-h-0 flex-1 grid-cols-3 gap-5 ${
+              hasSession ? 'grid-rows-[minmax(0,220px)]' : 'auto-rows-[219px] content-start overflow-y-auto pb-3'
+            }`}
+          >
             {!hasSession && (
               <Link
                 href={`/stories/${story.id}?child=${childId}`}
-                className="flex flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] transition-transform active:scale-95"
+                className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] transition-transform active:scale-95"
               >
-                <Image
-                  src={storyThumbnailUrl(true)}
-                  alt=""
-                  width={1448}
-                  height={1086}
-                  sizes="370px"
-                  loading="eager"
-                  className="aspect-[5/2] w-full object-cover"
-                />
-                <div className="flex flex-col gap-2 p-3.5">
+                <div className="relative min-h-0 flex-1 overflow-hidden">
+                  <Image
+                    src={storyThumbnailUrl(true)}
+                    alt=""
+                    fill
+                    sizes="370px"
+                    loading="eager"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex shrink-0 flex-col gap-2 p-3.5">
                   <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
                   <div className="flex flex-wrap items-center gap-1.5">
                     {story.topics.slice(0, 2).map((topic, i) => (
@@ -288,18 +297,12 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                 <div
                   key={dummy.title}
                   aria-disabled
-                  className="flex flex-col overflow-hidden rounded-[20px] bg-white opacity-50 shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
+                  className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white opacity-50 shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
                 >
-                  <Image
-                    src={dummy.url}
-                    alt=""
-                    width={400}
-                    height={400}
-                    sizes="370px"
-                    loading="eager"
-                    className="aspect-[5/2] w-full object-cover"
-                  />
-                  <div className="flex flex-col gap-2 p-3.5">
+                  <div className="relative min-h-0 flex-1 overflow-hidden">
+                    <Image src={dummy.url} alt="" fill sizes="370px" loading="eager" className="object-cover" />
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-2 p-3.5">
                     <p className="truncate font-display text-[22px] leading-tight text-ink">{dummy.title}</p>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {dummy.keywords.map((keyword, i) => (
