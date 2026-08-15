@@ -141,6 +141,7 @@ function routeViews(
     },
     { group: 'my', label: '이용안내 3.5', url: ctx.loggedIn ? '/my/guide' : null, note: '로그인 필요' },
     { group: 'my', label: '배지 3.6', url: ctx.loggedIn ? '/my/badges' : null, note: '로그인 필요' },
+    { group: 'my', label: '보호자 리포트 3.7', url: ctx.loggedIn ? '/my/report' : null, note: '로그인 필요' },
   ];
 }
 

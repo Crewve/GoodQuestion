@@ -99,7 +99,7 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
       <main className="mx-auto flex w-full max-w-[848px] flex-1 flex-col px-6 pb-8 pt-5">
         {/* 사용자 정보 카드 — 보호자 이미지는 하나로 고정(표시 전용).
             우측 '보호자 리포트' 버튼은 피그마 코멘트 #79/시안 353:4146(#FFEDE3 필 143×52) —
-            리포트 화면은 미구현(디자인 초안 3.7 프로토타입 단계)이라 GNB 단어장과 같은 이동 없음 버튼 */}
+            3.7 보호자 리포트(/my/report) 진입 (2026-08-16 구현 — 예시 데이터 리포트) */}
         <section className="flex items-center gap-4 rounded-3xl border border-[#F0E4D3] bg-white p-5 shadow-[0_4px_18px_rgba(58,44,30,0.07)]">
           <Image
             src={assetUrl('profiles/select/guardian.png')}
@@ -112,12 +112,12 @@ export function MyScreen({ loginMethodLabel, profiles, summary, childId }: MyScr
             <p className="text-base font-bold text-ink">보호자님</p>
             <p className="mt-1 text-sm text-[#8A7A68]">{loginMethodLabel}</p>
           </div>
-          <button
-            type="button"
-            className="ml-auto h-[52px] shrink-0 rounded-2xl bg-[#FFEDE3] px-6 text-[15px] font-bold text-ink active:opacity-80"
+          <Link
+            href={withChild('/my/report', childId)}
+            className="ml-auto flex h-[52px] shrink-0 items-center rounded-2xl bg-[#FFEDE3] px-6 text-[15px] font-bold text-ink active:opacity-80"
           >
             보호자 리포트
-          </button>
+          </Link>
         </section>
 
         {/* 등록된 아이 카드 리스트 — 표시 전용·클릭 불가, 이름은 성 제외 (3.1) */}
