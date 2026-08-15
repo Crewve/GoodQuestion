@@ -32,12 +32,59 @@ export default async function DevUiPage() {
       .eq('parent_id', user.id)
       .limit(1)
       .maybeSingle();
-    if (child) {
-      ctx.childId = child.id as string;
+    let childId = (child?.id as string) ?? null;
+
+    // 더미 아이 시드 (UI 확인 전용) — 아이 프로필이 없으면 홈·목록·상세·진행 계열이 전부 비활성이라,
+    // 로그인만 돼 있으면 실제 가입 플로우(/api/profiles)와 동일 컬럼 셋으로 아이 1명을 만들어 활성화한다.
+    // 없을 때만 생성(멱등). 주의: 더미 아이는 프로필 선택·관리 화면에도 그대로 노출된다(실데이터 경로 공유).
+    if (!childId) {
+      const now = new Date().toISOString();
+      // parents 행이 먼저 있어야 children FK가 성립 — /api/profiles와 동일하게 없을 때만 생성
+      const { data: existingParent } = await admin
+        .from('parents')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (!existingParent) {
+        await admin.from('parents').insert({
+          id: user.id,
+          name: user.email?.split('@')[0] ?? '보호자',
+          created_at: now,
+        });
+      }
+      const { data: createdChild } = await admin
+        .from('children')
+        .insert({
+          id: crypto.randomUUID(),
+          parent_id: user.id,
+          name: '진욱', // 리허설 갤러리 childName과 동일 — 아이 화면 호칭 표기 확인용
+          birth_year: 2019,
+          birth_date: '2019-05-10',
+          avatar_key: 'boy-2',
+          created_at: now,
+        })
+        .select('id')
+        .single();
+      if (createdChild) {
+        // 동의 이력도 실제 플로우와 동일 1행 — 프로필 삭제(3.2)의 정리 경로가 함께 지울 수 있게
+        await admin.from('child_consents').insert({
+          id: crypto.randomUUID(),
+          child_id: createdChild.id as string,
+          consent_version: 'mvp_v1',
+          verification_method: 'authenticated_parent',
+          consented_at: now,
+          withdrawn_at: null,
+        });
+        childId = createdChild.id as string;
+      }
+    }
+
+    if (childId) {
+      ctx.childId = childId;
       const { data: done } = await admin
         .from('story_sessions')
         .select('id')
-        .eq('child_id', child.id)
+        .eq('child_id', childId)
         .eq('status', 'completed')
         .order('started_at', { ascending: false })
         .limit(1)
@@ -47,7 +94,7 @@ export default async function DevUiPage() {
       const { data: latest } = await admin
         .from('story_sessions')
         .select('id')
-        .eq('child_id', child.id)
+        .eq('child_id', childId)
         .order('started_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -67,7 +114,7 @@ export default async function DevUiPage() {
         if (firstScene && lastScene) {
           // /api/sessions 생성 로직과 동일 컬럼 셋 — id·타임스탬프는 스키마 기본값 없음(클라이언트 생성)
           const sessionDefaults = {
-            child_id: child.id as string,
+            child_id: childId,
             story_id: BANGGUI_STORY_ID,
             current_child_turn_count: 0,
             accumulated_elements: [],
