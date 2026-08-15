@@ -609,7 +609,7 @@ export default async function ReportPage(props: PageProps<'/my/report'>) {
               </div>
               <button
                 type="button"
-                className="h-11 shrink-0 rounded-xl bg-sage px-5 text-[15px] font-bold text-white active:opacity-80"
+                className="h-10 shrink-0 rounded-full bg-sage px-6 text-[15px] font-bold text-white active:opacity-80"
               >
                 맞춤 가이드 받기
               </button>
