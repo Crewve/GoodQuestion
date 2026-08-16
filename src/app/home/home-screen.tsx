@@ -18,7 +18,7 @@ import { BottomNav } from '@/components/bottom-nav';
 import { ArrowNextIcon, PlayIcon, UserIcon } from '@/components/icons';
 import { avatarUrl, recommendedThumbnailUrls, storyThumbnailUrl, type AvatarKey } from '@/lib/assets';
 import { givenName } from '@/lib/profile-display';
-import { difficultyLabel } from '@/lib/stories-view';
+import { DUMMY_STORIES, difficultyLabel } from '@/lib/stories-view';
 
 export type StoryMeta = {
   id: string;
@@ -33,18 +33,7 @@ type SessionProgress = {
   progress: { n: number; N: number; percent: number };
 };
 
-/** 추천 더미 7종 메타 — 클릭 불가(MVP), 썸네일 recommended/01~07과 순서 일치.
-    주제·난이도·시간은 피그마 「개발 배포용」 2.0 Case B 카드 값 그대로 (프레임 간 값이 다른 경우 Case B 기준).
-    흥부와 놀부는 피그마 코멘트 #170으로 추가. */
-const DUMMY_STORIES = [
-  { title: '선녀와 나무꾼', keywords: ['다름'], difficulty: '새싹 이야기', minutes: 15 },
-  { title: '해와 달이 된 오누이', keywords: ['친절', '용기'], difficulty: '도전 이야기', minutes: 18 },
-  { title: '금도끼 은도끼', keywords: ['나눔', '다름'], difficulty: '튼튼 이야기', minutes: 16 },
-  { title: '토끼와 거북이', keywords: ['다름', '용기'], difficulty: '새싹 이야기', minutes: 13 },
-  { title: '혹부리 영감', keywords: ['다름', '용기'], difficulty: '도전 이야기', minutes: 20 },
-  { title: '개미와 베짱이', keywords: ['나눔', '친절'], difficulty: '새싹 이야기', minutes: 10 },
-  { title: '흥부와 놀부', keywords: ['나눔', '친절'], difficulty: '새싹 이야기', minutes: 16 },
-];
+// 추천 더미 7종 메타는 이야기 목록(2.2)과 공용 — lib/stories-view.DUMMY_STORIES (흥부와 놀부는 피그마 코멘트 #170으로 추가)
 
 /* 칩 팔레트 — 피그마 「개발 배포용」 '주제'·'난이도' 심볼 실측: 배경 = 해당 색 13% 틴트, 글자 = 같은 색 원색
    (다름 Primary · 용기 Sunny · 친절 Berry · 나눔 Sage / 새싹 Sage · 튼튼 Sky · 도전 Berry).

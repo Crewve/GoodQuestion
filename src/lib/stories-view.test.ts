@@ -1,6 +1,14 @@
 // T049 이야기 목록·상세 뷰 로직 테스트 — 기능명세서 2.2(필터 AND·단일 선택)·2.3(줄거리 결합).
 import { describe, expect, test } from 'vitest';
-import { difficultyLabel, filterStories, summaryWithTagline, type StoryRow } from './stories-view';
+import { recommendedThumbnailUrls } from './assets';
+import {
+  DUMMY_STORIES,
+  difficultyLabel,
+  filterDummyStories,
+  filterStories,
+  summaryWithTagline,
+  type StoryRow,
+} from './stories-view';
 
 const banggui: StoryRow = {
   id: 'uuid-1',
@@ -47,6 +55,32 @@ describe('filterStories — 주제·난이도 단일 선택 AND (2.2)', () => {
   test('AND 조건: 두 필터 동시 만족만 노출', () => {
     expect(filterStories([banggui, brave], '다름', '튼튼 이야기')).toEqual([banggui]);
     expect(filterStories([banggui, brave], '다름', '새싹 이야기')).toEqual([]);
+  });
+});
+
+describe('filterDummyStories — 미공개 더미도 동일 AND 필터 (2.2, PM 피드백 2026-08-16)', () => {
+  test('전체/전체: 7종 전부 노출', () => {
+    expect(filterDummyStories(DUMMY_STORIES, '전체', '전체')).toHaveLength(7);
+  });
+
+  test('주제 필터: keywords 포함 여부', () => {
+    const titles = filterDummyStories(DUMMY_STORIES, '나눔', '전체').map((d) => d.title);
+    expect(titles).toEqual(['금도끼 은도끼', '개미와 베짱이', '흥부와 놀부']);
+  });
+
+  test('난이도 필터: 라벨 값 그대로 매칭 (difficultyLabel 통과)', () => {
+    const titles = filterDummyStories(DUMMY_STORIES, '전체', '도전 이야기').map((d) => d.title);
+    expect(titles).toEqual(['해와 달이 된 오누이', '혹부리 영감']);
+  });
+
+  test('AND 조건: 두 필터 동시 만족만 노출', () => {
+    const titles = filterDummyStories(DUMMY_STORIES, '용기', '도전 이야기').map((d) => d.title);
+    expect(titles).toEqual(['해와 달이 된 오누이', '혹부리 영감']);
+    expect(filterDummyStories(DUMMY_STORIES, '나눔', '도전 이야기')).toEqual([]);
+  });
+
+  test('썸네일 zip 정합: recommended/01~07 개수와 메타 개수 일치 (목록·홈이 index로 zip)', () => {
+    expect(recommendedThumbnailUrls()).toHaveLength(DUMMY_STORIES.length);
   });
 });
 

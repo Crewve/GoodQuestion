@@ -3,15 +3,19 @@
 // 아이 컨텍스트(child)는 홈(T048)→목록→상세→진행으로 쿼리 파라미터로 전파된다.
 // UI 리뉴얼: 피그마 「개발 배포용」 2.2 대조 — 헤더 69px·필터 칩 h36 r32·카드 369×284 r20 3열 gap20.
 // h-dvh 한 화면 수납(페이지 세로 스크롤 금지) — 카드가 한 화면을 넘으면 그리드 영역만 내부 스크롤.
+// 미공개 더미 7종(홈 추천 이야기와 공용 메타·썸네일)을 실재 이야기 뒤에 비활성 '준비 중' 카드로 노출
+// (PM 피드백 2026-08-16 "추천이야기처럼 며느리 외 다른 이야기들도 보여야") — 더미도 주제·난이도 필터 적용.
 import Image from 'next/image';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
 import { StoryBookIcon } from '@/components/icons';
-import { storyThumbnailUrl } from '@/lib/assets';
+import { recommendedThumbnailUrls, storyThumbnailUrl } from '@/lib/assets';
 import {
   DIFFICULTY_FILTERS,
+  DUMMY_STORIES,
   TOPIC_FILTERS,
   difficultyLabel,
+  filterDummyStories,
   filterStories,
   type StoryRow,
 } from '@/lib/stories-view';
@@ -47,6 +51,18 @@ const DIFFICULTY_CHIP_TINT: Record<string, string> = {
   '도전 이야기': 'bg-berry/15 text-berry',
 };
 const DIFFICULTY_CHIP_FALLBACK = 'bg-sky/15 text-sky';
+
+/** 목록 카드 공통 뷰모델 — DB 실재 이야기와 미공개 더미를 같은 그리드에 렌더 (href null = 비활성 표시 전용) */
+type StoryCardVM = {
+  key: string;
+  title: string;
+  summary: string | null;
+  topics: string[];
+  levelLabel: string;
+  minutes: number | null;
+  thumbnailUrl: string | null;
+  href: string | null;
+};
 
 function withParams(base: string, params: Record<string, string | null>): string {
   const search = new URLSearchParams();
@@ -115,6 +131,39 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
   if (error) throw new Error(`이야기 목록 조회 실패: ${error.message}`); // error.tsx가 재시도 UI 제공
 
   const stories = filterStories(data ?? [], topic, level);
+  // 미공개 더미 7종을 실재 이야기 뒤에 비활성 카드로 노출 (PM 피드백 2026-08-16 — 홈 추천 이야기와 동일 세트),
+  // 더미도 주제·난이도 필터를 동일하게 따른다. 썸네일은 recommended/01~07 순서 zip.
+  const dummies = filterDummyStories(
+    recommendedThumbnailUrls().map((url, i) => ({ url, ...DUMMY_STORIES[i] })),
+    topic,
+    level,
+  );
+  const cards: StoryCardVM[] = [
+    ...stories.map((story) => {
+      // 콘텐츠가 없는 이야기(MVP는 '방귀 뀌는 며느리' 1편)는 UI 비활성 — 링크 대신 표시 전용 카드 (QA 3)
+      const available = story.id === BANGGUI_STORY_ID;
+      return {
+        key: story.id,
+        title: story.title,
+        summary: story.summary,
+        topics: (story.topics ?? []).slice(0, 2),
+        levelLabel: difficultyLabel(story.difficulty),
+        minutes: story.estimated_minutes,
+        thumbnailUrl: available ? storyThumbnailUrl(true) : null,
+        href: available ? withParams(`/stories/${story.id}`, { child }) : null,
+      };
+    }),
+    ...dummies.map((dummy) => ({
+      key: `dummy-${dummy.title}`,
+      title: dummy.title,
+      summary: null,
+      topics: dummy.keywords,
+      levelLabel: difficultyLabel(dummy.difficulty),
+      minutes: dummy.minutes,
+      thumbnailUrl: dummy.url,
+      href: null,
+    })),
+  ];
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
@@ -141,37 +190,35 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
       </div>
 
       <main className="mx-auto w-full min-h-0 max-w-[1194px] flex-1 overflow-y-auto px-6 py-6">
-        {stories.length === 0 ? (
+        {cards.length === 0 ? (
           // '필터 초기화' 버튼은 삭제 (QA 19) — 상단 필터 칩의 '전체'로 되돌린다
           <div className="flex h-full flex-col items-center justify-center text-center">
             <p className="font-display text-2xl text-ink">해당 조건의 이야기가 없어요</p>
           </div>
         ) : (
           <ul className="grid grid-cols-3 gap-5">
-            {stories.map((story) => {
-              const levelLabel = difficultyLabel(story.difficulty);
-              // 콘텐츠가 없는 이야기(MVP는 '방귀 뀌는 며느리' 1편)는 UI 비활성 — 링크 대신 표시 전용 카드 (QA 3)
-              const available = story.id === BANGGUI_STORY_ID;
+            {cards.map((card) => {
               const body = (
                 <>
-                  {available ? (
-                    <Image
-                      src={storyThumbnailUrl(true)}
-                      alt=""
-                      width={1448}
-                      height={1086}
-                      sizes="370px"
-                      loading="eager"
-                      className="aspect-[5/2] w-full object-cover"
-                    />
+                  {card.thumbnailUrl ? (
+                    <div className="relative aspect-[5/2] w-full shrink-0 overflow-hidden">
+                      <Image
+                        src={card.thumbnailUrl}
+                        alt=""
+                        fill
+                        sizes="370px"
+                        loading="eager"
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
                     <div className="aspect-[5/2] w-full bg-sunny/15" aria-hidden />
                   )}
                   <div className="flex flex-1 flex-col gap-2 p-4">
-                    <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
-                    <p className="truncate text-lg text-[#8A7A68]">{story.summary}</p>
+                    <p className="truncate font-display text-[22px] leading-tight text-ink">{card.title}</p>
+                    {card.summary != null && <p className="truncate text-lg text-[#8A7A68]">{card.summary}</p>}
                     <div className="mt-auto flex flex-wrap items-center gap-1.5">
-                      {(story.topics ?? []).slice(0, 2).map((t, i) => (
+                      {card.topics.map((t, i) => (
                         <span
                           key={t}
                           className={`rounded-md px-2.5 py-1 font-display text-lg font-bold leading-none ${topicChip(t, i)}`}
@@ -181,17 +228,17 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
                       ))}
                       <span
                         className={`rounded-lg px-2.5 py-1 font-display text-lg font-bold leading-none ${
-                          DIFFICULTY_CHIP_TINT[levelLabel] ?? DIFFICULTY_CHIP_FALLBACK
+                          DIFFICULTY_CHIP_TINT[card.levelLabel] ?? DIFFICULTY_CHIP_FALLBACK
                         }`}
                       >
-                        {levelLabel}
+                        {card.levelLabel}
                       </span>
-                      {story.estimated_minutes != null && (
+                      {card.minutes != null && (
                         <span className="rounded-lg bg-[#F5EDE0] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#8A7A68]">
-                          {story.estimated_minutes}분
+                          {card.minutes}분
                         </span>
                       )}
-                      {!available && (
+                      {card.href == null && (
                         <span className="rounded-lg bg-[#EFE7DA] px-2.5 py-1 font-display text-lg font-bold leading-none text-[#8A7A68]">
                           준비 중
                         </span>
@@ -201,10 +248,10 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
                 </>
               );
               return (
-                <li key={story.id}>
-                  {available ? (
+                <li key={card.key}>
+                  {card.href != null ? (
                     <Link
-                      href={withParams(`/stories/${story.id}`, { child })}
+                      href={card.href}
                       className="flex h-full flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] active:opacity-80"
                     >
                       {body}
