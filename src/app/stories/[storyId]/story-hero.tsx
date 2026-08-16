@@ -6,9 +6,11 @@ import Image from 'next/image';
 
 export function StoryHero({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
+  // 41dvh는 기본 높이 — 뷰포트가 낮으면(태블릿 Safari 주소창 등) 히어로가 먼저 min-h-32까지 줄어
+  // 아래 '이런 것을 배워요' 박스·CTA가 잘리지 않는다 (QA 08/16, 페이지 min-content 계산과 한 세트)
   if (failed) {
-    // 이미지 로딩 배경과 같은 크림색 박스 — 레이아웃(41dvh)을 그대로 유지해 아래 내용이 튀지 않게 한다
-    return <div className="h-[41dvh] w-full shrink-0 bg-[#FFE8C9]" aria-hidden />;
+    // 이미지 로딩 배경과 같은 크림색 박스 — 레이아웃을 그대로 유지해 아래 내용이 튀지 않게 한다
+    return <div className="h-[41dvh] min-h-32 w-full shrink bg-[#FFE8C9]" aria-hidden />;
   }
   return (
     <Image
@@ -19,7 +21,7 @@ export function StoryHero({ src }: { src: string }) {
       sizes="100vw"
       preload
       onError={() => setFailed(true)}
-      className="h-[41dvh] w-full shrink-0 bg-[#FFE8C9] object-contain"
+      className="h-[41dvh] min-h-32 w-full shrink bg-[#FFE8C9] object-contain"
     />
   );
 }

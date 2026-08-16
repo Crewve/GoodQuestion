@@ -2,7 +2,8 @@
 // 줄거리 = stories.summary + 고정 문구 한 문단, '이런 것을 배워요'는 고정 텍스트 박스.
 // 시작하기(T050)는 클라이언트 버튼이 /api/sessions 호출 후 /play/[sessionId]로 라우팅.
 // UI 리뉴얼: 피그마 「개발 배포용」 2.3 대조 — 뒤로가기 알약 버튼(흰 배경 r32)·풀블리드 히어로(344/834)·
-// 파스텔 칩·'이런 것을 배워요' 하늘색 박스(#DDF0FB r16)·주황 CTA r48. h-dvh 한 화면 수납(세로 스크롤 금지).
+// 파스텔 칩·'이런 것을 배워요' 하늘색 박스(#DDF0FB r16)·주황 CTA r48. h-dvh 한 화면 수납이 기본이되,
+// 낮은 뷰포트는 히어로 축소 → 극단에서만 스크롤 (QA 08/16 — 상세는 return 위 주석 참고).
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BookIcon, CheckIcon, ChevronLeftIcon } from '@/components/icons';
@@ -87,9 +88,12 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
   const backHref = searchChild ? `/stories?child=${searchChild}` : '/stories';
   const levelLabel = difficultyLabel(story.difficulty);
 
-  // 태블릿 기준(1194×834) 한 화면 수납 — 히어로는 41dvh 캡, CTA는 mt-auto 하단 고정 (세로 스크롤 금지)
+  // 태블릿 기준(1194×834) 한 화면 수납 — 히어로 41dvh 기본, CTA는 mt-auto 하단 고정.
+  // 뷰포트가 낮으면(태블릿 Safari 주소창 등) 히어로가 먼저 줄고(min-h-32 바닥), 그래도 넘치는
+  // 극단(모바일 가로)에서만 세로 스크롤 — '이런 것을 배워요' 박스가 잘리던 QA(08/16) 해소.
+  // main은 min-h 미지정(자동 최소 = 콘텐츠) + 텍스트 요소 shrink-0으로 본문 압착을 금지한다.
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background">
+    <div className="flex h-dvh flex-col overflow-y-auto bg-background">
       <div className="flex h-20 shrink-0 items-center px-5">
         <Link
           href={backHref}
@@ -104,11 +108,11 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
         // 타이틀 있는 썸네일 사용 — 피그마 코멘트 #175 (기존 제목X 버전에서 교체)
         <StoryHero src={storyThumbnailUrl(true)} />
       ) : (
-        <div className="h-[41dvh] w-full shrink-0 bg-sunny/15" aria-hidden />
+        <div className="h-[41dvh] min-h-32 w-full shrink bg-sunny/15" aria-hidden />
       )}
 
-      <main className="mx-auto flex w-full min-h-0 max-w-[1194px] flex-1 flex-col px-6 pt-6">
-        <div className="flex flex-wrap items-center gap-1.5">
+      <main className="mx-auto flex w-full max-w-[1194px] flex-1 flex-col px-6 pt-6">
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           {(story.topics ?? []).map((topic, i) => (
             <span
               key={topic}
@@ -133,12 +137,13 @@ export default async function StoryDetailPage(props: PageProps<'/stories/[storyI
           )}
         </div>
 
-        <h1 className="mt-3 font-display text-[32px] leading-tight text-ink">{story.title}</h1>
-        <p className="mt-2 font-display text-lg font-bold leading-relaxed text-[#8A7A68]">
+        <h1 className="mt-3 shrink-0 font-display text-[32px] leading-tight text-ink">{story.title}</h1>
+        <p className="mt-2 shrink-0 font-display text-lg font-bold leading-relaxed text-[#8A7A68]">
           {summaryWithTagline(story.summary)}
         </p>
 
-        <section className="mt-4 min-h-0 shrink overflow-hidden rounded-2xl border border-sky/25 bg-[#DDF0FB] p-4">
+        {/* shrink-0 — 종전 shrink+overflow-hidden은 낮은 뷰포트에서 배움 포인트가 잘렸다(QA 08/16), 축소는 히어로 몫 */}
+        <section className="mt-4 shrink-0 rounded-2xl border border-sky/25 bg-[#DDF0FB] p-4">
           <h2 className="flex items-center gap-2.5 font-display text-[22px] text-sky">
             {LEARN_SECTION_TITLE}
             <BookIcon className="size-6" />
