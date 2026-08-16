@@ -276,7 +276,8 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   />
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3.5">
-                  <p className="truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
+                  {/* shrink-0 — 칩이 줄바꿈되면 truncate 제목(자동 최소 높이 0)이 먼저 찌그러져 사라진다 (QA 08/16) */}
+                  <p className="shrink-0 truncate font-display text-[22px] leading-tight text-ink">{story.title}</p>
                   <div className="flex flex-wrap items-center gap-1.5">
                     {story.topics.slice(0, 2).map((topic, i) => (
                       <Chip key={topic} tint={topicChip(topic, i)}>
@@ -303,12 +304,17 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                   aria-disabled
                   className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white opacity-50 shadow-[0_4px_16px_rgba(58,44,30,0.08)]"
                 >
-                  {/* 이미지 130px 고정 — 위 실제 카드와 동일 (피그마 실측) */}
+                  {/* 이미지 130px 고정 — 위 실제 카드와 동일 (피그마 실측).
+                      '준비 중'은 칩 행이 아닌 썸네일 오버레이 — 칩 행에 넣으면 카드 고정 높이(219)에서 칩이
+                      2줄로 감기며 truncate 제목이 0으로 눌려 사라진다 (QA 08/16 "제목이 보이지 않습니다") */}
                   <div className="relative h-[130px] shrink-0 overflow-hidden">
                     <Image src={dummy.url} alt="" fill sizes="370px" loading="eager" className="object-cover" />
+                    <span className="absolute right-2 top-2 rounded-lg bg-[#EFE7DA]/95 px-2.5 py-1 font-display text-lg font-bold leading-none text-[#75664F]">
+                      준비 중
+                    </span>
                   </div>
                   <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3.5">
-                    <p className="truncate font-display text-[22px] leading-tight text-ink">{dummy.title}</p>
+                    <p className="shrink-0 truncate font-display text-[22px] leading-tight text-ink">{dummy.title}</p>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {dummy.keywords.map((keyword, i) => (
                         <Chip key={keyword} tint={topicChip(keyword, i)}>
@@ -320,9 +326,6 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                       </Chip>
                       <Chip rounded="rounded-lg" tint="bg-[#F5EDE0] text-[#8A7A68]">
                         {dummy.minutes}분
-                      </Chip>
-                      <Chip rounded="rounded-lg" tint="bg-[#EFE7DA] text-[#75664F]">
-                        준비 중
                       </Chip>
                     </div>
                   </div>
