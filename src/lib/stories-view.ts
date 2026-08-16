@@ -37,8 +37,9 @@ export const TOPIC_FILTERS = ['전체', '다름', '용기', '친절', '나눔'] 
 /** 난이도 필터 선택지 (2.2 — 단일 선택 Radio) */
 export const DIFFICULTY_FILTERS = ['전체', '새싹 이야기', '튼튼 이야기', '도전 이야기'] as const;
 
-/** 이야기 상세 고정 텍스트 (2.3 — 이야기 종류와 무관하게 동일 노출, 임시) */
-export const LEARN_SECTION_TITLE = '이런 것을 배워요 📝';
+/** 이야기 상세 고정 텍스트 (2.3 — 이야기 종류와 무관하게 동일 노출, 임시).
+    이모지 없음 — 화면의 BookIcon과 겹쳐 책 아이콘이 두 개로 보였다 (QA 08/16, 이모지 쪽 삭제) */
+export const LEARN_SECTION_TITLE = '이런 것을 배워요';
 export const LEARN_POINTS = [
   '다름을 장점으로 바라보기',
   '상대방의 감정 이해하기',

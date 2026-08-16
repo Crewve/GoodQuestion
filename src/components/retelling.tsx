@@ -148,7 +148,10 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
   const micLabel = recorder.isRecording ? '말 끝났어요! (녹음 마치기)' : stt ? '다시 말하기' : '눌러서 말하기';
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col gap-6 px-6 pb-6 pt-8">
+    // 뷰포트가 시안(834)보다 낮으면(태블릿 Safari 주소창 등) 세로 스크롤 허용 — 하단 마이크·보내기가 잘려
+    // 클릭 불가하던 QA(2026-08-16) 해소. 이미지 축소 수납안은 카드가 띠처럼 뭉개져 스크롤로 확정(사용자 결정 08/16).
+    // 아이 화면 무스크롤 원칙(핸드오프 §2)의 예외 — 콘텐츠가 넘칠 때만 스크롤이 생긴다.
+    <section className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-6 pt-8">
       <audio ref={hintAudioRef} hidden />
 
       {/* 활동 안내 — 스토리보드(피그마 2.4.5) 원문. 실측(2026-08-14): 제목 32 · 보조 22 #8A7A68 · 간격 8 */}
@@ -162,7 +165,8 @@ export function Retelling({ cards, keywords, sceneId, onSubmit }: RetellingProps
       </div>
 
       {/* 장면 카드 + 핵심 단어 세트 — 표시 전용, 사용자 조작 불가 (2.4.5 구성요소).
-          스토리보드처럼 콘텐츠 높이만 차지(flex-1 미사용) — 아래 요소들이 위로 붙는다.
+          스토리보드처럼 콘텐츠 높이만 차지(flex-1 미사용) — 아래 요소들이 위로 붙는다. 뷰포트가 낮으면
+          카드를 줄이지 않고 섹션 스크롤로 넘긴다(사용자 결정 08/16 — 축소는 카드가 띠처럼 뭉개짐).
           열 수는 카드 수를 따른다(하드코딩 4 제거 — 콘텐츠 교체만으로 장면 수가 바뀌어도 따라간다) */}
       <div
         style={{ gridTemplateColumns: `repeat(${Math.max(cards.length, 1)}, minmax(0, 1fr))` }}
