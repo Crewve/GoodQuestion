@@ -149,7 +149,8 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
         topics: (story.topics ?? []).slice(0, 2),
         levelLabel: difficultyLabel(story.difficulty),
         minutes: story.estimated_minutes,
-        thumbnailUrl: available ? storyThumbnailUrl(true) : null,
+        // 카드 제목이 썸네일 바로 아래에 나오므로 이미지 속 제목 글씨는 중복 — 제목X 썸네일 사용 (QA 08/16)
+        thumbnailUrl: available ? storyThumbnailUrl(false) : null,
         href: available ? withParams(`/stories/${story.id}`, { child }) : null,
       };
     }),
@@ -217,7 +218,9 @@ export default async function StoriesPage(props: PageProps<'/stories'>) {
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="truncate font-display text-[22px] leading-tight text-ink">{card.title}</p>
                     {card.summary != null && <p className="truncate text-lg text-[#8A7A68]">{card.summary}</p>}
-                    <div className="mt-auto flex flex-wrap items-center gap-1.5">
+                    {/* 칩은 제목/요약 바로 아래에 붙인다 — mt-auto(바닥 정렬)는 요약문 있는 카드가 행 높이를 키울 때
+                        칩 1줄짜리 카드('선녀와 나무꾼')만 제목 아래 여백이 벌어져 철회 (QA 08/16) */}
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {card.topics.map((t, i) => (
                         <span
                           key={t}

@@ -59,7 +59,9 @@ ASSETS = [
     ("추천 이야기/추천 3_금도끼 은도끼.png", "recommended/03-geumdokki-eundokki.png"),
     ("추천 이야기/추천 4_토끼와 거북이.png", "recommended/04-tokki-geobuki.png"),
     ("추천 이야기/추천 5_혹부리 영감.png", "recommended/05-hokburi-yeonggam.png"),
-    ("추천 이야기/추천 6_개미와 베짱이.png", "recommended/06-gaemi-bejjangi.png"),
+    # 06만 QA 전 버전(노란 테두리+제목 글씨)이 남아 있어 (글씨X) 원본으로 교체 (QA 08/16).
+    # 구버전은 같은 폴더에 '추천 6_개미와 베짱이_구버전(테두리·제목 포함).png'으로 보관.
+    ("추천 이야기/(글씨X)추천 6_개미와 베짱이.png", "recommended/06-gaemi-bejjangi.png"),
     ("추천 이야기/추천 7_흥부와 놀부.png", "recommended/07-heungbu-nolbu.png"),
     # 단어장 (2.6) — 「0_단어장 파일 전달드립니다._260815」 원본을 design/이미지/단어장/으로 복사해 관리
     ("단어장/단어1_장대.png", "stories/banggui/wordbook/01-jangdae.png"),
