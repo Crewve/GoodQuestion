@@ -264,10 +264,11 @@ export function HomeScreen({ childId, childName, childAvatarKey, story, hasSessi
                 className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(58,44,30,0.08)] transition-transform active:scale-95"
               >
                 {/* 이미지 130px 고정 — 피그마 「이야기 카드」 실측(이미지 130 + 텍스트 90 = 219).
-                    flex-1이면 칩 줄 수에 따라 이미지 높이가 카드마다 달라진다 (2026-08-15 QA) */}
+                    flex-1이면 칩 줄 수에 따라 이미지 높이가 카드마다 달라진다 (2026-08-15 QA).
+                    카드 제목이 썸네일 바로 아래에 나오므로 이미지 속 제목 글씨는 중복 — 제목X 썸네일 (QA 08/16) */}
                 <div className="relative h-[130px] shrink-0 overflow-hidden">
                   <Image
-                    src={storyThumbnailUrl(true)}
+                    src={storyThumbnailUrl(false)}
                     alt=""
                     fill
                     sizes="370px"
